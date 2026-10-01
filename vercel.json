@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/og-url.mjs",
+  "outputDirectory": "public",
+  "rewrites": [
+    {
+      "source": "/new",
+      "destination": "/create.html"
+    },
+    {
+      "source": "/g/:slug",
+      "destination": "/record.html"
+    },
+    {
+      "source": "/r/:slug",
+      "destination": "/reveal.html"
+    },
+    {
+      "source": "/m/:slug",
+      "destination": "/manage.html"
+    }
+  ],
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  }
+}

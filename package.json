@@ -1,0 +1,16 @@
+{
+  "name": "voice-gift",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voice Gift prototype: friends record secret voice messages; at midnight each one lights a candle.",
+  "type": "module",
+  "scripts": {
+    "dev": "node dev.mjs"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.0"
+  }
+}

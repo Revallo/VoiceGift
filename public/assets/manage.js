@@ -56,7 +56,7 @@ async function load() {
   $('#delivery').textContent = '';
   $('#delivery').append(recipientCard(gift, openKey));
   $('#openReveal').href = recipientUrl(gift, openKey);
-  $('#demoCard').hidden = messages.some((m) => m.demo);
+  $('#demoCard').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
   showScreen('main');
 }
 

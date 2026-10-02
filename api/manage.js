@@ -11,11 +11,15 @@ const DEMO_DIR = path.join(process.cwd(), 'public', 'demo');
 // Adds the demo voices for the gift's occasion, as if 12 people had recorded and fixed their caption.
 // Stored with demo: true so the ASR export leaves them out.
 async function addDemo(gift) {
-  if ((await loadMessages(gift.slug)).some((m) => m.demo)) throw new HttpError(400, 'The demo voices are already added.');
+  const have = new Set((await loadMessages(gift.slug)).filter((m) => m.demo).map((m) => m.sender));
   const all = JSON.parse(await fs.readFile(path.join(DEMO_DIR, 'voices.json'), 'utf8'));
   const occasion = all[gift.occasion] ? gift.occasion : 'birthday';
-  for (const [i, p] of all[occasion].entries()) {
-    const wav = await fs.readFile(path.join(DEMO_DIR, `${occasion}-${String(i + 1).padStart(2, '0')}.wav`));
+  // Only the ones not there yet (so pressing again finishes an interrupted run), all at once: one by one
+  // takes longer than a serverless function may run.
+  const todo = all[occasion].map((p, i) => ({ ...p, i })).filter((p) => !have.has(p.name));
+  if (!todo.length) throw new HttpError(400, 'The demo voices are already added.');
+  await Promise.all(todo.map(async (p) => {
+    const wav = await fs.readFile(path.join(DEMO_DIR, `${occasion}-${String(p.i + 1).padStart(2, '0')}.wav`));
     const durationSec = +wavDuration(wav).toFixed(2);
     const asr = await transcribe({ wav, durationSec, recipient: gift.recipient, occasion: gift.occasion }).catch(() => ({ text: '', words: [] }));
     await createMessage(gift.slug, {
@@ -23,7 +27,7 @@ async function addDemo(gift) {
       finalText: p.text, finalWords: evenWords(p.text, durationSec), edited: p.text !== asr.text,
       consent: true, consentVersion: CONSENT_VERSION, demo: true, sentAt: new Date().toISOString()
     }, wav);
-  }
+  }));
 }
 
 async function authed(slug, key) {

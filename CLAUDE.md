@@ -7,6 +7,8 @@ Taiwan Mobile's AI team: every message gives **Indonesian speech + the caption t
 corrected** — labeled data for our Indonesian ASR (~70% accurate today). The UX is the product;
 the data is the side effect. This is a **prototype**: keep it simple and readable.
 
+**Start here:** also read `docs/HANDOFF.md` (decisions, live URL, how we work, open ideas).
+
 ## Stack (prototype)
 - Vercel: static files in `public/`, serverless functions in `api/` (Node 22, ESM, no framework).
 - Storage: **Vercel Blob, private store**. Locally a `.data/` folder with the same interface (`lib/store.js`).

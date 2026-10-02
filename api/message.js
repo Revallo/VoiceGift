@@ -3,16 +3,8 @@
 // PATCH  /api/message   { slug, id, token, text }  → saves the caption the friend corrected
 // DELETE /api/message   { slug, id, token }        → "record again"
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { loadGift, createMessage, findMessage, updateMessage, deleteMessage, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
+import { loadGift, createMessage, findMessage, updateMessage, deleteMessage, wavDuration, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
-
-function wavDuration(buf) {
-  // Expect a 44-byte PCM WAV header (what the browser recorder writes).
-  if (buf.length < 44 || buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE') return null;
-  const byteRate = buf.readUInt32LE(28);
-  if (!byteRate) return null;
-  return (buf.length - 44) / byteRate;
-}
 
 async function authorized(body) {
   if (!isSlug(body.slug)) throw new HttpError(404, 'Gift not found');
@@ -27,7 +19,7 @@ export default route({
     const gift = await loadGift(q.slug);
     const name = cleanText(q.name, 40);
     if (!name) throw new HttpError(400, 'Please enter your name.');
-    if (q.consent !== '1') throw new HttpError(400, 'Please agree to the voice-use terms first.');
+    if (q.consent !== '1') throw new HttpError(400, 'Please allow saving your voice first.');
     const wav = await rawBody(req);
     const durationSec = wavDuration(wav);
     if (durationSec === null) throw new HttpError(400, 'The recording could not be read. Please record again.');
@@ -36,7 +28,7 @@ export default route({
 
     let asr;
     try {
-      asr = await transcribe({ wav, durationSec, recipient: gift.recipient });
+      asr = await transcribe({ wav, durationSec, recipient: gift.recipient, occasion: gift.occasion });
     } catch (e) {
       console.error(e);
       asr = { text: '', words: [] }; // never lose the recording because ASR failed

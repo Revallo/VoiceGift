@@ -11,7 +11,7 @@ export default route({
     const lines = [];
     for (const slug of await listAllGiftSlugs()) {
       for (const m of await loadMessages(slug)) {
-        if (!m.finalText) continue;
+        if (!m.finalText || m.demo) continue; // demo voices are TTS, not training data
         lines.push(JSON.stringify({
           gift: slug,
           id: m.id,

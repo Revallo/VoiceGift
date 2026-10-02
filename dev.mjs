@@ -1,6 +1,6 @@
 // Local development server: serves public/, applies the same rewrites as vercel.json,
 // and runs the handlers in api/. Data is stored in .data/ instead of Vercel Blob.
-//   npm run dev  →  http://localhost:3000
+//   npm run dev  →  http://localhost:3000  (restarts by itself when api/ or lib/ code changes)
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';

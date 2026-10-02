@@ -1,0 +1,137 @@
+// Shared scaffolding for the three scenes (cake, bouquet, lanterns):
+// a fixed-size coordinate "stage" scaled to fit its container, the finger-drawing layer,
+// and the states every scene's items share (lit, active/speaking, mine, out).
+
+export function div(cls, style) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  Object.assign(d.style, style);
+  return d;
+}
+
+export function seeded(seed) {
+  let s = seed;
+  return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+export function createStage(host, W, H, cls = '') {
+  const wrap = div('stage-wrap');
+  const stage = div(`stage ${cls}`.trim(), { width: `${W}px`, height: `${H}px` });
+  wrap.append(stage);
+  host.append(wrap);
+  const glow = div('glow');
+  const body = div('scenebody');
+  const layer = div('', { position: 'absolute', inset: '0' }); // the items (candles, flowers, lanterns)
+  stage.append(glow, body, layer);
+
+  function fit() {
+    const k = wrap.clientWidth / W || 1;
+    stage.style.transform = `scale(${k})`;
+    wrap.style.height = `${Math.round(H * k)}px`;
+  }
+  fit();
+  new ResizeObserver(fit).observe(wrap);
+
+  // Convert a pointer event to stage coordinates.
+  const toStage = (e) => {
+    const r = stage.getBoundingClientRect();
+    const k = r.width / W;
+    return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k };
+  };
+  return { wrap, stage, glow, body, layer, toStage, size: { w: W, h: H } };
+}
+
+// Stickers on top of the scene, stored with the gift as [emoji, x, y] (centre, stage coordinates).
+// Shown on every page; only the decorate step makes them movable (see create.js).
+export function createStickers(stage) {
+  const layer = div('stickers');
+  stage.append(layer);
+  let list = [];
+  const st = {
+    layer,
+    onRender: null,
+    set(l) { list = (Array.isArray(l) ? l : []).map((s) => [...s]); st.render(); },
+    get() { return list.map((s) => [...s]); },
+    render() {
+      layer.textContent = '';
+      list.forEach(([emoji, x, y], i) => {
+        const el = div('sticker', { left: `${x}px`, top: `${y}px` });
+        el.textContent = emoji;
+        el.dataset.i = i;
+        layer.append(el);
+      });
+      st.onRender?.();
+    }
+  };
+  return st;
+}
+
+export const BRUSHES = ['#FFFFFF', '#F6B93B', '#FF5A5F', '#5CC8A8', '#6FB7FF', '#2A1328'];
+
+// Dots drawn with a finger, stored with the gift as [x, y, colorIndex].
+export function createDrawing(parent, W, H) {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'draw';
+  Object.assign(canvas.style, { width: `${W}px`, height: `${H}px` });
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  parent.append(canvas);
+  const g = canvas.getContext('2d');
+  g.scale(dpr, dpr);
+  let dots = [];
+
+  function paint() {
+    g.clearRect(0, 0, W, H);
+    for (const [x, y, c] of dots) {
+      g.fillStyle = BRUSHES[c] || BRUSHES[0];
+      g.beginPath();
+      g.arc(x, y, 3, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  return {
+    setDots(d) { dots = Array.isArray(d) ? d.slice() : []; paint(); },
+    getDots() { return dots.slice(); },
+    // join = this dot continues the previous stroke, so fill the gap between them
+    addDot(x, y, c, join) {
+      const last = dots[dots.length - 1];
+      if (last && join) {
+        const dx = x - last[0], dy = y - last[1];
+        const n = Math.min(12, Math.floor(Math.hypot(dx, dy) / 4));
+        for (let s = 1; s < n; s++) dots.push([Math.round(last[0] + (dx * s) / n), Math.round(last[1] + (dy * s) / n), c]);
+      }
+      dots.push([Math.round(x), Math.round(y), c]);
+      if (dots.length > 2500) dots = dots.slice(-2500);
+      paint();
+    }
+  };
+}
+
+// Item states shared by every scene. `items` is the live array of item elements in message order.
+export function itemStates(items, glow) {
+  const st = {
+    light(i, on = true) {
+      const c = items[i];
+      if (c && !c.classList.contains('spot')) { c.classList.toggle('lit', on); if (on) c.classList.remove('out'); }
+      st.updateGlow();
+    },
+    lightAll(on = true) { items.forEach((c, i) => st.light(i, on)); },
+    // The finale for one item: candle blown out (keepLit false) or lantern released (keepLit true).
+    out(i, keepLit = false) {
+      const c = items[i];
+      if (!c || !c.classList.contains('lit') || c.classList.contains('out')) return;
+      c.classList.remove('active', 'speaking');
+      if (!keepLit) c.classList.remove('lit');
+      c.classList.add('out');
+      st.updateGlow();
+    },
+    setActive(i, speaking = false) { items.forEach((c, k) => { c.classList.toggle('active', k === i); c.classList.toggle('speaking', k === i && speaking); }); },
+    mark(i) { items[i]?.classList.add('mine'); },
+    litCount() { return items.filter((c) => c.classList.contains('lit') && !c.classList.contains('out')).length; },
+    updateGlow() {
+      glow.style.opacity = items.length ? (st.litCount() / items.length).toFixed(2) : '0';
+    }
+  };
+  return st;
+}

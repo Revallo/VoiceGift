@@ -1,8 +1,9 @@
 # Voice Gift — guide for Claude Code
 
 ## What this is
-A web app where friends record short voice messages for someone. The gift stays locked until a set
-time (e.g. 00:00 on a birthday), then opens as a cake where every voice is one candle. Built for
+A web app where friends record short voice messages for someone. The organizer sends the recipient
+their link when they want the surprise to start (e.g. at 00:00 on a birthday); it opens as a scene where every voice is one item: a cake with
+candles (birthday), a bouquet of flowers (graduation) or lanterns (wedding). Built for
 Taiwan Mobile's AI team: every message gives **Indonesian speech + the caption the speaker
 corrected** — labeled data for our Indonesian ASR (~70% accurate today). The UX is the product;
 the data is the side effect. This is a **prototype**: keep it simple and readable.
@@ -25,40 +26,61 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | URL | File | Who |
 | --- | --- | --- |
 | `/` | `index.html` | landing |
-| `/new` | `create.html` + `assets/create.js` | organizer: who/when → decorate cake → share links + QR |
+| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → friends' link + QR + dashboard |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |
-| `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | organizer dashboard: who recorded (not content), "open now" |
-| `/r/:slug` | `reveal.html` + `assets/reveal.js` | recipient: countdown → candles light → listen → blow → keepsake |
+| `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | organizer dashboard (only with the key): who recorded (not content), recipient link, demo voices |
+| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
-Grad*/Wed* = future themes; Decorate = cake editor).
+Grad* = graduation, Wed* = wedding; Decorate = cake editor).
+
+## Occasions (themes)
+- `assets/themes.js` holds every occasion's words (one object per occasion) and `createScene()`, which picks
+  the scene. Pages never hard-code "candle" or "birthday": add words there.
+- Scenes: `cake.js` (birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
+  (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
+  `finaleOrder`/`finaleOut`, `reset`…
+- `gift.cake {flavor, name, dots, stickers}` is reused by every scene: `flavor` is a key of that scene's
+  palette (cake `FLAVORS`, bouquet `WRAPS`, lantern `LIGHTS`; unknown keys fall back to the default);
+  `name` is the text on the cake / wrap / under the lanterns; `stickers` = `[[emoji, x, y]]` (sets in
+  `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
+- Step 3 → back → step 2 saves with `PATCH /api/gifts` (manageKey). Each step is a history entry, so the
+  phone's back gesture works.
+- Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
+- Step 3 of `/new` stays simple: friends' link, QR, dashboard. The recipient's link is only on the dashboard.
+
+## Demo voices
+`public/demo/voices.json` + `public/demo/<occasion>-01..12.wav`: 12 TTS voices per occasion (made once with
+`scripts/demo-voices.py`). Dashboard → "Add 12 demo voices" (`POST /api/manage` action `add-demo`, needs the
+manage key) stores them like real messages with `demo: true`; `/api/export` leaves them out.
 
 ## API (`api/*.js`)
-- `POST /api/gifts` {recipient, organizer, occasion, unlockAt, cake{flavor,name,dots}} → {slug, manageKey}
+- `POST /api/gifts` {recipient, organizer, occasion, cake{flavor,name,dots,stickers}} → {slug, manageKey, openKey}; `PATCH` same + {slug, key} → edit
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug` → messages **only after unlockAt** (server-side rule)
-- `GET /api/audio?slug&id[&token]` → WAV with Range support (iOS); after unlock, or own recording via token
-- `GET|POST /api/manage` (manageKey) → dashboard data / `unlock-now`
+- `GET /api/reveal?slug&k=openKey` → messages **only with the recipient's key** (server-side rule)
+- `GET /api/audio?slug&id&k=openKey` (or `&token` for your own recording) → WAV with Range support (iOS)
+- `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey / `add-demo`
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent…
 
 Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`.
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
-`lib/asr.js` is the only seam. Mock by default (returns "Selamat ulang tahun, <name>!" with even word
+`lib/asr.js` is the only seam. Mock by default (returns the occasion's greeting, e.g. "Selamat ulang tahun, <name>!", with even word
 timings). Set `ASR_URL` (+ `ASR_API_KEY`) to call the company API; adapt `fromProvider()` to its response shape.
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.
-- Never return message audio/text before unlock (enforced in `api/`, not just the UI).
+- Never return message audio/text without the recipient's key (enforced in `api/`, not just the UI).
+  Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
+  organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
 - Consent checkbox on every recording; store `consentVersion`. No accounts, no phone numbers.
 - Mobile first: test at 390×844, and desktop (the app is a centered 440 px column).
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 
 ## Not built yet (designed)
-Graduation (bouquet, throw cap) and wedding (lanterns, QR guestbook, opens next morning) themes;
 "Save video" export; thank-you reply to everyone; notifications; per-gift link-preview images.
 
 ## Later: moving to the company server

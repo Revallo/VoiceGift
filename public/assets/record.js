@@ -1,12 +1,12 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, fmtWhen, addStars, copyText } from './common.js';
-import { createCake } from './cake.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, copyText } from './common.js';
+import { theme, createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 
 addStars($('#app'), 18, 40);
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
 
 const slug = slugFromPath();
-let gift, count = 0, first = '';
+let gift, t, count = 0, first = '';
 let rec = null, recorded = null, sent = null; // sent = { id, token }
 
 function err(el, msg) { el.textContent = msg || ''; el.hidden = !msg; }
@@ -20,23 +20,20 @@ async function load() {
     $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
     return showScreen('error');
   }
-  first = gift.recipient.split(/\s+/)[0];
-  document.title = `Record a message for ${first}`;
+  t = applyTheme(gift.occasion);
+  first = t.callName(gift.recipient);
+  document.title = t.inviteTitle(first);
   $('#invitedBy').textContent = `${gift.organizer} invited you`;
-  $('#inviteTitle').textContent = gift.occasion === 'birthday' ? `Record a message for ${first}’s birthday` : `Record a message for ${first}`;
+  $('#inviteTitle').textContent = t.inviteTitle(first);
   $('#startBtn').innerHTML = icon.mic(18);
   $('#startBtn').append(h('span', {}, 'Start recording'));
   $('#recEyebrow').textContent = `For ${first} · max 15 seconds`;
   $('#tip').textContent = '';
-  $('#tip').append(h('b', { style: { color: '#fff' } }, 'Tip: '), `start by calling ${first}’s name, then say your wish.`);
-  const inviteCake = createCake($('#inviteCake'), gift.cake);
+  $('#tip').append(h('b', { style: { color: '#fff' } }, 'Tip: '), t.tip(first));
+  const inviteCake = createScene($('#inviteCake'), gift);
   inviteCake.setCandles(count, { spots: Math.max(12, count + 1) });
   inviteCake.lightAll();
-  $('#countLine').textContent = count === 0 ? 'Be the first to add a candle' : `${count} ${count === 1 ? 'friend has' : 'friends have'} added a candle`;
-  if (gift.unlocked) {
-    $('#lateNote').hidden = false;
-    $('#lateNote').textContent = `The gift opened on ${fmtWhen(gift.unlockAt)}. You can still add your message.`;
-  }
+  $('#countLine').textContent = t.countLine(count);
   try { $('#name').value = localStorage.getItem('vg-name') || ''; } catch {}
   showScreen('invite');
 }
@@ -111,7 +108,7 @@ async function upload() {
     $('#ownDur').textContent = `0:${String(Math.round(recorded.durationSec)).padStart(2, '0')}`;
     $('#againBtn').innerHTML = icon.redo(15);
     $('#againBtn').append(h('span', {}, 'Record again'));
-    $('#secretLine').textContent = gift.unlocked ? '' : `Your voice and words stay secret until ${fmtWhen(gift.unlockAt)}.`;
+    $('#secretLine').textContent = `Your voice and words stay secret until ${gift.organizer} sends ${first} the gift.`;
     setupPlayer();
     showScreen('caption');
   } catch (e) {
@@ -169,13 +166,14 @@ $('#sendBtn').addEventListener('click', async () => {
 async function showDone() {
   let n = count + 1;
   try { n = (await api(`/api/gift?slug=${encodeURIComponent(slug)}`)).count; } catch {}
-  $('#doneLead').textContent = gift.unlocked ? `${first} can hear it now.` : `${first} hears it on ${fmtWhen(gift.unlockAt)}. Until then, it’s a secret.`;
+  $('#doneLead').textContent = `It’s a secret until ${gift.organizer} sends ${first} the gift.`;
+  $('#doneTitle').textContent = t.doneTitle;
   $('#doneCake').textContent = '';
-  const c = createCake($('#doneCake'), gift.cake);
+  const c = createScene($('#doneCake'), gift);
   c.setCandles(n, { spots: Math.max(12, n) });
   c.lightAll();
   c.mark(n - 1);
-  $('#doneCount').textContent = `${n} ${n === 1 ? 'candle' : 'candles'} · yours is the one circled`;
+  $('#doneCount').textContent = t.doneCount(n);
   showScreen('done');
 }
 

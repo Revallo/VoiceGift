@@ -19,7 +19,7 @@
     <div class="loading"><h1>Hmm.</h1><p class="lead" id="errorText"></p><a class="btn ghost" href="/" style="max-width:240px">Go to Voice Gift</a></div>
   </section>
   <section data-screen="main" hidden>
-    <a class="brand" href="/" style="font-size:15px"><span class="logo" data-logo style="width:26px;height:26px"></span>Voice Gift</a>
+    <div class="topbar"><a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a><a class="brand" href="/" style="font-size:15px"><span class="logo" data-logo style="width:26px;height:26px"></span>Voice Gift</a></div>
     <div class="head">
       <div class="eyebrow">Your dashboard</div>
       <h1 id="title"></h1>
@@ -32,18 +32,20 @@
       <div class="list" id="list"></div>
     </div>
     <div class="card stack">
-      <b>Invite more friends</b>
+      <b id="inviteTitle">Invite more friends</b>
       <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
-      <a class="btn wa" id="waBtn" target="_blank" rel="noopener"></a>
+      <div id="waBtn"></div>
+      <div class="row">
+        <div class="qr" id="qr"></div>
+        <div class="grow stack" style="gap:8px"><div class="small muted">Or let them scan this. For events, print it for the table.</div>
+          <button type="button" class="btn ghost sm" id="printQr" style="align-self:flex-start"></button></div>
+      </div>
     </div>
-    <div class="card stack">
-      <div><b id="recipientTitle"></b><div class="small muted">Send it any time. It stays locked until it opens.</div></div>
-      <div class="linkbox"><span id="recipientLink"></span><button type="button" id="copyRecipient"></button></div>
-      <a class="btn ghost" id="openReveal" target="_blank" rel="noopener">Preview their page</a>
-    </div>
+    <div id="delivery"></div>
+    <a class="btn ghost" id="openReveal" target="_blank" rel="noopener">Preview their page</a>
     <div class="card stack" id="demoCard">
-      <div><b>Demo</b><div class="small muted">Open the gift right now instead of waiting.</div></div>
-      <button class="btn ghost" id="unlockNow">Open it now</button>
+      <div><b>Demo</b><div class="small muted">Show how it works without waiting for real friends: add 12 demo voices, then tap “Preview their page”.</div></div>
+      <button class="btn ghost" id="addDemo">Add 12 demo voices</button>
     </div>
   </section>
 </main>

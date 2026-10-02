@@ -5,7 +5,7 @@
   "description": "Voice Gift prototype: friends record secret voice messages; at midnight each one lights a candle.",
   "type": "module",
   "scripts": {
-    "dev": "node dev.mjs"
+    "dev": "node --watch dev.mjs"
   },
   "engines": {
     "node": "22.x"

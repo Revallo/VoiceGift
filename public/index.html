@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1A0C19">
 <title>Voice Gift — collect voice messages for someone you love</title>
-<meta name="description" content="Friends record secret voice messages. It opens as a surprise at the moment you choose. No app to install.">
+<meta name="description" content="Friends record secret voice messages. You send it as one surprise. No app to install.">
 <meta property="og:title" content="Voice Gift">
 <meta property="og:description" content="Friends record secret voice messages. At midnight, each one lights a candle.">
 <meta property="og:image" content="/og.png">
@@ -24,22 +24,22 @@
     </div>
     <div class="head">
       <h1 class="big">Collect voice messages for someone you love</h1>
-      <p class="lead">Friends record from a link. It opens as a surprise, at the moment you choose.</p>
+      <p class="lead">Friends record from a link. You send it as one surprise, whenever you’re ready.</p>
     </div>
     <div id="cake"></div>
-    <div class="chips" style="justify-content:center">
-      <span class="chip on">Birthday</span>
-      <span class="chip" style="cursor:default">Graduation <small>· soon</small></span>
-      <span class="chip" style="cursor:default">Wedding <small>· soon</small></span>
+    <div class="chips" id="occasions" style="justify-content:center">
+      <button type="button" class="chip on" data-v="birthday">🎂 Birthday</button>
+      <button type="button" class="chip" data-v="graduation">🎓 Graduation</button>
+      <button type="button" class="chip" data-v="wedding">💍 Wedding</button>
     </div>
-    <a class="btn pulse" href="/new">Create a gift</a>
+    <a class="btn pulse" href="/new" id="createLink">Create a gift</a>
     <p class="small muted center" style="margin:0">Free · No app to install · Works in any phone browser</p>
 
     <div class="stack" style="margin-top:18px">
       <h2>How it works</h2>
-      <div class="card row"><span class="avatar" style="background:#F6B93B">1</span><div><b>You create the gift</b><div class="small muted">Who it’s for, when it opens, and how the cake looks.</div></div></div>
-      <div class="card row"><span class="avatar" style="background:#5CC8A8">2</span><div><b>Friends record 15 seconds</b><div class="small muted">They tap the link you share. Each voice adds a candle.</div></div></div>
-      <div class="card row"><span class="avatar" style="background:#FF8FA3">3</span><div><b>It opens as a surprise</b><div class="small muted">At the set time the candles light up, one voice at a time.</div></div></div>
+      <div class="card row"><span class="avatar" style="background:#F6B93B">1</span><div><b>You create the gift</b><div class="small muted">Who it’s for and how it looks.</div></div></div>
+      <div class="card row"><span class="avatar" style="background:#5CC8A8">2</span><div><b>Friends record 15 seconds</b><div class="small muted" id="how2">They tap the link you share. Each voice adds a candle.</div></div></div>
+      <div class="card row"><span class="avatar" style="background:#FF8FA3">3</span><div><b>It opens as a surprise</b><div class="small muted" id="how3">When they open it, the candles light up, one voice at a time.</div></div></div>
     </div>
     <div id="mine" class="stack" hidden style="margin-top:12px">
       <h2>Your gifts</h2>
@@ -48,15 +48,34 @@
   </section>
 </main>
 <script type="module">
-import { $, h, icon, addStars, fmtWhen } from '/assets/common.js';
-import { createCake } from '/assets/cake.js';
+import { $, $$, h, icon, addStars } from '/assets/common.js';
+import { theme, createScene, applyTheme } from '/assets/themes.js';
 
 $('#logo').innerHTML = icon.gift(17);
 addStars($('#app'), 26, 45);
-const cake = createCake($('#cake'), { flavor: 'strawberry', name: 'Dimas' });
-cake.setCandles(12);
-let i = 0;
-const t = setInterval(() => { cake.light(i++); if (i >= 12) clearInterval(t); }, 180);
+
+// The hero shows the scene for the chosen occasion, lighting up one item at a time.
+const SAMPLES = {
+  birthday: { recipient: 'Dimas', cake: { flavor: 'strawberry', name: 'Dimas' } },
+  graduation: { recipient: 'Nadia', cake: { flavor: 'strawberry', name: 'Nadia, S.Kom.' } },
+  wedding: { recipient: 'Rina & Bayu', cake: { flavor: 'vanilla', name: 'Selamat menempuh hidup baru' } }
+};
+let timer;
+function show(occasion) {
+  const t = applyTheme(occasion);
+  $$('#occasions .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === occasion));
+  $('#createLink').href = occasion === 'birthday' ? '/new' : `/new?occasion=${occasion}`;
+  $('#how2').textContent = `They tap the link you share. Each voice adds a ${t.item}.`;
+  $('#how3').textContent = `When they open it, the ${t.items} ${t.key === 'graduation' ? 'bloom' : 'light up'}, one voice at a time.`;
+  $('#cake').textContent = '';
+  const scene = createScene($('#cake'), { occasion, ...SAMPLES[occasion] });
+  scene.setCandles(12);
+  clearInterval(timer);
+  let i = 0;
+  timer = setInterval(() => { scene.light(i++); if (i >= 12) clearInterval(timer); }, 180);
+}
+$$('#occasions .chip').forEach((c) => c.addEventListener('click', () => show(c.dataset.v)));
+show('birthday');
 
 // Gifts this browser created (kept only on this device).
 try {
@@ -65,7 +84,7 @@ try {
     $('#mine').hidden = false;
     for (const g of mine.slice(-5).reverse()) {
       $('#mineList').append(h('a', { class: 'item', href: `/m/${g.slug}?k=${g.key}`, style: { color: '#fff', textDecoration: 'none' } },
-        h('div', { class: 'grow' }, h('b', {}, `For ${g.recipient}`), h('div', { class: 'small muted' }, `Opens ${fmtWhen(g.unlockAt)}`)),
+        h('div', { class: 'grow' }, h('b', {}, `${theme(g.occasion).emoji} For ${g.recipient}`), h('div', { class: 'small muted' }, theme(g.occasion).label)),
         h('span', { class: 'small', style: { color: 'var(--gold)', fontWeight: '700' } }, 'Dashboard')));
     }
   }

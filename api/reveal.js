@@ -1,16 +1,13 @@
-// GET /api/reveal?slug=…  → the messages, but only once the gift is unlocked
-import { route, send, query } from '../lib/http.js';
-import { loadGift, publicGift, isUnlocked, loadMessages, countMessages } from '../lib/gifts.js';
+// GET /api/reveal?slug=…&k=…  → the messages, only with the recipient's key (the link the organizer sends)
+import { route, send, query, HttpError } from '../lib/http.js';
+import { loadGift, publicGift, canOpen, loadMessages } from '../lib/gifts.js';
 import { evenWords } from '../lib/asr.js';
 
 export default route({
   async GET(req, res) {
-    const { slug } = query(req);
+    const { slug, k } = query(req);
     const gift = await loadGift(slug);
-    if (!isUnlocked(gift)) {
-      const count = await countMessages(gift.slug);
-      return send(res, 200, { locked: true, gift: publicGift(gift), count, now: new Date().toISOString() });
-    }
+    if (!canOpen(gift, k)) throw new HttpError(403, `This link isn’t complete. Ask ${gift.organizer} for the link to the gift.`);
     const messages = (await loadMessages(gift.slug))
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
       .map((m) => {
@@ -23,6 +20,6 @@ export default route({
           durationSec: m.durationSec
         };
       });
-    send(res, 200, { locked: false, gift: publicGift(gift), messages, now: new Date().toISOString() });
+    send(res, 200, { gift: publicGift(gift), messages });
   }
 });

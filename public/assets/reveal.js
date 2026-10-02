@@ -1,15 +1,16 @@
-// The recipient's page: countdown → candles light up → listen to each voice → blow them out → keepsake.
-import { $, h, api, icon, showScreen, slugFromPath, fmtWhen, addStars, toast, colorFor, initials, tone, copyText } from './common.js';
-import { createCake, candleSpots } from './cake.js';
+// The recipient's page: the scene lights up (candles / flowers / lanterns) → listen to each voice
+// → the finale (blow out the candles / throw your cap / release the lanterns) → keepsake.
+import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText } from './common.js';
+import { createScene, applyTheme } from './themes.js';
 
 addStars($('#app'), 26, 55);
 
 const slug = slugFromPath();
+const openKey = new URLSearchParams(location.search).get('k') || '';
 const NOTES = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 const el = { eyebrow: $('#eyebrow'), title: $('#title'), sub: $('#sub'), panel: $('#panel'), bottom: $('#bottom') };
 
-let gift, first = '', messages = [], cake, ac;
-let clockOffset = 0;
+let gift, t, first = '', messages = [], scene, ac;
 let phase = 'loading';
 const buffers = [];
 const bufferJobs = [];
@@ -19,11 +20,8 @@ let queue = [];
 let chips = [];
 let timers = [];
 
-const later = (fn, ms) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
+const later = (fn, ms) => { const tm = setTimeout(fn, ms); timers.push(tm); return tm; };
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
-const now = () => Date.now() + clockOffset;
-const people = (n) => `${n} ${n === 1 ? 'person' : 'people'}`;
-const greeting = () => (gift.occasion === 'birthday' ? `Happy birthday, ${first}!` : `Congratulations, ${first}!`);
 const fmtDur = (s) => { s = Math.round(s); return s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`; };
 
 function header(eyebrow, title, sub, italic = false) {
@@ -46,61 +44,26 @@ function btn(label, opts = {}) {
 async function load() {
   let data;
   try {
-    data = await api(`/api/reveal?slug=${encodeURIComponent(slug)}`);
+    data = await api(`/api/reveal?slug=${encodeURIComponent(slug)}&k=${encodeURIComponent(openKey)}`);
   } catch (e) {
     $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
     return showScreen('error');
   }
-  clockOffset = Date.parse(data.now) - Date.now();
   gift = data.gift;
-  first = gift.recipient.split(/\s+/)[0];
+  t = applyTheme(gift.occasion);
+  first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
-  if (!cake) cake = createCake($('#cake'), gift.cake);
+  if (!scene) scene = createScene($('#cake'), gift);
   showScreen('scene');
-  if (data.locked) return showLocked(data.count);
   messages = data.messages;
   if (!messages.length) return showEmpty();
   showReady();
 }
 
-// ---------- before it opens ----------
-function showLocked(count) {
-  phase = 'locked';
-  cake.setCandles(count, { spots: Math.max(12, count) });
-  cake.setDim(1);
-  const when = fmtWhen(gift.unlockAt);
-  header(`For ${first}`, count ? `${people(count)} prepared a surprise for you` : 'Something is being prepared for you', `It opens ${when}.`);
-  const pile = h('div', { class: 'facepile' });
-  for (let i = 0; i < Math.min(Math.max(count, 3), 12); i++) pile.append(h('i', {}, '?'));
-  setPanel(h('div', { class: 'row' }, pile, h('span', { class: 'small soft' }, 'Who? A secret until it opens.')));
-
-  const boxes = [h('b'), h('b'), h('b')];
-  const labels = [h('small'), h('small'), h('small')];
-  const box = (i) => h('div', { class: 'box' }, boxes[i], labels[i]);
-  const cd = h('div', { class: 'countdown', role: 'timer' }, box(0), h('span', { class: 'sep' }, ':'), box(1), h('span', { class: 'sep' }, ':'), box(2));
-  const remind = btn('Remind me', { ghost: true, icon: icon.bell(16), onclick: () => toast('Keep this page. It opens by itself at that time.') });
-  setBottom(cd, h('p', { class: 'small muted center', style: { margin: '0' } }, `Opens ${when}`), remind);
-
-  const pad = (n) => String(n).padStart(2, '0');
-  const tick = () => {
-    const left = Math.max(0, Date.parse(gift.unlockAt) - now());
-    const s = Math.floor(left / 1000);
-    const d = Math.floor(s / 86400);
-    const parts = d > 0 ? [[d, 'days'], [Math.floor((s % 86400) / 3600), 'hours'], [Math.floor((s % 3600) / 60), 'min']] : [[Math.floor(s / 3600), 'hours'], [Math.floor((s % 3600) / 60), 'min'], [s % 60, 'sec']];
-    parts.forEach(([v, l], i) => { boxes[i].textContent = pad(v); labels[i].textContent = l; });
-    if (left <= 0) {
-      clearInterval(iv);
-      later(load, 800);
-    }
-  };
-  const iv = setInterval(tick, 1000);
-  tick();
-}
-
 function showEmpty() {
   phase = 'empty';
-  cake.setCandles(0, { spots: 12 });
-  header(`For ${first}`, 'No messages yet', `Ask ${gift.organizer} to share the link with your friends, then come back.`);
+  scene.setCandles(0, { spots: 12 });
+  header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
   setPanel(null);
   setBottom(btn('Check again', { ghost: true, onclick: load }));
 }
@@ -108,9 +71,10 @@ function showEmpty() {
 // ---------- it's time ----------
 function showReady() {
   phase = 'ready';
-  cake.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), onTap: (i) => phase === 'cake' && play(i, false) });
-  cake.setDim(0.7);
-  header(`For ${first}`, 'It’s time!', `${people(messages.length)} recorded something for you. Turn your sound on.`);
+  scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), onTap: (i) => phase === 'cake' && play(i, false) });
+  scene.stage.classList.add('interactive');
+  scene.setDim(0.7);
+  header(t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
   const pile = h('div', { class: 'facepile' });
   for (let i = 0; i < Math.min(messages.length, 12); i++) pile.append(h('i', {}, '?'));
   setPanel(h('div', { class: 'row' }, pile));
@@ -141,7 +105,7 @@ async function runLimited(jobs, n) {
 
 function loadBuffer(i) {
   if (!bufferJobs[i]) {
-    bufferJobs[i] = fetch(`/api/audio?slug=${encodeURIComponent(slug)}&id=${encodeURIComponent(messages[i].id)}`)
+    bufferJobs[i] = fetch(`/api/audio?slug=${encodeURIComponent(slug)}&id=${encodeURIComponent(messages[i].id)}&k=${encodeURIComponent(openKey)}`)
       .then((r) => { if (!r.ok) throw new Error('audio ' + r.status); return r.arrayBuffer(); })
       .then((ab) => new Promise((res, rej) => ac.decodeAudioData(ab, res, rej)))
       .then((b) => (buffers[i] = b));
@@ -150,37 +114,38 @@ function loadBuffer(i) {
   return bufferJobs[i];
 }
 
-// ---------- candles light up ----------
+// ---------- the scene lights up, one voice at a time ----------
 function startLighting() {
   phase = 'lighting';
-  cake.setDim(0);
+  scene.setDim(0);
   const n = messages.length;
-  header(`For ${first}`, 'Your friends are lighting the candles…', 'Every candle is one friend.');
-  const dots = messages.map((m, i) => h('i', { style: { width: '10px', height: '10px', borderRadius: '50%', background: '#3A2338', transition: 'background .3s' } }));
-  const count = h('p', { class: 'small soft center', style: { margin: '0' } }, `0 of ${n} candles lit`);
+  const eyebrow = t.eyebrow(first);
+  header(eyebrow, t.lightingTitle, t.lightingSub);
+  const dots = messages.map(() => h('i', { style: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--face)', transition: 'background .3s' } }));
+  const count = h('p', { class: 'small soft center', style: { margin: '0' } }, t.progress(0, n));
   setBottom(h('div', { class: 'row', style: { justifyContent: 'center', flexWrap: 'wrap', gap: '7px' } }, n <= 40 ? dots : []), count);
-  let t = 300;
+  let at = 300;
   messages.forEach((m, i) => {
-    t += i === 0 ? 300 : Math.max(170, 700 * Math.pow(0.86, i));
+    at += i === 0 ? 300 : Math.max(170, 700 * Math.pow(0.86, i));
     later(() => {
-      cake.light(i);
+      scene.light(i);
       if (dots[i]) dots[i].style.background = colorFor(i);
-      count.textContent = i + 1 === n ? `All ${n} candles are lit` : `${i + 1} of ${n} candles lit`;
+      count.textContent = t.progress(i + 1, n);
       setPanel(h('div', { class: 'caller' },
         h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
         h('div', {}, h('div', { class: 'small soft', style: { fontWeight: '600' } }, m.sender), h('div', { class: 'shout' }, `“${first}!”`))));
       tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.05);
       playSnippet(i);
-    }, t);
+    }, at);
   });
   later(() => {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.06));
-    header(`For ${first}`, greeting(), `${people(n)} lit a candle for you.`);
-  }, t + 700);
-  later(enterCake, t + 3200);
+    header(eyebrow, t.greeting(first), t.gaveLine(n));
+  }, at + 700);
+  later(enterScene, at + 3200);
 }
 
-// The first moment of each recording, as its candle lights (friends were asked to start with the name).
+// The first moment of each recording, as its item lights (friends were asked to start with the name).
 function playSnippet(i) {
   const b = buffers[i];
   if (!b) return;
@@ -188,22 +153,22 @@ function playSnippet(i) {
     const src = ac.createBufferSource();
     const g = ac.createGain();
     src.buffer = b;
-    const t = ac.currentTime;
-    g.gain.setValueAtTime(0.9, t);
-    g.gain.setValueAtTime(0.9, t + 1.0);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    const at = ac.currentTime;
+    g.gain.setValueAtTime(0.9, at);
+    g.gain.setValueAtTime(0.9, at + 1.0);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 1.4);
     src.connect(g);
     g.connect(ac.destination);
-    src.start(t, 0, 1.45);
+    src.start(at, 0, 1.45);
   } catch {}
 }
 
 // ---------- listen ----------
-function enterCake() {
+function enterScene() {
   phase = 'cake';
-  cake.lightAll();
-  cake.setBend(0);
-  updateCakeHeader();
+  scene.lightAll();
+  scene.setBend(0);
+  updateHeader();
   setPanel(idlePanel());
   const grid = h('div', { class: 'friends' });
   chips = messages.map((m, i) => {
@@ -221,15 +186,15 @@ function enterCake() {
     play(queue.shift(), true);
   } });
   playAll.style.width = 'auto';
-  const blowBtn = btn('Blow out the candles', { onclick: startBlow });
-  blowBtn.id = 'blowBtn';
-  setBottom(grid, heard, h('div', { class: 'row' }, playAll, blowBtn));
+  const finaleBtn = btn(t.finaleBtn, { onclick: startFinale });
+  finaleBtn.id = 'blowBtn';
+  setBottom(grid, heard, h('div', { class: 'row' }, playAll, finaleBtn));
   updateHeard();
 }
 
-function updateCakeHeader() {
+function updateHeader() {
   const all = played.size >= messages.length;
-  header(`For ${first}`, greeting(), current?.chain ? 'Playing every voice, one by one.' : all ? 'You heard everyone. Now make a wish.' : 'Each candle is a friend. Tap one to hear them.');
+  header(t.eyebrow(first), t.greeting(first), current?.chain ? 'Playing every voice, one by one.' : all ? t.allHeard : t.tapHint);
 }
 function updateHeard() {
   const heard = $('#heard');
@@ -240,7 +205,7 @@ function updateHeard() {
 function idlePanel() {
   const p = h('div', { class: 'panel row' });
   const circle = h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.play(16) });
-  p.append(circle, h('div', {}, h('b', {}, 'Tap a candle to hear who lit it'), h('div', { class: 'small muted' }, 'Their words appear as they speak.')));
+  p.append(circle, h('div', {}, h('b', {}, t.idleTitle), h('div', { class: 'small muted' }, 'Their words appear as they speak.')));
   return p;
 }
 
@@ -248,7 +213,7 @@ function stopCurrent() {
   if (!current) return;
   cancelAnimationFrame(current.raf);
   if (current.src) { current.src.onended = null; try { current.src.stop(); } catch {} }
-  cake.setActive(current.i, false);
+  scene.setActive(current.i, false);
   chips[current.i]?.classList.remove('on');
   current = null;
 }
@@ -261,7 +226,7 @@ async function play(i, chain) {
   const me = { i, chain, raf: 0, src: null };
   current = me;
   chips.forEach((c, k) => c.classList.toggle('on', k === i));
-  cake.setActive(i, true);
+  scene.setActive(i, true);
 
   const words = m.words.map((w) => h('span', {}, w.w + ' '));
   const bars = h('div', { class: 'bars' }, ...[0, 1, 2, 3].map(() => h('i', { style: { background: colorFor(i) } })));
@@ -269,7 +234,7 @@ async function play(i, chain) {
     h('div', { class: 'who' }, h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
       h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec))), bars),
     h('div', { class: 'caption' }, words)));
-  updateCakeHeader();
+  updateHeader();
 
   let buf = buffers[i];
   if (!buf) {
@@ -283,12 +248,12 @@ async function play(i, chain) {
     bars.remove();
     played.add(i);
     if (!chips[i].querySelector('.tick')) chips[i].append(h('span', { class: 'tick', html: icon.check() }));
-    cake.setActive(i, false);
-    cake.candles[i]?.classList.add('active');
+    scene.setActive(i, false);
+    scene.candles[i]?.classList.add('active');
     current = null;
     updateHeard();
     if (chain && queue.length) later(() => play(queue.shift(), true), 600);
-    else updateCakeHeader();
+    else updateHeader();
   };
   const dur = buf ? buf.duration : m.durationSec;
   const startAt = ac.currentTime;
@@ -304,28 +269,31 @@ async function play(i, chain) {
     later(finish, dur * 1000);
   }
   const paint = () => {
-    const t = ac.currentTime - startAt;
+    const el = ac.currentTime - startAt;
     let k = -1;
-    m.words.forEach((w, idx) => { if (w.start <= t) k = idx; });
+    m.words.forEach((w, idx) => { if (w.start <= el) k = idx; });
     words.forEach((w, idx) => { w.className = idx < k ? 'done' : idx === k ? 'now' : ''; });
-    if (t < dur + 0.2 && current === me) me.raf = requestAnimationFrame(paint);
+    if (el < dur + 0.2 && current === me) me.raf = requestAnimationFrame(paint);
   };
   me.raf = requestAnimationFrame(paint);
 }
 
-// ---------- make a wish ----------
-let mic = null;
-function startBlow() {
+// ---------- the finale ----------
+function startFinale() {
   stopCurrent();
   queue = [];
   clearTimers();
   phase = 'blow';
-  header('Last step', 'Make a wish…', 'Then blow into your phone. The candles go out.', true);
   setPanel(null);
-  const n = messages.length;
-  // candles go out left to right
-  const spots = candleSpots(Math.min(n, 60));
-  const order = spots.slice().sort((a, b) => a.x - b.x).map((s) => s.i);
+  header('Last step', t.finaleTitle, t.finaleSub(messages.length), true);
+  if (t.key === 'birthday') startBlow();
+  else startTap();
+}
+
+// Birthday: press and hold, or blow into the phone. Candles go out left to right.
+let mic = null;
+function startBlow() {
+  const order = scene.finaleOrder(messages.length);
   const th = [];
   order.forEach((ci, r) => (th[ci] = 0.1 + (0.85 * r) / Math.max(1, order.length - 1)));
 
@@ -346,7 +314,7 @@ function startBlow() {
 
   if (navigator.mediaDevices?.getUserMedia) {
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }).then((stream) => {
-      if (phase !== 'blow') { stream.getTracks().forEach((t) => t.stop()); return; }
+      if (phase !== 'blow') { stream.getTracks().forEach((tr) => tr.stop()); return; }
       mic = stream;
       const src = ac.createMediaStreamSource(stream);
       analyser = ac.createAnalyser();
@@ -357,10 +325,10 @@ function startBlow() {
     }).catch(() => {});
   }
 
-  const step = (t) => {
+  const step = (ts) => {
     if (phase !== 'blow') return;
-    const dt = Math.min(0.05, (t - last) / 1000);
-    last = t;
+    const dt = Math.min(0.05, (ts - last) / 1000);
+    last = ts;
     let blowing = holding;
     if (analyser) {
       analyser.getFloatTimeDomainData(buf);
@@ -369,24 +337,48 @@ function startBlow() {
       if (Math.sqrt(s / buf.length) > 0.12) blowing = true;
     }
     if (blowing) progress = Math.min(1, progress + dt / 1.4);
-    cake.setBend(blowing ? 1 : 0.15);
+    scene.setBend(blowing ? 1 : 0.15);
     const deg = Math.round(progress * 360);
     ring.style.background = `conic-gradient(#FF5A5F ${deg}deg, rgba(255,255,255,0.14) ${deg}deg)`;
     const nowOut = th.filter((x) => progress >= x).length;
     if (nowOut > out) {
-      th.forEach((x, ci) => { if (progress >= x) cake.blowOut(ci); });
-      puff();
+      th.forEach((x, ci) => { if (progress >= x) scene.finaleOut(ci); });
+      noise(0.22, 900, 0.2);
       out = nowOut;
     }
-    if (progress >= 1) return finishBlow();
+    if (progress >= 1) return finishFinale();
     requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
 
-function puff() {
+// Graduation and wedding: one tap, everyone together.
+function startTap() {
+  const ring = h('button', { type: 'button', class: 'holdbtn', 'aria-label': t.finaleAction, style: { background: 'rgba(255,255,255,0.14)' } });
+  const inner = h('span', { html: t.key === 'graduation' ? icon.cap(32) : icon.sparkle(30) });
+  inner.append(h('span', {}, t.finaleAction));
+  ring.append(inner);
+  setBottom(ring, h('p', { class: 'small muted center', style: { margin: '0' } }, t.finaleHint));
+  ring.addEventListener('click', () => {
+    if (phase !== 'blow') return;
+    phase = 'finale';
+    ring.classList.add('down');
+    ring.disabled = true;
+    if (t.key === 'graduation') {
+      throwCaps();
+      later(finishFinale, 2300);
+    } else {
+      const order = scene.finaleOrder(messages.length);
+      const stepMs = Math.min(220, 2600 / Math.max(1, order.length));
+      order.forEach((ci, r) => later(() => { scene.finaleOut(ci); tone(ac, NOTES[(r * 2) % NOTES.length], 0, 1.6, 0.035); }, 150 + r * stepMs));
+      later(finishFinale, 150 + order.length * stepMs + 1800);
+    }
+  });
+}
+
+function noise(dur, freq, vol) {
   try {
-    const len = Math.floor(ac.sampleRate * 0.22);
+    const len = Math.floor(ac.sampleRate * dur);
     const b = ac.createBuffer(1, len, ac.sampleRate);
     const d = b.getChannelData(0);
     for (let j = 0; j < len; j++) d[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / len, 2);
@@ -394,58 +386,112 @@ function puff() {
     s.buffer = b;
     const f = ac.createBiquadFilter();
     f.type = 'lowpass';
-    f.frequency.value = 900;
+    f.frequency.value = freq;
     const g = ac.createGain();
-    g.gain.value = 0.2;
+    g.gain.value = vol;
     s.connect(f); f.connect(g); g.connect(ac.destination);
     s.start();
   } catch {}
 }
 
-function finishBlow() {
-  if (mic) { mic.getTracks().forEach((t) => t.stop()); mic = null; }
-  cake.setBend(0);
+function finishFinale() {
+  if (mic) { mic.getTracks().forEach((tr) => tr.stop()); mic = null; }
+  scene.setBend(0);
   phase = 'done';
   [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.07));
   [1046.5, 1318.51, 1567.98, 2093].forEach((f, k) => tone(ac, f, 0.3 + k * 0.09, 0.9, 0.04));
   confetti();
+  if (t.key === 'wedding') skyLanterns();
   showKeepsake();
 }
 
 // ---------- keepsake ----------
+const NAMES_SHOWN = 24;
 function showKeepsake() {
   const n = messages.length;
   const total = messages.reduce((s, m) => s + (m.durationSec || 0), 0);
-  header(`For ${first}`, greeting(), `${people(n)} love you.`);
+  header(t.eyebrow(first), t.greeting(first), t.keepSub(n));
   const card = h('div', { class: 'panel row', style: { borderStyle: 'dashed', borderColor: 'rgba(246,185,59,0.5)' } },
     h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.gift(18) }),
     h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, 'Kept here. Open this link again any time.')));
   setPanel(card);
-  const names = h('div', { class: 'names' }, messages.map((m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender)));
+  const nameChip = (m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender);
+  const names = h('div', { class: 'names' }, messages.slice(0, NAMES_SHOWN).map(nameChip));
+  if (n > NAMES_SHOWN) {
+    const more = h('button', { type: 'button', class: 'more', onclick: () => { more.replaceWith(...messages.slice(NAMES_SHOWN).map((m, k) => nameChip(m, NAMES_SHOWN + k))); } },
+      `+${n - NAMES_SHOWN} more ${t.people(2).split(' ')[1]}`);
+    names.append(more);
+  }
   const save = btn('Save video', { icon: icon.download(16), onclick: () => toast('Coming soon: one video with every voice and caption.') });
   const share = btn('Share', { ghost: true, icon: icon.share(16), onclick: async () => {
-    if (navigator.share) { try { await navigator.share({ title: `My voice gift`, url: location.href }); } catch {} }
+    if (navigator.share) { try { await navigator.share({ title: 'My voice gift', url: location.href }); } catch {} }
     else copyText(location.href);
   } });
-  const again = btn('Listen again', { ghost: true, icon: icon.redo(15), onclick: () => { cake.lightAll(); enterCake(); } });
+  const again = btn('Listen again', { ghost: true, icon: icon.redo(15), onclick: () => { scene.reset(); enterScene(); } });
   setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), again);
 }
 
-function confetti() {
+// ---------- effects (confetti, caps, sky lanterns) ----------
+let fxTimer;
+function effects(nodes, ms) {
   const box = $('#confetti');
-  box.textContent = '';
   box.hidden = false;
+  box.append(...nodes);
+  clearTimeout(fxTimer);
+  fxTimer = setTimeout(() => { box.hidden = true; box.textContent = ''; }, ms);
+}
+
+function confetti() {
   const cols = messages.map((m, i) => colorFor(i)).concat(['#FFFFFF', '#FFFFFF', '#F6B93B']);
+  const bits = [];
   for (let j = 0; j < 46; j++) {
     const round = Math.random() < 0.3;
     const dur = 3.2 + Math.random() * 2.6;
-    box.append(h('i', { style: {
+    bits.push(h('i', { style: {
       left: `${Math.random() * 100}%`, width: `${round ? 8 : 5 + Math.random() * 4}px`, height: `${round ? 8 : 9 + Math.random() * 7}px`,
       borderRadius: round ? '50%' : '2px', background: cols[j % cols.length],
       animationDuration: `${dur.toFixed(2)}s`, animationDelay: `${(Math.random() * 1.1).toFixed(2)}s`, animationIterationCount: '2'
     } }));
   }
-  setTimeout(() => { box.hidden = true; }, 13000);
+  effects(bits, 13000);
+}
+
+// A mortarboard; the tassel takes the friend's colour (palette colours only, never user text).
+const capSvg = (c) => `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 22v9c6 5 18 5 24 0v-9l-12 6z" fill="#20264A"/><path d="M24 8 46 18 24 28 2 18z" fill="#2B3263" stroke="#4E5796" stroke-width="1.2"/><path d="M24 18 39 24v10" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/><circle cx="39" cy="36" r="3.2" fill="${c}"/><circle cx="24" cy="18" r="2.2" fill="${c}"/></svg>`;
+
+function throwCaps() {
+  $('#confetti').textContent = '';
+  noise(0.6, 2400, 0.12);
+  const n = Math.min(Math.max(messages.length + 1, 10), 30); // yours + your friends' (a few extra when there are only a few)
+  const caps = [];
+  for (let j = 0; j < n; j++) {
+    const cap = h('i', { class: 'cap', html: capSvg(j === 0 ? '#F6B93B' : colorFor(j - 1)), style: {
+      left: `${8 + Math.random() * 76}%`, animationDelay: `${(j * 0.035 + Math.random() * 0.12).toFixed(2)}s`,
+      width: j === 0 ? '60px' : '46px', height: j === 0 ? '60px' : '46px'
+    } });
+    cap.style.setProperty('--dx', `${Math.round((Math.random() - 0.5) * 180)}px`);
+    cap.style.setProperty('--up', `${Math.round(window.innerHeight * (0.62 + Math.random() * 0.3))}px`);
+    cap.style.setProperty('--spin', `${Math.round((Math.random() - 0.5) * 1000)}deg`);
+    caps.push(cap);
+  }
+  effects(caps, 4000);
+}
+
+// Wedding keepsake: the released lanterns keep rising across the whole screen.
+function skyLanterns() {
+  const lights = [];
+  for (let j = 0; j < Math.min(18, messages.length + 6); j++) {
+    const c = colorFor(j);
+    const s = 0.7 + Math.random() * 0.6;
+    const l = h('i', { class: 'sky', style: {
+      left: `${4 + Math.random() * 90}%`, width: `${Math.round(16 * s)}px`, height: `${Math.round(22 * s)}px`,
+      background: `radial-gradient(ellipse at 50% 60%, rgba(255,255,255,0.8), rgba(255,255,255,0) 65%), ${c}`,
+      boxShadow: `0 0 14px 4px ${c}88`, animationDuration: `${(9 + Math.random() * 6).toFixed(1)}s`, animationDelay: `${(Math.random() * 4).toFixed(1)}s`
+    } });
+    l.style.setProperty('--dx', `${Math.round((Math.random() - 0.5) * 120)}px`);
+    lights.push(l);
+  }
+  effects(lights, 20000);
 }
 
 load();

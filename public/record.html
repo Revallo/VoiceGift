@@ -33,13 +33,12 @@
     </div>
     <div id="inviteCake"></div>
     <p class="center small" id="countLine" style="margin:-4px 0 0;color:var(--gold);font-weight:700"></p>
-    <p class="card small soft" id="lateNote" hidden></p>
     <form class="stack" id="inviteForm" novalidate>
       <div class="field">
         <label for="name">Your name</label>
         <input class="input" id="name" maxlength="40" autocomplete="given-name" placeholder="How should they know it’s you?" required>
       </div>
-      <label class="check"><input type="checkbox" id="consent"> <span>My voice and caption may be used to improve speech recognition.</span></label>
+      <label class="check"><input type="checkbox" id="consent"> <span>I allow my voice to be saved for this gift.</span></label>
       <p class="small" id="inviteError" style="color:#FF8A8D;margin:0" hidden></p>
       <button class="btn pulse" type="submit" id="startBtn"></button>
       <p class="small muted center" style="margin:0">No app. No sign-up. Works in Chrome and Safari.</p>
@@ -102,7 +101,7 @@
   <section data-screen="done" hidden>
     <div class="head">
       <div class="eyebrow">Sent</div>
-      <h1>Your candle is on the cake</h1>
+      <h1 id="doneTitle"></h1>
       <p class="lead" id="doneLead"></p>
     </div>
     <div id="doneCake"></div>

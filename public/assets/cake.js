@@ -1,5 +1,6 @@
-// The cake: drawn in a fixed 390×300 coordinate "stage" and scaled to fit its container.
+// Birthday: the cake. Drawn in a fixed 390×300 stage; every voice is a candle.
 import { colorFor } from './common.js';
+import { div, seeded, createStage, createDrawing, createStickers, itemStates } from './stage.js';
 
 export const FLAVORS = {
   strawberry: { label: 'Strawberry', b1: '#F2A9C4', b2: '#FFE3EE', frost: '#FFF0F6', top2: '#FFF7FA', text: '#8E2552' },
@@ -7,24 +8,20 @@ export const FLAVORS = {
   matcha: { label: 'Matcha', b1: '#9CC28A', b2: '#CFE3C2', frost: '#F6FBEF', top2: '#FFFFFF', text: '#2F5A2A' },
   ube: { label: 'Ube', b1: '#A98BD6', b2: '#D9CBF0', frost: '#F4EFFF', top2: '#FFFFFF', text: '#4B2C7A' },
   vanilla: { label: 'Vanilla', b1: '#F3DFB0', b2: '#FFF1D2', frost: '#FFFFFF', top2: '#FFFDF6', text: '#8A5A12' },
-  redvelvet: { label: 'Red velvet', b1: '#B83246', b2: '#D9566A', frost: '#FFF6F2', top2: '#FFFFFF', text: '#FFFFFF' }
+  redvelvet: { label: 'Red velvet', b1: '#B83246', b2: '#D9566A', frost: '#FFF6F2', top2: '#FFFFFF', text: '#FFFFFF' },
+  pandan: { label: 'Pandan', b1: '#6DBF6A', b2: '#B9E3A8', frost: '#F4FBEA', top2: '#FFFFFF', text: '#235C23' },
+  mango: { label: 'Mango', b1: '#FFB938', b2: '#FFD98A', frost: '#FFF6DA', top2: '#FFFFFF', text: '#8A4B00' },
+  blueberry: { label: 'Blueberry', b1: '#6577CF', b2: '#A9B5EC', frost: '#EEF1FF', top2: '#FFFFFF', text: '#FFFFFF' },
+  lemon: { label: 'Lemon', b1: '#F2D94E', b2: '#FBEC9A', frost: '#FFFCE6', top2: '#FFFFFF', text: '#7A6400' },
+  cottoncandy: { label: 'Cotton candy', b1: '#8CCFF0', b2: '#FFC6E0', frost: '#FFFFFF', top2: '#FFF5FA', text: '#2E6E96' },
+  caramel: { label: 'Caramel', b1: '#C4884A', b2: '#E2B27A', frost: '#FFF1DC', top2: '#FFF8EE', text: '#FFFFFF' },
+  blackforest: { label: 'Black forest', b1: '#3A2020', b2: '#5A3030', frost: '#FFFFFF', top2: '#FFF5F5', text: '#FF6B7E' },
+  tiramisu: { label: 'Tiramisu', b1: '#E9D6B5', b2: '#F6EBD5', frost: '#7B5536', top2: '#8E6644', text: '#5C3B1F' }
 };
-export const BRUSHES = ['#FFFFFF', '#F6B93B', '#FF5A5F', '#5CC8A8', '#6FB7FF', '#2A1328'];
+export const SWATCH = (f) => ({ background: f.b1, boxShadow: `inset 0 9px 0 ${f.frost}` });
 
 const W = 390, H = 300;
 const CX = 195, CY = 90; // centre of the top tier's top surface
-
-function seeded(seed) {
-  let s = seed;
-  return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
-}
-
-function div(cls, style) {
-  const d = document.createElement('div');
-  if (cls) d.className = cls;
-  Object.assign(d.style, style);
-  return d;
-}
 
 // Candle positions on the top tier for n candles (1–60). Two rings when there are many.
 export function candleSpots(n) {
@@ -46,14 +43,7 @@ export function candleSpots(n) {
 }
 
 export function createCake(host, opts = {}) {
-  const wrap = div('stage-wrap');
-  const stage = div('stage' + (opts.interactive ? ' interactive' : ''));
-  wrap.append(stage);
-  host.append(wrap);
-
-  const glow = div('glow');
-  const body = div('cakebody');
-  stage.append(glow, body);
+  const { wrap, stage, glow, body, layer, toStage, size } = createStage(host, W, H, opts.interactive ? 'interactive' : '');
 
   const rnd = seeded(7);
   const parts = {};
@@ -84,34 +74,15 @@ export function createCake(host, opts = {}) {
   }
   P({ left: '100px', top: '70px', width: '190px', height: '40px', borderRadius: '50%' }, 'top2');
 
-  // drawing layer
-  const canvas = document.createElement('canvas');
-  canvas.className = 'draw';
-  const dpr = Math.min(3, window.devicePixelRatio || 1);
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  body.append(canvas);
-  const g = canvas.getContext('2d');
-  g.scale(dpr, dpr);
-
-  const candleLayer = div('', { position: 'absolute', inset: '0' });
-  stage.append(candleLayer);
-
-  let dots = [];
-  let candles = [];
-
-  function paintDots() {
-    g.clearRect(0, 0, W, H);
-    for (const [x, y, c] of dots) {
-      g.fillStyle = BRUSHES[c] || BRUSHES[0];
-      g.beginPath();
-      g.arc(x, y, 3, 0, Math.PI * 2);
-      g.fill();
-    }
-  }
+  const drawing = createDrawing(body, W, H);
+  const candles = [];
+  const st = itemStates(candles, glow);
+  const stickers = createStickers(stage);
 
   const api = {
-    wrap, stage, candles,
+    wrap, stage, candles, toStage, size, stickers, ...st,
+    drawArea: { left: 30, top: 40, width: 330, height: 260 },
+    setDots: drawing.setDots, getDots: drawing.getDots, addDot: drawing.addDot,
     setFlavor(f) {
       const c = FLAVORS[f] || FLAVORS.strawberry;
       parts.b1.forEach((d) => (d.style.background = c.b1));
@@ -121,22 +92,9 @@ export function createCake(host, opts = {}) {
       nameEl.style.color = c.text;
     },
     setName(t) { nameEl.textContent = t || ''; },
-    setDots(d) { dots = Array.isArray(d) ? d.slice() : []; paintDots(); },
-    getDots() { return dots.slice(); },
-    addDot(x, y, c) {
-      const last = dots[dots.length - 1];
-      if (last && api._drawing) {
-        const dx = x - last[0], dy = y - last[1];
-        const n = Math.min(12, Math.floor(Math.hypot(dx, dy) / 4));
-        for (let s = 1; s < n; s++) dots.push([Math.round(last[0] + (dx * s) / n), Math.round(last[1] + (dy * s) / n), c]);
-      }
-      dots.push([Math.round(x), Math.round(y), c]);
-      if (dots.length > 2500) dots = dots.slice(-2500);
-      paintDots();
-    },
     // Lay out `n` candles (+ empty spots up to `spots`). Returns the candle elements in message order.
     setCandles(n, { spots = n, colors, onTap } = {}) {
-      candleLayer.textContent = '';
+      layer.textContent = '';
       candles.length = 0;
       const total = Math.max(n, spots);
       const pos = candleSpots(Math.min(total, 60));
@@ -161,42 +119,23 @@ export function createCake(host, opts = {}) {
         const s2 = div('c-smoke s2', { bottom: `${p.h + 8}px` });
         btn.append(ring, bodyEl, wick, fw, s1, s2);
         if (onTap && !isSpot) btn.addEventListener('click', () => onTap(p.i));
-        candleLayer.append(btn);
+        layer.append(btn);
         els[p.i] = btn;
       }
-      candles.push(...els);
+      candles.push(...els.slice(0, total));
       return els;
     },
-    light(i, on = true) { const c = candles[i]; if (c && !c.classList.contains('spot')) { c.classList.toggle('lit', on); if (on) c.classList.remove('out'); } api.updateGlow(); },
-    lightAll(on = true) { candles.forEach((c, i) => api.light(i, on)); },
-    blowOut(i) { const c = candles[i]; if (c && c.classList.contains('lit')) { c.classList.remove('lit', 'active', 'speaking'); c.classList.add('out'); } api.updateGlow(); },
-    setActive(i, speaking = false) { candles.forEach((c, k) => { c.classList.toggle('active', k === i); c.classList.toggle('speaking', k === i && speaking); }); },
-    mark(i) { candles[i]?.classList.add('mine'); },
+    // Finale: candles go out left to right while the flames bend.
+    finaleOrder(n) { return candleSpots(Math.min(n, 60)).sort((a, b) => a.x - b.x).map((s) => s.i); },
+    finaleOut(i) { st.out(i); },
     setBend(strength) { stage.style.setProperty('--bend', strength ? `skewX(${(-(4 + 24 * strength)).toFixed(1)}deg) scale(${(1 - 0.18 * strength).toFixed(2)}, ${(1 - 0.3 * strength).toFixed(2)})` : 'none'); },
-    setDim(level) { body.style.filter = level ? `saturate(${1 - 0.45 * level}) brightness(${1 - 0.38 * level})` : 'none'; },
-    updateGlow() {
-      const lit = candles.filter((c) => c.classList.contains('lit')).length;
-      glow.style.opacity = candles.length ? (lit / candles.length).toFixed(2) : '0';
-    },
-    litCount() { return candles.filter((c) => c.classList.contains('lit')).length; },
-    // Convert a pointer event to stage coordinates.
-    toStage(e) {
-      const r = stage.getBoundingClientRect();
-      const k = r.width / W;
-      return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k };
-    }
+    setDim(level) { body.style.filter = stickers.layer.style.filter = level ? `saturate(${1 - 0.45 * level}) brightness(${1 - 0.38 * level})` : 'none'; },
+    reset() { candles.forEach((c) => c.classList.remove('out')); api.lightAll(); api.setBend(0); }
   };
-
-  function fit() {
-    const k = wrap.clientWidth / W || 1;
-    stage.style.transform = `scale(${k})`;
-    wrap.style.height = `${Math.round(H * k)}px`;
-  }
-  fit();
-  new ResizeObserver(fit).observe(wrap);
 
   api.setFlavor(opts.flavor);
   api.setName(opts.name);
   api.setDots(opts.dots);
+  stickers.set(opts.stickers);
   return api;
 }

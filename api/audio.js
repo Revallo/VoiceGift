@@ -1,7 +1,7 @@
-// GET /api/audio?slug=…&id=…[&token=…]
-// Streams one recording. Allowed after the gift unlocks, or before that for the person who recorded it (token).
+// GET /api/audio?slug=…&id=…&k=…  or  …&token=…
+// Streams one recording: to the recipient (k = the recipient's key) or to the person who recorded it (token).
 import { route, send, query, HttpError } from '../lib/http.js';
-import { loadGift, isUnlocked, findMessage, loadAudio } from '../lib/gifts.js';
+import { loadGift, canOpen, findMessage, loadAudio } from '../lib/gifts.js';
 
 export default route({
   async GET(req, res) {
@@ -9,7 +9,7 @@ export default route({
     const gift = await loadGift(q.slug);
     const { msg } = await findMessage(gift.slug, String(q.id || ''));
     const own = q.token && q.token === msg.token;
-    if (!isUnlocked(gift) && !own) throw new HttpError(403, 'This gift is still locked.');
+    if (!own && !canOpen(gift, q.k)) throw new HttpError(403, 'Not allowed');
     const buf = await loadAudio(msg);
     if (!buf) throw new HttpError(404, 'Recording not found');
 

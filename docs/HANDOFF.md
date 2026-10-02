@@ -39,13 +39,22 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - After UI changes, run the e2e test (see `tests/e2e.mjs`), it must print `ERRORS none`.
 
 ## Status
-- Working end to end: create → decorate → friends record + fix caption → dashboard →
-  countdown → candles light → listen → blow → keepsake. Tested in Chromium (fake mic), mobile + desktop.
+- Working end to end for all three occasions: create → decorate → friends record + fix caption →
+  dashboard → recipient link → items light → listen → finale → keepsake. Tested in Chromium (fake mic), mobile + desktop.
+- Birthday = cake/candles/blow; Graduation = bouquet/flowers/throw your cap; Wedding = lanterns/release
+  (QR card to print for the guestbook table).
+- Decision (2026-10-02): **no unlock time at all** (no date picker, no countdown, no reminders). The gift
+  opens when the organizer sends the recipient their link (e.g. at 00:00). That link carries its own key
+  (`/r/<slug>?k=…`) so friends, who know the slug, can't listen early. It's only on the dashboard.
+- The dashboard is only reachable with the secret key in its link (`/m/<slug>?k=…`), given to the
+  creator at step 3 and remembered under "Your gifts" on the creator's browser.
+- Consent wording is demo-only for now ("I allow my voice to be saved for this gift", `consentVersion`
+  `demo-2026-10`). It doesn't mention ASR training: change it (and the version) before collecting real data.
+- For the manager demo: dashboard → "Add 12 demo voices" (TTS, marked `demo`, not exported), then "Preview their page".
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)
 - Indonesian UI language (target users are Indonesian).
-- Graduation and Wedding themes (designed in the canvas).
 - Thank-you reply from the recipient to everyone.
 - A simple admin page showing recordings + ASR text vs corrected text (to show the data value).
 - "Save video" export.

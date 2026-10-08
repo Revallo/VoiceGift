@@ -48,7 +48,7 @@
   </section>
 </main>
 <script type="module">
-import { $, $$, h, icon, addStars } from '/assets/common.js';
+import { $, $$, h, api, icon, addStars, toast } from '/assets/common.js';
 import { theme, createScene, applyTheme } from '/assets/themes.js';
 
 $('#logo').innerHTML = icon.gift(17);
@@ -78,17 +78,33 @@ $$('#occasions .chip').forEach((c) => c.addEventListener('click', () => show(c.d
 show('birthday');
 
 // Gifts this browser created (kept only on this device).
-try {
-  const mine = JSON.parse(localStorage.getItem('vg-mine') || '[]');
-  if (mine.length) {
-    $('#mine').hidden = false;
-    for (const g of mine.slice(-5).reverse()) {
-      $('#mineList').append(h('a', { class: 'item', href: `/m/${g.slug}?k=${g.key}`, style: { color: '#fff', textDecoration: 'none' } },
+function loadMine() {
+  try { return JSON.parse(localStorage.getItem('vg-mine') || '[]'); } catch { return []; }
+}
+function showMine() {
+  const mine = loadMine();
+  $('#mine').hidden = !mine.length;
+  $('#mineList').textContent = '';
+  for (const g of mine.slice(-5).reverse()) {
+    $('#mineList').append(h('div', { class: 'item' },
+      h('a', { class: 'grow row', href: `/m/${g.slug}?k=${g.key}`, style: { color: '#fff', textDecoration: 'none' } },
         h('div', { class: 'grow' }, h('b', {}, `${theme(g.occasion).emoji} For ${g.recipient}`), h('div', { class: 'small muted' }, theme(g.occasion).label)),
-        h('span', { class: 'small', style: { color: 'var(--gold)', fontWeight: '700' } }, 'Dashboard')));
-    }
+        h('span', { class: 'small', style: { color: 'var(--gold)', fontWeight: '700' } }, 'Dashboard')),
+      h('button', { type: 'button', class: 'del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(), onclick: () => removeGift(g) })));
   }
-} catch {}
+}
+// Deletes the gift on the server too (every message and recording), then forgets it here.
+async function removeGift(g) {
+  if (!confirm(`Delete the gift for ${g.recipient}, with every message and recording? This can't be undone.`)) return;
+  try {
+    await api('/api/manage', { method: 'POST', json: { slug: g.slug, key: g.key, action: 'delete-gift' } });
+  } catch (e) {
+    if (!/not found/i.test(e.message)) return toast(e.message); // already gone: just forget it
+  }
+  try { localStorage.setItem('vg-mine', JSON.stringify(loadMine().filter((x) => x.slug !== g.slug))); } catch {}
+  showMine();
+}
+showMine();
 </script>
 </body>
 </html>

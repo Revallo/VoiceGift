@@ -281,6 +281,8 @@ body[data-theme="wedding"] .stage .glow { background: radial-gradient(circle, rg
 
 .list { display: flex; flex-direction: column; gap: 8px; }
 .list .item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--panel); }
+.list .del { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 138, 138, 0.14); color: #FF8A8A; cursor: pointer; }
+.list .del:hover { background: rgba(255, 138, 138, 0.28); }
 
 /* printable QR card (for the guestbook table) */
 .printcard { display: none; }

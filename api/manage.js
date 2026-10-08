@@ -1,9 +1,11 @@
 // GET  /api/manage?slug=…&key=…             → organizer dashboard: who has recorded (not what they said) + the recipient's key
 // POST /api/manage { slug, key, action }    → action "add-demo": 12 demo voices (TTS, public/demo/) so the gift can be shown
+//                                            action "delete" + id: removes that message and its audio from storage
+//                                            action "delete-gift": removes the whole gift from storage
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
-import { loadGift, publicGift, loadMessages, createMessage, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
+import { loadGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
 
 const DEMO_DIR = path.join(process.cwd(), 'public', 'demo');
@@ -41,6 +43,7 @@ export default route({
     const q = query(req);
     const gift = await authed(q.slug, q.key);
     const messages = (await loadMessages(gift.slug)).map((m) => ({
+      id: m.id,
       sender: m.sender,
       createdAt: m.createdAt,
       sent: Boolean(m.finalText),
@@ -54,8 +57,12 @@ export default route({
   async POST(req, res) {
     const b = await jsonBody(req);
     const gift = await authed(b.slug, b.key);
-    if (b.action !== 'add-demo') throw new HttpError(400, 'Unknown action');
-    await addDemo(gift);
+    if (b.action === 'add-demo') await addDemo(gift);
+    else if (b.action === 'delete') {
+      const { msg, path } = await findMessage(gift.slug, String(b.id || ''));
+      await deleteMessage(path, msg);
+    } else if (b.action === 'delete-gift') await deleteGift(gift.slug);
+    else throw new HttpError(400, 'Unknown action');
     send(res, 200, { ok: true });
   }
 });

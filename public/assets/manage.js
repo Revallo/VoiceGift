@@ -37,7 +37,8 @@ async function load() {
     list.append(h('div', { class: 'item' },
       h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
       h('div', { class: 'grow' }, h('b', {}, m.sender), h('div', { class: 'small muted' }, `${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)} s${m.demo ? ' · demo voice' : m.edited ? ' · fixed the caption' : ''}`)),
-      h('span', { class: 'small', style: { color: m.sent ? '#7FE0B0' : 'var(--muted)', fontWeight: '700' } }, m.sent ? 'Sent' : 'Not sent')));
+      h('span', { class: 'small', style: { color: m.sent ? '#7FE0B0' : 'var(--muted)', fontWeight: '700' } }, m.sent ? 'Sent' : 'Not sent'),
+      h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(), onclick: () => remove(m) })));
   });
 
   const friend = friendUrl(gift);
@@ -60,7 +61,29 @@ async function load() {
   showScreen('main');
 }
 
+// Gone for good: the server deletes the message and its recording.
+async function remove(m) {
+  if (!confirm(`Delete ${m.sender}'s message? This can't be undone.`)) return;
+  try {
+    await api('/api/manage', { method: 'POST', json: { slug, key, action: 'delete', id: m.id } });
+    toast('Message deleted');
+    await load();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
 $('#refresh').addEventListener('click', load);
+$('#deleteGift').addEventListener('click', async () => {
+  if (!confirm("Delete this whole gift, with every message and recording? This can't be undone.")) return;
+  try {
+    await api('/api/manage', { method: 'POST', json: { slug, key, action: 'delete-gift' } });
+    try { localStorage.setItem('vg-mine', JSON.stringify(JSON.parse(localStorage.getItem('vg-mine') || '[]').filter((g) => g.slug !== slug))); } catch {}
+    location.href = '/';
+  } catch (e) {
+    toast(e.message);
+  }
+});
 $('#addDemo').addEventListener('click', async () => {
   const b = $('#addDemo');
   b.disabled = true;

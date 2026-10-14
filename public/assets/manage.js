@@ -1,4 +1,4 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast, requireSignIn } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { friendUrl, recipientUrl, qrSvg, shareRow, recipientCard, printQrCard } from './share.js';
 
@@ -7,10 +7,11 @@ $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const slug = slugFromPath();
-const key = new URLSearchParams(location.search).get('k') || '';
+const key = new URLSearchParams(location.search).get('k') || ''; // only gifts made before accounts
 let scene;
 
 async function load() {
+  await requireSignIn();
   let data;
   try {
     data = await api(`/api/manage?slug=${encodeURIComponent(slug)}&key=${encodeURIComponent(key)}`);
@@ -18,7 +19,7 @@ async function load() {
     $('#errorText').textContent = e.message;
     return showScreen('error');
   }
-  const { gift, openKey, messages } = data;
+  const { gift, openKey, opened, messages } = data;
   const t = applyTheme(gift.occasion);
   const name = t.callName(gift.recipient);
   const sentMsgs = messages.filter((m) => m.sent);
@@ -55,10 +56,29 @@ async function load() {
   $('#printQr').onclick = () => printQrCard(gift);
 
   $('#delivery').textContent = '';
-  $('#delivery').append(recipientCard(gift, openKey));
+  $('#delivery').append(opened ? openedCard(name, opened) : recipientCard(gift, openKey));
   $('#openReveal').href = recipientUrl(gift, openKey);
   $('#demoCard').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
   showScreen('main');
+}
+
+// Once the recipient opened it, the gift belongs to their account. If the wrong person got the link,
+// the organizer takes it back: a new link for the recipient, and the old one stops working.
+function openedCard(name, opened) {
+  return h('div', { class: 'card stack' },
+    h('div', {}, h('b', {}, `${name} opened it`),
+      h('div', { class: 'small muted' }, `${fmtAgo(opened.at)} with the account ${opened.name} · ${opened.email}. Only this account can listen now.`)),
+    h('button', { type: 'button', class: 'btn ghost sm', style: { alignSelf: 'flex-start' }, onclick: unclaim }, 'Not them? Make a new link'));
+}
+async function unclaim() {
+  if (!confirm('Take the gift back from this account? They lose access, and you get a new link to send.')) return;
+  try {
+    await api('/api/manage', { method: 'POST', json: { slug, key, action: 'unclaim' } });
+    toast('Done. Send the new link below.');
+    await load();
+  } catch (e) {
+    toast(e.message);
+  }
 }
 
 // Gone for good: the server deletes the message and its recording.
@@ -78,8 +98,7 @@ $('#deleteGift').addEventListener('click', async () => {
   if (!confirm("Delete this whole gift, with every message and recording? This can't be undone.")) return;
   try {
     await api('/api/manage', { method: 'POST', json: { slug, key, action: 'delete-gift' } });
-    try { localStorage.setItem('vg-mine', JSON.stringify(JSON.parse(localStorage.getItem('vg-mine') || '[]').filter((g) => g.slug !== slug))); } catch {}
-    location.href = '/';
+    location.href = '/me';
   } catch (e) {
     toast(e.message);
   }

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1A0C19">
+<meta name="robots" content="noindex">
+<title>Sign in · Voice Gift</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<main class="app" id="app">
+  <section data-screen="signin">
+    <div class="topbar"><a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a><a class="brand" href="/" style="font-size:15px"><span class="logo" data-logo style="width:26px;height:26px"></span>Voice Gift</a></div>
+    <div class="head">
+      <div class="eyebrow" id="eyebrow">Your account</div>
+      <h1 id="title">Sign in to Voice Gift</h1>
+      <p class="lead" id="lead">Your gifts and messages stay in your account.</p>
+    </div>
+    <div id="cake"></div>
+    <form id="form" class="stack" novalidate>
+      <div class="field">
+        <label for="name">Your name</label>
+        <input class="input" id="name" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input class="input" id="email" type="email" inputmode="email" maxlength="120" autocomplete="email" placeholder="you@example.com" required>
+      </div>
+      <p class="small" id="error" style="color:#FF8A8D;margin:0" hidden></p>
+      <button class="btn" type="submit" id="go">Continue</button>
+      <p class="note"><span data-icon="lock"></span><span>Prototype: no password yet. The real version signs in with Google or your phone number.</span></p>
+    </form>
+  </section>
+</main>
+<script type="module" src="/assets/login.js"></script>
+</body>
+</html>

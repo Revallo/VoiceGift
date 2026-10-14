@@ -32,8 +32,10 @@ Optional environment variables (*Settings → Environment Variables*, then redep
 
 | Variable | What it does |
 | --- | --- |
+| `SESSION_SECRET` | Signs the sign-in cookie. Set it to a long random string (without it, cookies could be forged) |
 | `ADMIN_KEY` | Enables `GET /api/export?key=…`, a JSONL file of every message for the ML team |
-| `ASR_URL`, `ASR_API_KEY` | Use the real speech recognition API instead of the mock (see `lib/asr.js`) |
+| `GROQ_API_KEY` | Real Indonesian ASR via Groq Whisper large-v3 (free tier) instead of the mock. Locally: put it in `.env` |
+| `ASR_URL`, `ASR_API_KEY` | The company ASR API (wins over Groq; see `lib/asr.js`) |
 
 ## Good to know
 - **Recordings are private.** The Blob store is private; audio is only served through `/api/audio`,

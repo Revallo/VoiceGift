@@ -1,15 +1,19 @@
 // GET /api/audio?slug=…&id=…&k=…  or  …&token=…
-// Streams one recording: to the recipient (k = the recipient's key) or to the person who recorded it (token).
+// Streams one recording to a signed-in user: the recipient who claimed the gift, the organizer (preview),
+// or the person who recorded it.
 import { route, send, query, HttpError } from '../lib/http.js';
-import { loadGift, canOpen, findMessage, loadAudio } from '../lib/gifts.js';
+import { loadGift, giftAccess, findMessage, loadAudio } from '../lib/gifts.js';
+import { requireUser } from '../lib/auth.js';
 
 export default route({
   async GET(req, res) {
+    const user = await requireUser(req);
     const q = query(req);
     const gift = await loadGift(q.slug);
     const { msg } = await findMessage(gift.slug, String(q.id || ''));
-    const own = q.token && q.token === msg.token;
-    if (!own && !canOpen(gift, q.k)) throw new HttpError(403, 'Not allowed');
+    const own = msg.userId === user.id || (q.token && q.token === msg.token);
+    const role = giftAccess(gift, user, q.k);
+    if (!own && role !== 'owner' && role !== 'recipient') throw new HttpError(403, 'Not allowed');
     const buf = await loadAudio(msg);
     if (!buf) throw new HttpError(404, 'Recording not found');
 

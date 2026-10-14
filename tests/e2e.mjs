@@ -1,5 +1,6 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
-// (create → decorate → friends record → dashboard → 12 demo voices → recipient link → reveal → finale → keepsake, plus desktop).
+// (sign in → create → decorate → friends sign in + record → dashboard → 12 demo voices → recipient signs in + claims →
+//  reveal → finale → keepsake → a forwarded link fails for other accounts, plus desktop).
 // One-time setup:  npm i --no-save playwright && npx playwright install chromium
 // Run:             npm run dev   (in another terminal)
 //                  BASE=http://localhost:3000 node tests/e2e.mjs            (all occasions)
@@ -18,6 +19,30 @@ const errors = [];
 
 const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
 const phone = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['microphone'] };
+
+// Signs a page's context in through the API (same cookie the sign-in page sets).
+async function signedIn(name, email, ctxOpts = phone) {
+  const p = await page(ctxOpts);
+  const r = await p.context().request.post(`${BASE}/api/auth`, { data: { name, email } });
+  if (!r.ok()) errors.push(`sign in ${email}: ${r.status()}`);
+  return p;
+}
+// A cookie for plain fetch() calls.
+async function cookieFor(name, email) {
+  const r = await fetch(`${BASE}/api/auth`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email }) });
+  return r.headers.get('set-cookie').split(';')[0];
+}
+const emailOf = (name, domain) => `${name.replace(/\W/g, '').toLowerCase()}@${domain}`;
+// Fills the sign-in page and waits to be back where we started.
+async function signInUi(p, name, email, shotName) {
+  await p.waitForSelector('#form');
+  await p.waitForTimeout(400);
+  if (shotName) await shot(p, shotName);
+  await p.fill('#name', name);
+  await p.fill('#email', email);
+  await p.click('#go');
+  await p.waitForURL((u) => !u.pathname.startsWith('/login'));
+}
 
 async function page(ctxOpts = phone) {
   const ctx = await browser.newContext(ctxOpts);
@@ -44,9 +69,10 @@ function wav(sec = 2) {
   return b;
 }
 async function apiGuest(slug, name, text) {
-  const r = await fetch(`${BASE}/api/message?slug=${slug}&name=${encodeURIComponent(name)}&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: wav() });
+  const Cookie = await cookieFor(name, emailOf(name, 'guest.test'));
+  const r = await fetch(`${BASE}/api/message?slug=${slug}&name=${encodeURIComponent(name)}&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', Cookie }, body: wav() });
   const m = await r.json();
-  await fetch(`${BASE}/api/message`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, id: m.id, token: m.token, text }) });
+  await fetch(`${BASE}/api/message`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Cookie }, body: JSON.stringify({ slug, id: m.id, text }) });
 }
 
 const CASES = {
@@ -57,13 +83,15 @@ const CASES = {
 
 async function runGift(occasion, c) {
   const P = (n) => `${occasion}-${n}`;
-  // create
+  const ORG = ['Sari', 'sari@organizer.test'];
+  const RCP = [c.recipient, `${occasion}@recipient.test`];
+  // sign in, then create
   const p = await page();
   await p.goto(`${BASE}/new`);
+  await signInUi(p, ...ORG, P('00-signin-create'));
   await p.waitForSelector('#recipient');
   await p.click(`#occasions [data-v="${occasion}"]`);
   await p.fill('#recipient', c.recipient);
-  await p.fill('#organizer', 'Sari');
   await shot(p, P('01-create-who'));
   await p.click('#nextBtn');
   await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
@@ -107,10 +135,12 @@ async function runGift(occasion, c) {
   console.log(occasion, 'slug', slug, 'manage', manageHref);
   await p.context().close();
 
-  // friends record
+  // friends sign in and record (the first one through the sign-in page)
   for (const [k, [name, text]] of c.friends.entries()) {
-    const f = await page();
+    const email = emailOf(name, 'friend.test');
+    const f = k === 0 ? await page() : await signedIn(name, email);
     await f.goto(`${BASE}/g/${slug}`);
+    if (k === 0) await signInUi(f, name, email, P('04a-signin-friend'));
     await f.waitForSelector('[data-screen="invite"]:not([hidden])');
     await f.waitForTimeout(400);
     if (k === 0) await shot(f, P('04-invite'));
@@ -133,37 +163,43 @@ async function runGift(occasion, c) {
   for (let g = 0; g < (c.extraGuests || 0); g++) await apiGuest(slug, `Tamu ${g + 1}`, `Selamat menempuh hidup baru, semoga bahagia selalu. (${g + 1})`);
 
   // friends who change /g/ into /r/ can't listen: the recipient's link has its own key
-  const peek = await (await browser.newContext(phone)).newPage(); // its 403 is expected, so no error listener
+  const friendCookie = await cookieFor('Budi', 'budi@friend.test');
+  const peekCtx = await browser.newContext(phone); // its 403 is expected, so no error listener
+  await peekCtx.request.post(`${BASE}/api/auth`, { data: { name: 'Budi', email: 'budi@friend.test' } });
+  const peek = await peekCtx.newPage();
   await peek.goto(`${BASE}/r/${slug}`);
   await peek.waitForSelector('[data-screen="error"]:not([hidden])');
   await shot(peek, P('08-no-key'));
-  await peek.context().close();
-  for (const u of [`/api/reveal?slug=${slug}`, `/api/reveal?slug=${slug}&k=guess`]) {
-    const st = (await fetch(BASE + u)).status;
-    if (st !== 403) errors.push(`${u} without the key: ${st}`);
+  await peekCtx.close();
+  for (const [u, Cookie, want] of [[`/api/reveal?slug=${slug}`, '', 401], [`/api/reveal?slug=${slug}`, friendCookie, 403], [`/api/reveal?slug=${slug}&k=guess`, friendCookie, 403]]) {
+    const st = (await fetch(BASE + u, { headers: { Cookie } })).status;
+    if (st !== want) errors.push(`${u}: ${st}, expected ${want}`);
   }
 
-  // dashboard + demo voices
-  const m = await page();
+  // dashboard + demo voices (only the organizer's account)
+  const m = await signedIn(...ORG);
   await m.goto(BASE + manageHref);
   await m.waitForSelector('[data-screen="main"]:not([hidden])');
   await m.waitForTimeout(500);
   await shot(m, P('09-dashboard'), true);
-  // the dashboard needs the organizer's key
-  const noKey = await fetch(`${BASE}/api/manage?slug=${slug}`);
-  const badKey = await fetch(`${BASE}/api/manage?slug=${slug}&key=guess`);
-  if (noKey.status !== 403 || badKey.status !== 403) errors.push(`dashboard without key: ${noKey.status}/${badKey.status}`);
+  const anon = await fetch(`${BASE}/api/manage?slug=${slug}`);
+  const other = await fetch(`${BASE}/api/manage?slug=${slug}`, { headers: { Cookie: friendCookie } });
+  if (anon.status !== 401 || other.status !== 403) errors.push(`dashboard for others: ${anon.status}/${other.status}`);
   const before = c.friends.length + (c.extraGuests || 0);
   await m.click('#addDemo');
   await m.waitForFunction((n) => document.querySelectorAll('#list .item').length === n, before + 12, { timeout: 30000 });
   await m.waitForSelector('#demoCard', { state: 'hidden' });
   await shot(m, P('10-dashboard-demo'), true);
   const recipientLink = await m.getAttribute('#openReveal', 'href');
-  await m.context().close();
+  // the organizer's preview doesn't claim the gift
+  await m.goto(recipientLink);
+  await m.waitForSelector('text=Open your gift');
+  await shot(m, P('10b-preview'));
 
-  // recipient reveal (the link from the dashboard)
+  // recipient signs in through the link from the dashboard → the gift becomes theirs
   const r = await page();
   await r.goto(recipientLink);
+  await signInUi(r, ...RCP, P('11a-signin-recipient'));
   await r.waitForSelector('text=Open your gift');
   const shown = (await r.$$('.stickers .sticker')).length;
   if (shown !== 3) errors.push(`${occasion}: recipient sees ${shown} stickers, expected 3`);
@@ -204,11 +240,37 @@ async function runGift(occasion, c) {
   await r.click('text=Listen again');
   await r.waitForTimeout(800);
   await shot(r, P('18-listen-again'));
+  // it's in their account, and opens without the key
+  await r.goto(`${BASE}/me`);
+  await r.waitForSelector('#received:not([hidden]) .item');
+  await shot(r, P('19-my-gifts-recipient'));
+  await r.goto(`${BASE}/r/${slug}`);
+  await r.waitForSelector('text=Open your gift');
   await r.context().close();
 
-  const rev = await (await fetch(`${BASE}/api/reveal?slug=${slug}&k=${new URL(recipientLink).searchParams.get('k')}`)).json();
+  // the same link, forwarded to someone else: no access
+  const leakCtx = await browser.newContext(phone);
+  await leakCtx.request.post(`${BASE}/api/auth`, { data: { name: 'Stranger', email: 'stranger@leak.test' } });
+  const leak = await leakCtx.newPage();
+  await leak.goto(recipientLink);
+  await leak.waitForSelector('[data-screen="error"]:not([hidden])');
+  await shot(leak, P('20-forwarded-link'));
+  await leakCtx.close();
+
+  // the organizer sees who opened it; their list shows it too
+  await m.goto(BASE + manageHref);
+  await m.waitForSelector('text=opened it');
+  await shot(m, P('21-dashboard-opened'), true);
+  await m.goto(`${BASE}/me`);
+  await m.waitForSelector('#made .item');
+  await shot(m, P('22-my-gifts-organizer'), true);
+  await m.context().close();
+
+  const rCookie = await cookieFor(...RCP);
+  const rev = await (await fetch(`${BASE}/api/reveal?slug=${slug}`, { headers: { Cookie: rCookie } })).json();
+  console.log(occasion, 'name clips', `${rev.messages.filter((x) => x.nameAt).length}/${rev.messages.length}`);
   console.log(occasion, 'messages', rev.messages.length, rev.messages.slice(0, 3).map((x) => `${x.sender}: ${x.text} (${x.durationSec}s)`));
-  return recipientLink;
+  return { link: recipientLink, recipient: RCP };
 }
 
 const only = process.argv[2];
@@ -229,7 +291,9 @@ const d = await page({ viewport: { width: 1280, height: 860 }, permissions: ['mi
 await d.goto(BASE + '/');
 await d.waitForTimeout(2600);
 await shot(d, 'desktop-landing');
-await d.goto(Object.values(slugs)[0]);
+const firstGift = Object.values(slugs)[0];
+await d.context().request.post(`${BASE}/api/auth`, { data: { name: firstGift.recipient[0], email: firstGift.recipient[1] } });
+await d.goto(firstGift.link);
 await d.waitForSelector('text=Open your gift');
 await shot(d, 'desktop-ready');
 

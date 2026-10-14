@@ -35,13 +35,14 @@
     <p class="center small" id="countLine" style="margin:-4px 0 0;color:var(--gold);font-weight:700"></p>
     <form class="stack" id="inviteForm" novalidate>
       <div class="field">
-        <label for="name">Your name</label>
+        <label for="name">Your name for them</label>
         <input class="input" id="name" maxlength="40" autocomplete="given-name" placeholder="How should they know it’s you?" required>
+        <span class="small muted">e.g. “Mama” or “Budi (SMA)”. It starts with your account name.</span>
       </div>
       <label class="check"><input type="checkbox" id="consent"> <span>I allow my voice to be saved for this gift.</span></label>
       <p class="small" id="inviteError" style="color:#FF8A8D;margin:0" hidden></p>
       <button class="btn pulse" type="submit" id="startBtn"></button>
-      <p class="small muted center" style="margin:0">No app. No sign-up. Works in Chrome and Safari.</p>
+      <div id="who"></div>
     </form>
   </section>
 
@@ -108,6 +109,7 @@
     <p class="center small" id="doneCount" style="margin:-4px 0 0;color:var(--gold);font-weight:700"></p>
     <div class="spacer"></div>
     <a class="btn" href="/new">Make a gift for someone else</a>
+    <a class="btn ghost" href="/me">My gifts</a>
   </section>
 </main>
 <script type="module" src="/assets/record.js"></script>

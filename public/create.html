@@ -33,13 +33,10 @@
         <label for="recipient" id="recipientLabel">Their name</label>
         <input class="input" id="recipient" maxlength="40" autocomplete="off" placeholder="e.g. Dimas" required>
       </div>
-      <div class="field">
-        <label for="organizer">Your name</label>
-        <input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required>
-      </div>
       <p class="small" id="whoError" style="color:#FF8A8D;margin:0" hidden></p>
       <div class="spacer"></div>
       <button class="btn" type="submit" id="nextBtn">Next: decorate the cake</button>
+      <div id="who"></div>
     </form>
   </section>
 
@@ -97,7 +94,7 @@
       </div>
     </div>
     <div class="card stack">
-      <div><b>Your dashboard</b><div class="small muted">Only you get this link. See who recorded, and add demo voices to try it out.</div></div>
+      <div><b>Your dashboard</b><div class="small muted">See who recorded, send it to them when you’re ready, or add demo voices to try it out. It’s always in My gifts.</div></div>
       <a class="btn ghost" id="manageBtn">Open dashboard</a>
     </div>
   </section>

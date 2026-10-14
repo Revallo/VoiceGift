@@ -8,6 +8,14 @@
       "destination": "/create.html"
     },
     {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/me",
+      "destination": "/me.html"
+    },
+    {
       "source": "/g/:slug",
       "destination": "/record.html"
     },

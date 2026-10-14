@@ -28,8 +28,10 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | `/` | `index.html` | landing |
 | `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → friends' link + QR + dashboard |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |
-| `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | organizer dashboard (only with the key): who recorded (not content), recipient link, demo voices |
-| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
+| `/m/:slug` | `manage.html` + `assets/manage.js` | organizer dashboard (owner's account only): who recorded (not content), recipient link, who opened it, demo voices |
+| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: sign in → claims the gift → items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
+| `/login?next=` | `login.html` + `assets/login.js` | sign in (prototype: name + email, no password), then back to `next` |
+| `/me` | `me.html` + `assets/me.js` | My gifts: gifts I made, gifts for me, messages I recorded |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
 Grad* = graduation, Wed* = wedding; Decorate = cake editor).
@@ -55,28 +57,33 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 manage key) stores them like real messages with `demo: true`; `/api/export` leaves them out.
 
 ## API (`api/*.js`)
-- `POST /api/gifts` {recipient, organizer, occasion, cake{flavor,name,dots,stickers}} → {slug, manageKey, openKey}; `PATCH` same + {slug, key} → edit
+- `GET|POST|DELETE /api/auth` → current user / sign in {name, email} (signed cookie `vg`) / sign out; `GET /api/me` → made, received, recorded
+- `POST /api/gifts` {recipient, occasion, cake{flavor,name,dots,stickers}} (organizer = account name) → {slug, manageKey, openKey}; `PATCH` same + {slug} → edit (owner only)
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug&k=openKey` → messages **only with the recipient's key** (server-side rule)
-- `GET /api/audio?slug&id&k=openKey` (or `&token` for your own recording) → WAV with Range support (iOS)
-- `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey / `add-demo`
+- `GET /api/reveal?slug&k=openKey` → messages. The first account that opens it with the key **claims** it (`recipientId`); afterwards only that account (no key needed). The owner can preview without claiming. Each message has `nameAt` = [start, end] where the recipient's name is said (the opening plays only that bit).
+- `GET /api/audio?slug&id&k=openKey` → WAV with Range support (iOS), for the recipient, the owner, or whoever recorded it
+- `GET|POST /api/manage` (owner's account; old gifts: manageKey) → dashboard data incl. openKey + `opened` / `add-demo`, `delete`, `delete-gift`, `unclaim` (new recipient link)
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent…
 
-Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`.
+Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`;
+accounts in `users/<id>/user.json` + `users/<id>/{made,got,sent}/…json` (`lib/auth.js`, id = hash of the email).
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
 `lib/asr.js` is the only seam. Mock by default (returns the occasion's greeting, e.g. "Selamat ulang tahun, <name>!", with even word
-timings). Set `ASR_URL` (+ `ASR_API_KEY`) to call the company API; adapt `fromProvider()` to its response shape.
+timings). Set `GROQ_API_KEY` for Groq Whisper large-v3 (interim, free tier), or `ASR_URL` (+ `ASR_API_KEY`) for the
+company API (wins over Groq; adapt `fromProvider()` to its response shape). Locally, keys go in `.env`.
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.
-- Never return message audio/text without the recipient's key (enforced in `api/`, not just the UI).
+- Everyone signs in (organizer, friends, recipient). Never return message audio/text except to the recipient's
+  account, the owner or the speaker (enforced in `api/`, not just the UI).
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
-- Consent checkbox on every recording; store `consentVersion`. No accounts, no phone numbers.
+- Consent checkbox on every recording; store `consentVersion` and `userId`. Accounts are name + email only (prototype,
+  no password); `SESSION_SECRET` signs the cookie (set it on Vercel).
 - Mobile first: test at 390×844, and desktop (the app is a centered 440 px column).
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 

@@ -1,4 +1,4 @@
-import { $, $$, h, api, icon, showScreen, copyText, addStars, toast } from './common.js';
+import { $, $$, h, api, icon, showScreen, copyText, addStars, toast, requireSignIn, whoLine } from './common.js';
 import { BRUSHES } from './stage.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { friendUrl, qrSvg, shareRow, printQrCard } from './share.js';
@@ -11,6 +11,7 @@ const params = new URLSearchParams(location.search);
 const state = { occasion: THEMES[params.get('occasion')] ? params.get('occasion') : 'birthday', flavor: '', brush: 0, nameTouched: false, sel: -1, created: null };
 let t = theme(state.occasion);
 const MAX_STICKERS = 30;
+requireSignIn().then((user) => $('#who').replaceWith(whoLine(user))); // the gift goes into this account
 
 // ---------- steps + back ----------
 // Each step is a browser history entry, so the phone's back gesture goes to the previous step.
@@ -39,11 +40,8 @@ $$('#occasions .chip').forEach((c) => c.addEventListener('click', () => { if (c.
 $('#whoForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const recipient = $('#recipient').value.trim();
-  const organizer = $('#organizer').value.trim();
   const err = $('#whoError');
-  let msg = '';
-  if (!recipient) msg = 'Please enter who the gift is for.';
-  else if (!organizer) msg = 'Please enter your name.';
+  const msg = recipient ? '' : 'Please enter who the gift is for.';
   err.hidden = !msg;
   err.textContent = msg;
   if (msg) return;
@@ -199,22 +197,16 @@ $('#createBtn').addEventListener('click', async () => {
   try {
     const body = {
       recipient: $('#recipient').value.trim(),
-      organizer: $('#organizer').value.trim(),
       occasion: state.occasion,
       cake: { flavor: state.flavor, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
     };
     if (state.created) {
-      await api('/api/gifts', { method: 'PATCH', json: { ...body, slug: state.created.slug, key: state.created.manageKey } });
+      await api('/api/gifts', { method: 'PATCH', json: { ...body, slug: state.created.slug } });
       toast('Saved');
     } else {
       state.created = await api('/api/gifts', { method: 'POST', json: body });
-      try {
-        const mine = JSON.parse(localStorage.getItem('vg-mine') || '[]');
-        mine.push({ slug: state.created.slug, key: state.created.manageKey, recipient: body.recipient, occasion: body.occasion });
-        localStorage.setItem('vg-mine', JSON.stringify(mine.slice(-20)));
-      } catch {}
     }
-    showShare({ ...body, slug: state.created.slug }, state.created.manageKey);
+    showShare({ ...body, slug: state.created.slug });
   } catch (e) {
     err.textContent = e.message;
     err.hidden = false;
@@ -225,7 +217,7 @@ $('#createBtn').addEventListener('click', async () => {
 });
 
 // ---------- step 3 ----------
-function showShare(gift, manageKey) {
+function showShare(gift) {
   const friend = friendUrl(gift);
   const name = t.callName(gift.recipient);
   $('#shareLead').textContent = gift.occasion === 'wedding'
@@ -242,7 +234,7 @@ function showShare(gift, manageKey) {
   $('#printQr').innerHTML = icon.print(14);
   $('#printQr').append(h('span', {}, 'Print'));
   $('#printQr').onclick = () => printQrCard(gift);
-  $('#manageBtn').href = `/m/${gift.slug}?k=${manageKey}`;
+  $('#manageBtn').href = `/m/${gift.slug}`;
   go('share');
 }
 

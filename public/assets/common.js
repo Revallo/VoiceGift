@@ -39,12 +39,43 @@ export async function api(path, opts = {}) {
     throw new Error('No connection. Please check your internet and try again.');
   }
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && !opts.quiet) location.href = signInUrl(); // signed out meanwhile
   if (!res.ok) {
     const err = new Error(data.error || `Request failed (${res.status})`);
     err.status = res.status;
     throw err;
   }
   return data;
+}
+
+// ---------- accounts ----------
+// Everyone signs in (organizer, friends, recipient). Prototype: name + email, no password yet.
+let userJob;
+export function getUser() {
+  if (!userJob) userJob = api('/api/auth', { quiet: true }).then((d) => d.user, () => null);
+  return userJob;
+}
+export const signInUrl = (next = location.pathname + location.search) => `/login?next=${encodeURIComponent(next)}`;
+
+// For pages that need an account: sends signed-out visitors to /login and brings them back afterwards.
+export async function requireSignIn() {
+  const user = await getUser();
+  if (!user) {
+    location.replace(signInUrl());
+    return new Promise(() => {}); // the page stops here while the browser leaves
+  }
+  return user;
+}
+
+export async function signOut(next = '/') {
+  await api('/api/auth', { method: 'DELETE', quiet: true }).catch(() => {});
+  location.href = next;
+}
+
+// "Signed in as sari@… · Not you?" for shared phones.
+export function whoLine(user) {
+  return h('p', { class: 'small muted center', style: { margin: '0' } }, `Signed in as ${user.email} · `,
+    h('a', { href: '#', style: { color: 'var(--soft)' }, onclick: (e) => { e.preventDefault(); signOut(signInUrl()); } }, 'Not you?'));
 }
 
 let toastTimer;

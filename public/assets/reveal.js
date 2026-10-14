@@ -1,6 +1,6 @@
 // The recipient's page: the scene lights up (candles / flowers / lanterns) → listen to each voice
 // → the finale (blow out the candles / throw your cap / release the lanterns) → keepsake.
-import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText } from './common.js';
+import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, requireSignIn } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 
 addStars($('#app'), 26, 55);
@@ -10,7 +10,7 @@ const openKey = new URLSearchParams(location.search).get('k') || '';
 const NOTES = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 const el = { eyebrow: $('#eyebrow'), title: $('#title'), sub: $('#sub'), panel: $('#panel'), bottom: $('#bottom') };
 
-let gift, t, first = '', messages = [], scene, ac;
+let gift, t, first = '', messages = [], scene, ac, preview = false;
 let phase = 'loading';
 const buffers = [];
 const bufferJobs = [];
@@ -42,14 +42,17 @@ function btn(label, opts = {}) {
 
 // ---------- load ----------
 async function load() {
+  await requireSignIn(); // the first account to open the link becomes the gift's owner
   let data;
   try {
     data = await api(`/api/reveal?slug=${encodeURIComponent(slug)}&k=${encodeURIComponent(openKey)}`);
   } catch (e) {
     $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
+    if (e.status === 403) $('#errorLink').append(h('a', { href: '/me', style: { color: 'var(--soft)' } }, 'See My gifts'));
     return showScreen('error');
   }
   gift = data.gift;
+  preview = data.preview;
   t = applyTheme(gift.occasion);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
@@ -74,7 +77,7 @@ function showReady() {
   scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), onTap: (i) => phase === 'cake' && play(i, false) });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
-  header(t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
+  header(preview ? 'Preview · only you see this' : t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
   const pile = h('div', { class: 'facepile' });
   for (let i = 0; i < Math.min(messages.length, 12); i++) pile.append(h('i', {}, '?'));
   setPanel(h('div', { class: 'row' }, pile));
@@ -124,19 +127,24 @@ function startLighting() {
   const dots = messages.map(() => h('i', { style: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--face)', transition: 'background .3s' } }));
   const count = h('p', { class: 'small soft center', style: { margin: '0' } }, t.progress(0, n));
   setBottom(h('div', { class: 'row', style: { justifyContent: 'center', flexWrap: 'wrap', gap: '7px' } }, n <= 40 ? dots : []), count);
-  let at = 300;
+  // Each item lights with a chime. If the friend called the name ("Dimas!"), only that bit of their voice
+  // plays, and the next one waits until it's done: names one after another, never a pile of voices.
+  // Voices that don't say the name just light up. After NAME_CALLS names the rest light quickly.
+  let at = 600, called = 0;
   messages.forEach((m, i) => {
-    at += i === 0 ? 300 : Math.max(170, 700 * Math.pow(0.86, i));
+    const clip = buffers[i] && m.nameAt && called < NAME_CALLS ? m.nameAt : null;
+    if (clip) called++;
     later(() => {
       scene.light(i);
       if (dots[i]) dots[i].style.background = colorFor(i);
       count.textContent = t.progress(i + 1, n);
       setPanel(h('div', { class: 'caller' },
         h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
-        h('div', {}, h('div', { class: 'small soft', style: { fontWeight: '600' } }, m.sender), h('div', { class: 'shout' }, `“${first}!”`))));
-      tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.05);
-      playSnippet(i);
+        h('div', {}, h('div', { class: clip ? 'small soft' : 'shout', style: { fontWeight: '600' } }, m.sender), clip && h('div', { class: 'shout' }, `“${first}!”`))));
+      tone(ac, NOTES[i % NOTES.length], 0, 1.1, clip ? 0.03 : 0.05);
+      if (clip) playClip(i, clip);
     }, at);
+    at += clip ? Math.round((clip[1] - clip[0]) * 1000) + 250 : Math.max(170, 600 * Math.pow(0.86, i));
   });
   later(() => {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.06));
@@ -145,21 +153,23 @@ function startLighting() {
   later(enterScene, at + 3200);
 }
 
-// The first moment of each recording, as its item lights (friends were asked to start with the name).
-function playSnippet(i) {
-  const b = buffers[i];
-  if (!b) return;
+const NAME_CALLS = 12;
+
+// Just the moment this friend calls the name ([start, end] seconds from the server), softly faded.
+function playClip(i, [from, to]) {
   try {
     const src = ac.createBufferSource();
     const g = ac.createGain();
-    src.buffer = b;
+    src.buffer = buffers[i];
     const at = ac.currentTime;
-    g.gain.setValueAtTime(0.9, at);
-    g.gain.setValueAtTime(0.9, at + 1.0);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + 1.4);
+    const len = to - from;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.9, at + 0.04);
+    g.gain.setValueAtTime(0.9, at + Math.max(0.05, len - 0.15));
+    g.gain.exponentialRampToValueAtTime(0.0001, at + len);
     src.connect(g);
     g.connect(ac.destination);
-    src.start(at, 0, 1.45);
+    src.start(at, from, len + 0.02);
   } catch {}
 }
 
@@ -413,7 +423,7 @@ function showKeepsake() {
   header(t.eyebrow(first), t.greeting(first), t.keepSub(n));
   const card = h('div', { class: 'panel row', style: { borderStyle: 'dashed', borderColor: 'rgba(246,185,59,0.5)' } },
     h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.gift(18) }),
-    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, 'Kept here. Open this link again any time.')));
+    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, preview ? 'This was your preview. It still opens fresh for them.' : 'Kept in your account. Open it again any time from My gifts.')));
   setPanel(card);
   const nameChip = (m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender);
   const names = h('div', { class: 'names' }, messages.slice(0, NAMES_SHOWN).map(nameChip));
@@ -423,12 +433,9 @@ function showKeepsake() {
     names.append(more);
   }
   const save = btn('Save video', { icon: icon.download(16), onclick: () => toast('Coming soon: one video with every voice and caption.') });
-  const share = btn('Share', { ghost: true, icon: icon.share(16), onclick: async () => {
-    if (navigator.share) { try { await navigator.share({ title: 'My voice gift', url: location.href }); } catch {} }
-    else copyText(location.href);
-  } });
+  const mine = btn('My gifts', { ghost: true, icon: icon.gift(16), onclick: () => { location.href = '/me'; } });
   const again = btn('Listen again', { ghost: true, icon: icon.redo(15), onclick: () => { scene.reset(); enterScene(); } });
-  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), again);
+  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, mine), again);
 }
 
 // ---------- effects (confetti, caps, sky lanterns) ----------

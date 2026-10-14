@@ -1,4 +1,4 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, copyText } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, copyText, requireSignIn, whoLine } from './common.js';
 import { theme, createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 
@@ -12,6 +12,9 @@ let rec = null, recorded = null, sent = null; // sent = { id, token }
 function err(el, msg) { el.textContent = msg || ''; el.hidden = !msg; }
 
 async function load() {
+  const user = await requireSignIn(); // the message is kept under this account
+  $('#who').replaceWith(whoLine(user));
+  $('#name').value = user.name;
   try {
     const data = await api(`/api/gift?slug=${encodeURIComponent(slug)}`);
     gift = data.gift;
@@ -34,7 +37,6 @@ async function load() {
   inviteCake.setCandles(count, { spots: Math.max(12, count + 1) });
   inviteCake.lightAll();
   $('#countLine').textContent = t.countLine(count);
-  try { $('#name').value = localStorage.getItem('vg-name') || ''; } catch {}
   showScreen('invite');
 }
 
@@ -45,7 +47,6 @@ $('#inviteForm').addEventListener('submit', async (e) => {
   if (!name) return err($('#inviteError'), 'Please enter your name.');
   if (!$('#consent').checked) return err($('#inviteError'), 'Please tick the box to continue.');
   err($('#inviteError'), '');
-  try { localStorage.setItem('vg-name', name); } catch {}
   await beginRecording();
 });
 

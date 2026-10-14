@@ -21,6 +21,7 @@
     <div class="row">
       <a class="brand" href="/"><span class="logo" id="logo"></span>Voice Gift</a>
       <span class="proto">Prototype</span>
+      <a class="btn ghost sm" id="account" hidden></a>
     </div>
     <div class="head">
       <h1 class="big">Collect voice messages for someone you love</h1>
@@ -41,15 +42,11 @@
       <div class="card row"><span class="avatar" style="background:#5CC8A8">2</span><div><b>Friends record 15 seconds</b><div class="small muted" id="how2">They tap the link you share. Each voice adds a candle.</div></div></div>
       <div class="card row"><span class="avatar" style="background:#FF8FA3">3</span><div><b>It opens as a surprise</b><div class="small muted" id="how3">When they open it, the candles light up, one voice at a time.</div></div></div>
     </div>
-    <div id="mine" class="stack" hidden style="margin-top:12px">
-      <h2>Your gifts</h2>
-      <div class="list" id="mineList"></div>
-    </div>
   </section>
 </main>
 <script type="module">
-import { $, $$, h, api, icon, addStars, toast } from '/assets/common.js';
-import { theme, createScene, applyTheme } from '/assets/themes.js';
+import { $, $$, icon, addStars, getUser } from '/assets/common.js';
+import { createScene, applyTheme } from '/assets/themes.js';
 
 $('#logo').innerHTML = icon.gift(17);
 addStars($('#app'), 26, 45);
@@ -77,34 +74,13 @@ function show(occasion) {
 $$('#occasions .chip').forEach((c) => c.addEventListener('click', () => show(c.dataset.v)));
 show('birthday');
 
-// Gifts this browser created (kept only on this device).
-function loadMine() {
-  try { return JSON.parse(localStorage.getItem('vg-mine') || '[]'); } catch { return []; }
-}
-function showMine() {
-  const mine = loadMine();
-  $('#mine').hidden = !mine.length;
-  $('#mineList').textContent = '';
-  for (const g of mine.slice(-5).reverse()) {
-    $('#mineList').append(h('div', { class: 'item' },
-      h('a', { class: 'grow row', href: `/m/${g.slug}?k=${g.key}`, style: { color: '#fff', textDecoration: 'none' } },
-        h('div', { class: 'grow' }, h('b', {}, `${theme(g.occasion).emoji} For ${g.recipient}`), h('div', { class: 'small muted' }, theme(g.occasion).label)),
-        h('span', { class: 'small', style: { color: 'var(--gold)', fontWeight: '700' } }, 'Dashboard')),
-      h('button', { type: 'button', class: 'del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(), onclick: () => removeGift(g) })));
-  }
-}
-// Deletes the gift on the server too (every message and recording), then forgets it here.
-async function removeGift(g) {
-  if (!confirm(`Delete the gift for ${g.recipient}, with every message and recording? This can't be undone.`)) return;
-  try {
-    await api('/api/manage', { method: 'POST', json: { slug: g.slug, key: g.key, action: 'delete-gift' } });
-  } catch (e) {
-    if (!/not found/i.test(e.message)) return toast(e.message); // already gone: just forget it
-  }
-  try { localStorage.setItem('vg-mine', JSON.stringify(loadMine().filter((x) => x.slug !== g.slug))); } catch {}
-  showMine();
-}
-showMine();
+// Signed in: a shortcut to everything in the account. Signed out: sign in.
+getUser().then((user) => {
+  const a = $('#account');
+  a.href = user ? '/me' : '/login?next=%2Fme';
+  a.textContent = user ? 'My gifts' : 'Sign in';
+  a.hidden = false;
+});
 </script>
 </body>
 </html>

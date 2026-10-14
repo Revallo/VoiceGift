@@ -1,11 +1,15 @@
-// GET  /api/manage?slug=…&key=…             → organizer dashboard: who has recorded (not what they said) + the recipient's key
-// POST /api/manage { slug, key, action }    → action "add-demo": 12 demo voices (TTS, public/demo/) so the gift can be shown
-//                                            action "delete" + id: removes that message and its audio from storage
-//                                            action "delete-gift": removes the whole gift from storage
+// Only the organizer's account (gifts made before accounts: the dashboard key in the link).
+// GET  /api/manage?slug=…              → dashboard: who has recorded (not what they said), the recipient's key,
+//                                        and who opened it (the account that claimed it)
+// POST /api/manage { slug, action }    → action "add-demo": 12 demo voices (TTS, public/demo/) so the gift can be shown
+//                                        action "delete" + id: removes that message and its audio from storage
+//                                        action "delete-gift": removes the whole gift from storage
+//                                        action "unclaim": the wrong account opened it → new recipient link
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
-import { loadGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
+import { loadGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, unclaimGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
+import { currentUser } from '../lib/auth.js';
 import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
 
 const DEMO_DIR = path.join(process.cwd(), 'public', 'demo');
@@ -32,16 +36,20 @@ async function addDemo(gift) {
   }));
 }
 
-async function authed(slug, key) {
+async function authed(req, slug, key) {
   const gift = await loadGift(slug);
-  if (!key || key !== gift.manageKey) throw new HttpError(403, 'This dashboard link is not valid.');
+  if (gift.ownerId) {
+    const user = await currentUser(req);
+    if (!user) throw new HttpError(401, 'Please sign in first.');
+    if (user.id !== gift.ownerId) throw new HttpError(403, 'Only the person who made this gift can see its dashboard.');
+  } else if (!key || key !== gift.manageKey) throw new HttpError(403, 'This dashboard link is not valid.');
   return gift;
 }
 
 export default route({
   async GET(req, res) {
     const q = query(req);
-    const gift = await authed(q.slug, q.key);
+    const gift = await authed(req, q.slug, q.key);
     const messages = (await loadMessages(gift.slug)).map((m) => ({
       id: m.id,
       sender: m.sender,
@@ -51,17 +59,19 @@ export default route({
       demo: Boolean(m.demo),
       durationSec: m.durationSec
     }));
-    send(res, 200, { gift: publicGift(gift), openKey: gift.openKey, messages });
+    const opened = gift.recipientId ? { ...gift.recipientAccount, at: gift.claimedAt } : null;
+    send(res, 200, { gift: publicGift(gift), openKey: gift.openKey, opened, messages });
   },
 
   async POST(req, res) {
     const b = await jsonBody(req);
-    const gift = await authed(b.slug, b.key);
+    const gift = await authed(req, b.slug, b.key);
     if (b.action === 'add-demo') await addDemo(gift);
     else if (b.action === 'delete') {
       const { msg, path } = await findMessage(gift.slug, String(b.id || ''));
-      await deleteMessage(path, msg);
-    } else if (b.action === 'delete-gift') await deleteGift(gift.slug);
+      await deleteMessage(path, msg, gift.slug);
+    } else if (b.action === 'delete-gift') await deleteGift(gift);
+    else if (b.action === 'unclaim') await unclaimGift(gift);
     else throw new HttpError(400, 'Unknown action');
     send(res, 200, { ok: true });
   }

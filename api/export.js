@@ -15,6 +15,7 @@ export default route({
         lines.push(JSON.stringify({
           gift: slug,
           id: m.id,
+          speaker: m.userId, // the same person across gifts (an account id, no name or email)
           audio: m.audioPath,
           durationSec: m.durationSec,
           asrProvider: m.asrProvider,

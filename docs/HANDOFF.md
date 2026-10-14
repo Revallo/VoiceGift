@@ -27,7 +27,8 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - Live: **https://voicegift-one.vercel.app** (production domain — share this one, not the
   per-deployment URLs, which require a Vercel login).
 - Vercel Blob store `voicegift` (Private) is connected; `BLOB_STORE_ID` is set.
-- Not set yet: `ADMIN_KEY` (export), `ASR_URL`/`ASR_API_KEY` (ASR is still the mock).
+- Not set yet: `ADMIN_KEY` (export), `ASR_URL`/`ASR_API_KEY` (company ASR). Interim ASR: set `GROQ_API_KEY`
+  (Groq Whisper large-v3, 2026-10-07); without it ASR is the mock. Each message stores `asrProvider`.
 
 ## How we work
 - Local: `npm run dev` → http://localhost:3000 (Windows, PowerShell, VS Code). Keep that terminal
@@ -52,6 +53,15 @@ Claude (claude.ai), so a new session can continue without re-asking.
   `demo-2026-10`). It doesn't mention ASR training: change it (and the version) before collecting real data.
 - For the manager demo: dashboard → "Add 12 demo voices" (TTS, marked `demo`, not exported), then "Preview their page".
 - Not yet tested on real iPhone/Android microphones.
+
+- Decision (2026-10-14, after the manager's feedback): **accounts for everyone**, kept as simple as possible
+  (name + email, no password; the real version would use Google or a phone OTP). The recipient's link is claimed
+  by the first account that opens it, so a forwarded link is useless; the organizer sees who opened it and can
+  make a new link. Everything is in `/me` (My gifts) instead of scattered links. Export has `speaker` (account id).
+- Decision (2026-10-14): the opening no longer plays the first ~1.4 s of every voice (overlapping, creepy when people
+  don't start with the name). It plays only the moment each person says the recipient's name (word timings: real
+  ASR timings when available, else the corrected caption's even timings), one after another. Voices without the
+  name just light with a chime. The demo voices never say the name, so the demo opening is chimes only.
 
 ## Ideas offered, not started (ask Revallo before building)
 - Indonesian UI language (target users are Indonesian).

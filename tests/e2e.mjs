@@ -268,6 +268,13 @@ async function runGift(occasion, c) {
 
   const rCookie = await cookieFor(...RCP);
   const rev = await (await fetch(`${BASE}/api/reveal?slug=${slug}`, { headers: { Cookie: rCookie } })).json();
+  // the organizer never hears a friend: their preview has the demo voices only
+  const oCookie = await cookieFor(...ORG);
+  const own = await (await fetch(`${BASE}/api/reveal?slug=${slug}`, { headers: { Cookie: oCookie } })).json();
+  if (own.messages.length !== 12) errors.push(`${occasion}: organizer preview has ${own.messages.length} messages, expected the 12 demo voices`);
+  const real = rev.messages.find((x) => !own.messages.some((o) => o.id === x.id));
+  const st = (await fetch(`${BASE}/api/audio?slug=${slug}&id=${real.id}`, { headers: { Cookie: oCookie } })).status;
+  if (st !== 403) errors.push(`${occasion}: organizer got a friend's audio: ${st}`);
   console.log(occasion, 'messages', rev.messages.length, rev.messages.slice(0, 3).map((x) => `${x.sender}: ${x.text} (${x.durationSec}s)`));
   return { link: recipientLink, recipient: RCP };
 }

@@ -1,7 +1,7 @@
 // GET /api/reveal?slug=…&k=…  → the messages, for a signed-in user only:
 //   - the first account that opens the recipient's link (k) claims the gift and becomes its recipient;
 //     after that only that account can open it (a forwarded link is useless), with or without k
-//   - the organizer may preview it without claiming it
+//   - the organizer may preview it without claiming it, with the demo voices only: real voices are for the recipient
 import { route, send, query, HttpError } from '../lib/http.js';
 import { loadGift, publicGift, giftAccess, claimGift, loadMessages } from '../lib/gifts.js';
 import { requireUser } from '../lib/auth.js';
@@ -22,6 +22,7 @@ export default route({
 
     const messages = (await loadMessages(gift.slug))
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
+      .filter((m) => role !== 'owner' || m.demo)
       .map((m) => {
         const text = m.finalText || m.asrText;
         return {

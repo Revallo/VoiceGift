@@ -66,7 +66,8 @@ async function load() {
 function showEmpty() {
   phase = 'empty';
   scene.setCandles(0, { spots: 12 });
-  header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
+  if (preview) header('Preview · only you see this', 'Their voices are for ' + first, `Only ${first} can hear what your friends recorded. To see how it works, add demo voices on your dashboard.`);
+  else header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
   setPanel(null);
   setBottom(btn('Check again', { ghost: true, onclick: load }));
 }
@@ -398,7 +399,7 @@ function showKeepsake() {
   header(t.eyebrow(first), t.greeting(first), t.keepSub(n));
   const card = h('div', { class: 'panel row', style: { borderStyle: 'dashed', borderColor: 'rgba(246,185,59,0.5)' } },
     h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.gift(18) }),
-    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, preview ? 'This was your preview. It still opens fresh for them.' : 'Kept in your account. Open it again any time from My gifts.')));
+    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, preview ? 'Your preview, with demo voices only. It still opens fresh for them.' : 'Kept in your account. Open it again any time from My gifts.')));
   setPanel(card);
   const nameChip = (m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender);
   const names = h('div', { class: 'names' }, messages.slice(0, NAMES_SHOWN).map(nameChip));

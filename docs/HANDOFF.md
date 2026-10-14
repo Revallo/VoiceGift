@@ -57,7 +57,8 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - Decision (2026-10-14, after the manager's feedback): **accounts for everyone**, kept as simple as possible
   (name + email, no password; the real version would use Google or a phone OTP). The recipient's link is claimed
   by the first account that opens it, so a forwarded link is useless; the organizer sees who opened it and can
-  make a new link. Everything is in `/me` (My gifts) instead of scattered links. Export has `speaker` (account id).
+  make a new link. Everything is in `/me` (My gifts) instead of scattered links. Only the recipient hears the
+  friends' voices: the organizer sees who recorded, and their preview plays demo voices only. Export has `speaker` (account id).
 - Decision (2026-10-14): the opening plays **no voices**: each item lights with a chime and the friend's name.
   (Before, it played the first ~1.4 s of every voice, overlapping: creepy, since people don't all start with the
   name. Playing only the moment someone says the name was tried and dropped: too few people say it.) Voices play

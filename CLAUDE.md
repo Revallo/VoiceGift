@@ -62,8 +62,8 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug&k=openKey` → messages. The first account that opens it with the key **claims** it (`recipientId`); afterwards only that account (no key needed). The owner can preview without claiming.
-- `GET /api/audio?slug&id&k=openKey` → WAV with Range support (iOS), for the recipient, the owner, or whoever recorded it
+- `GET /api/reveal?slug&k=openKey` → messages. The first account that opens it with the key **claims** it (`recipientId`); afterwards only that account (no key needed). The owner can preview without claiming, **with demo voices only**: real voices are only for the recipient.
+- `GET /api/audio?slug&id&k=openKey` → WAV with Range support (iOS), for the recipient, whoever recorded it, or the owner (demo voices only)
 - `GET|POST /api/manage` (owner's account; old gifts: manageKey) → dashboard data incl. openKey + `opened` / `add-demo`, `delete`, `delete-gift`, `unclaim` (new recipient link)
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent…
 
@@ -78,8 +78,8 @@ company API (wins over Groq; adapt `fromProvider()` to its response shape). Loca
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.
-- Everyone signs in (organizer, friends, recipient). Never return message audio/text except to the recipient's
-  account, the owner or the speaker (enforced in `api/`, not just the UI).
+- Everyone signs in (organizer, friends, recipient). Never return a real message's audio/text except to the
+  recipient's account or the speaker; not even the organizer (enforced in `api/`, not just the UI).
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
 - Consent checkbox on every recording; store `consentVersion` and `userId`. Accounts are name + email only (prototype,

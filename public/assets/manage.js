@@ -58,6 +58,7 @@ async function load() {
   $('#delivery').textContent = '';
   $('#delivery').append(opened ? openedCard(name, opened) : recipientCard(gift, openKey));
   $('#openReveal').href = recipientUrl(gift, openKey);
+  $('#previewNote').textContent = `Your preview only plays demo voices. Your friends’ voices are only for ${name}, not even for you.`;
   $('#demoCard').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
   showScreen('main');
 }

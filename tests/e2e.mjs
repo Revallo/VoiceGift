@@ -268,7 +268,6 @@ async function runGift(occasion, c) {
 
   const rCookie = await cookieFor(...RCP);
   const rev = await (await fetch(`${BASE}/api/reveal?slug=${slug}`, { headers: { Cookie: rCookie } })).json();
-  console.log(occasion, 'name clips', `${rev.messages.filter((x) => x.nameAt).length}/${rev.messages.length}`);
   console.log(occasion, 'messages', rev.messages.length, rev.messages.slice(0, 3).map((x) => `${x.sender}: ${x.text} (${x.durationSec}s)`));
   return { link: recipientLink, recipient: RCP };
 }

@@ -7,23 +7,6 @@ import { loadGift, publicGift, giftAccess, claimGift, loadMessages } from '../li
 import { requireUser } from '../lib/auth.js';
 import { evenWords } from '../lib/asr.js';
 
-const norm = (w) => String(w).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
-const CONNECT = new Set(['dan', 'and', '']);
-
-// Where the speaker calls the recipient's name ("Dimas!", "Rina dan Bayu"), as [start, end] seconds, or null.
-// The opening plays only that bit of each voice, never a random first second.
-function nameAt(words, recipient) {
-  const names = new Set(String(recipient).split(/[\s&,]+/).map(norm).filter((n) => n.length >= 2));
-  if (!words?.length) return null;
-  const i = words.findIndex((w) => names.has(norm(w.w)));
-  if (i < 0) return null;
-  let j = i;
-  while (j + 2 < words.length && CONNECT.has(norm(words[j + 1].w)) && names.has(norm(words[j + 2].w))) j += 2;
-  const start = Math.max(0, words[i].start - 0.12);
-  const end = Math.min(start + 1.8, (words[j].end || words[j].start + 0.6) + 0.2);
-  return end - start >= 0.3 ? [+start.toFixed(2), +end.toFixed(2)] : null;
-}
-
 export default route({
   async GET(req, res) {
     const user = await requireUser(req);
@@ -41,14 +24,11 @@ export default route({
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
       .map((m) => {
         const text = m.finalText || m.asrText;
-        const words = (m.finalWords && m.finalWords.length ? m.finalWords : null) || evenWords(text, m.durationSec);
         return {
           id: m.id,
           sender: m.sender,
           text,
-          words,
-          // real ASR timings first (they follow the voice); the corrected caption's timings are only spread evenly
-          nameAt: (m.asrProvider !== 'mock' && nameAt(m.asrWords, gift.recipient)) || nameAt(words, gift.recipient),
+          words: (m.finalWords && m.finalWords.length ? m.finalWords : null) || evenWords(text, m.durationSec),
           durationSec: m.durationSec
         };
       });

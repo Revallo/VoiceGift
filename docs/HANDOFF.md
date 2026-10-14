@@ -58,10 +58,10 @@ Claude (claude.ai), so a new session can continue without re-asking.
   (name + email, no password; the real version would use Google or a phone OTP). The recipient's link is claimed
   by the first account that opens it, so a forwarded link is useless; the organizer sees who opened it and can
   make a new link. Everything is in `/me` (My gifts) instead of scattered links. Export has `speaker` (account id).
-- Decision (2026-10-14): the opening no longer plays the first ~1.4 s of every voice (overlapping, creepy when people
-  don't start with the name). It plays only the moment each person says the recipient's name (word timings: real
-  ASR timings when available, else the corrected caption's even timings), one after another. Voices without the
-  name just light with a chime. The demo voices never say the name, so the demo opening is chimes only.
+- Decision (2026-10-14): the opening plays **no voices**: each item lights with a chime and the friend's name.
+  (Before, it played the first ~1.4 s of every voice, overlapping: creepy, since people don't all start with the
+  name. Playing only the moment someone says the name was tried and dropped: too few people say it.) Voices play
+  when the recipient taps an item or "Play all".
 
 ## Ideas offered, not started (ask Revallo before building)
 - Indonesian UI language (target users are Indonesian).

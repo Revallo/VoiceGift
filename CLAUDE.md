@@ -62,7 +62,7 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug&k=openKey` → messages. The first account that opens it with the key **claims** it (`recipientId`); afterwards only that account (no key needed). The owner can preview without claiming. Each message has `nameAt` = [start, end] where the recipient's name is said (the opening plays only that bit).
+- `GET /api/reveal?slug&k=openKey` → messages. The first account that opens it with the key **claims** it (`recipientId`); afterwards only that account (no key needed). The owner can preview without claiming.
 - `GET /api/audio?slug&id&k=openKey` → WAV with Range support (iOS), for the recipient, the owner, or whoever recorded it
 - `GET|POST /api/manage` (owner's account; old gifts: manageKey) → dashboard data incl. openKey + `opened` / `add-demo`, `delete`, `delete-gift`, `unclaim` (new recipient link)
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent…

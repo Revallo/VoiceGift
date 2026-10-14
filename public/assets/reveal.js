@@ -127,50 +127,25 @@ function startLighting() {
   const dots = messages.map(() => h('i', { style: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--face)', transition: 'background .3s' } }));
   const count = h('p', { class: 'small soft center', style: { margin: '0' } }, t.progress(0, n));
   setBottom(h('div', { class: 'row', style: { justifyContent: 'center', flexWrap: 'wrap', gap: '7px' } }, n <= 40 ? dots : []), count);
-  // Each item lights with a chime. If the friend called the name ("Dimas!"), only that bit of their voice
-  // plays, and the next one waits until it's done: names one after another, never a pile of voices.
-  // Voices that don't say the name just light up. After NAME_CALLS names the rest light quickly.
-  let at = 600, called = 0;
+  // Each item lights with a chime and the friend's name. No voices yet: they play when the recipient taps an item.
+  let at = 300;
   messages.forEach((m, i) => {
-    const clip = buffers[i] && m.nameAt && called < NAME_CALLS ? m.nameAt : null;
-    if (clip) called++;
+    at += i === 0 ? 300 : Math.max(170, 700 * Math.pow(0.86, i));
     later(() => {
       scene.light(i);
       if (dots[i]) dots[i].style.background = colorFor(i);
       count.textContent = t.progress(i + 1, n);
       setPanel(h('div', { class: 'caller' },
         h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
-        h('div', {}, h('div', { class: clip ? 'small soft' : 'shout', style: { fontWeight: '600' } }, m.sender), clip && h('div', { class: 'shout' }, `“${first}!”`))));
-      tone(ac, NOTES[i % NOTES.length], 0, 1.1, clip ? 0.03 : 0.05);
-      if (clip) playClip(i, clip);
+        h('div', { class: 'shout' }, m.sender)));
+      tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.05);
     }, at);
-    at += clip ? Math.round((clip[1] - clip[0]) * 1000) + 250 : Math.max(170, 600 * Math.pow(0.86, i));
   });
   later(() => {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.06));
     header(eyebrow, t.greeting(first), t.gaveLine(n));
   }, at + 700);
   later(enterScene, at + 3200);
-}
-
-const NAME_CALLS = 12;
-
-// Just the moment this friend calls the name ([start, end] seconds from the server), softly faded.
-function playClip(i, [from, to]) {
-  try {
-    const src = ac.createBufferSource();
-    const g = ac.createGain();
-    src.buffer = buffers[i];
-    const at = ac.currentTime;
-    const len = to - from;
-    g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(0.9, at + 0.04);
-    g.gain.setValueAtTime(0.9, at + Math.max(0.05, len - 0.15));
-    g.gain.exponentialRampToValueAtTime(0.0001, at + len);
-    src.connect(g);
-    g.connect(ac.destination);
-    src.start(at, from, len + 0.02);
-  } catch {}
 }
 
 // ---------- listen ----------

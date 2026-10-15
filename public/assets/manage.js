@@ -1,6 +1,7 @@
 import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { friendUrl, recipientUrl, qrSvg, shareRow, recipientCard, printQrCard } from './share.js';
+import { me } from './auth.js';
 
 addStars($('#app'), 16, 30);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
@@ -9,6 +10,13 @@ $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 const slug = slugFromPath();
 const key = new URLSearchParams(location.search).get('k') || '';
 let scene;
+
+// Logged in: "back" goes to the account's list of gifts.
+me().then((u) => {
+  if (!u) return;
+  $('.backbtn').href = '/account';
+  $('.backbtn').setAttribute('aria-label', 'Back to your gifts');
+});
 
 async function load() {
   let data;
@@ -79,7 +87,7 @@ $('#deleteGift').addEventListener('click', async () => {
   try {
     await api('/api/manage', { method: 'POST', json: { slug, key, action: 'delete-gift' } });
     try { localStorage.setItem('vg-mine', JSON.stringify(JSON.parse(localStorage.getItem('vg-mine') || '[]').filter((g) => g.slug !== slug))); } catch {}
-    location.href = '/';
+    location.href = (await me()) ? '/account' : '/';
   } catch (e) {
     toast(e.message);
   }

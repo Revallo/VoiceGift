@@ -5,6 +5,7 @@
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { loadGift, createMessage, findMessage, updateMessage, deleteMessage, wavDuration, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
+import { sessionUserId } from '../lib/accounts.js';
 
 async function authorized(body) {
   if (!isSlug(body.slug)) throw new HttpError(404, 'Gift not found');
@@ -34,8 +35,11 @@ export default route({
       asr = { text: '', words: [] }; // never lose the recording because ASR failed
     }
 
+    // Friends never need an account, but one who is logged in (an organizer too, say) is linked: we know who spoke.
+    const userId = await sessionUserId(req);
     const msg = await createMessage(gift.slug, {
       sender: name,
+      userId: userId || undefined,
       durationSec: +durationSec.toFixed(2),
       asrProvider,
       asrText: asr.text,

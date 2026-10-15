@@ -1,5 +1,6 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
-// (create → decorate → friends record → dashboard → 12 demo voices → recipient link → reveal → finale → keepsake, plus desktop).
+// (create → decorate → sign up → friends record → dashboard → 12 demo voices → recipient link → reveal → finale → keepsake,
+// then log in / account page / log out, plus desktop).
 // One-time setup:  npm i --no-save playwright && npx playwright install chromium
 // Run:             npm run dev   (in another terminal)
 //                  BASE=http://localhost:3000 node tests/e2e.mjs            (all occasions)
@@ -15,15 +16,18 @@ const BASE = process.env.BASE || 'http://localhost:3000';
 const OUT = fileURLToPath(new URL('./screenshots/', import.meta.url));
 fs.mkdirSync(OUT, { recursive: true });
 const errors = [];
+const RUN = Date.now().toString(36); // a new organizer account per run
+const PASSWORD = 'candles at midnight';
+const emailFor = (occasion) => `sari.${occasion}.${RUN}@example.com`;
 
 const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
 const phone = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, permissions: ['microphone'] };
 
-async function page(ctxOpts = phone) {
+async function page(ctxOpts = phone, expected) { // expected: a regex for console errors the test causes on purpose
   const ctx = await browser.newContext(ctxOpts);
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-  p.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g|Failed to load resource: net::ERR/.test(m.text())) errors.push('console: ' + m.text()); });
+  p.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g|Failed to load resource: net::ERR/.test(m.text()) && !expected?.test(m.text())) errors.push('console: ' + m.text()); });
   p.on('dialog', (d) => d.accept());
   return p;
 }
@@ -91,6 +95,14 @@ async function runGift(occasion, c) {
   await p.waitForTimeout(300);
   await shot(p, P('02-decorate'));
   await p.click('#createBtn');
+  // logged out: a new gift needs an account. Sign up right there; then the gift is created.
+  await p.waitForSelector('[data-screen="account"]:not([hidden])');
+  if ((await p.inputValue('#acName')) !== 'Sari') errors.push(`${occasion}: the account form didn't take the organizer's name`);
+  await p.fill('#acEmail', emailFor(occasion));
+  await p.fill('#acPass', PASSWORD);
+  await p.waitForTimeout(400);
+  await shot(p, P('02b-account'));
+  await p.click('#accountBox button[type="submit"]');
   await p.waitForSelector('[data-screen="share"]:not([hidden])');
   await p.waitForTimeout(400);
   await shot(p, P('03-share'), true);
@@ -211,9 +223,61 @@ async function runGift(occasion, c) {
   return recipientLink;
 }
 
+// Accounts: no gift without one; the organizer logs in on another phone, finds the gift, is recognized on a
+// friends' page (without being asked to sign up), logs out; an email can't sign up twice.
+async function accountFlow(occasion, recipientLink) {
+  const slug = new URL(recipientLink).pathname.split('/')[2];
+  const email = emailFor(occasion);
+  const st = (await fetch(`${BASE}/api/gifts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipient: 'X', organizer: 'Y' }) })).status;
+  if (st !== 401) errors.push(`creating a gift without an account: ${st}`);
+
+  const a = await page(phone, /status of (401|409)/); // the wrong password and the taken email
+  await a.goto(`${BASE}/`);
+  await a.click('#account:not([hidden])'); // "Log in" in the header
+  await a.waitForSelector('[data-screen="auth"]:not([hidden])');
+  await a.fill('#acEmail', email);
+  await a.fill('#acPass', 'not the password');
+  await a.click('#authBox button[type="submit"]');
+  await a.waitForSelector('#authBox .err:not([hidden])');
+  await a.waitForTimeout(400);
+  await shot(a, 'account-01-login-wrong');
+  await a.fill('#acPass', PASSWORD);
+  await a.click('#authBox button[type="submit"]');
+  await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
+  if (new URL(a.url()).pathname !== '/account') errors.push('after logging in the address is ' + a.url());
+  await a.waitForTimeout(400);
+  await shot(a, 'account-02-me', true);
+
+  await a.goto(`${BASE}/g/${slug}`);
+  await a.waitForSelector('#signedIn:not([hidden])');
+  if ((await a.inputValue('#name')) !== 'Sari') errors.push(`friends' page name for a logged-in organizer: ${await a.inputValue('#name')}`);
+  await a.waitForTimeout(400);
+  await shot(a, 'account-03-friend-page');
+  await a.goto(`${BASE}/`);
+  await a.waitForSelector('a.acct'); // their initial instead of "Log in"
+  await a.waitForTimeout(400);
+  await shot(a, 'account-04-landing');
+  await a.click('a.acct');
+  await a.waitForSelector('[data-screen="me"]:not([hidden])');
+  await a.click('#logout');
+  await a.waitForSelector('[data-screen="auth"]:not([hidden])');
+  if (new URL(a.url()).pathname !== '/login') errors.push('after logging out the address is ' + a.url());
+
+  await a.goto(`${BASE}/signup`);
+  await a.fill('#acName', 'Someone else');
+  await a.fill('#acEmail', email);
+  await a.fill('#acPass', 'another password');
+  await a.click('#authBox button[type="submit"]');
+  await a.waitForSelector('#authBox .err:not([hidden])');
+  if (!/already an account/.test(await a.textContent('#authBox .err'))) errors.push('signing up twice: ' + (await a.textContent('#authBox .err')));
+  await shot(a, 'account-05-signup-taken');
+  await a.context().close();
+}
+
 const only = process.argv[2];
 const slugs = {};
 for (const [occasion, c] of Object.entries(CASES)) if (!only || only === occasion) slugs[occasion] = await runGift(occasion, c);
+await accountFlow(...Object.entries(slugs)[0]);
 
 // landing + desktop
 const l = await page();

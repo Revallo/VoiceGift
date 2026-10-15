@@ -27,7 +27,7 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - Live: **https://voicegift-one.vercel.app** (production domain — share this one, not the
   per-deployment URLs, which require a Vercel login).
 - Vercel Blob store `voicegift` (Private) is connected; `BLOB_STORE_ID` is set.
-- Not set yet: `ADMIN_KEY` (export), `ASR_URL`/`ASR_API_KEY` (ASR is still the mock).
+- Not set yet: `ADMIN_KEY` (export + account list), `ASR_URL`/`ASR_API_KEY` (ASR is still the mock).
 
 ## How we work
 - Local: `npm run dev` → http://localhost:3000 (Windows, PowerShell, VS Code). Keep that terminal
@@ -47,7 +47,12 @@ Claude (claude.ai), so a new session can continue without re-asking.
   opens when the organizer sends the recipient their link (e.g. at 00:00). That link carries its own key
   (`/r/<slug>?k=…`) so friends, who know the slug, can't listen early. It's only on the dashboard.
 - The dashboard is only reachable with the secret key in its link (`/m/<slug>?k=…`), given to the
-  creator at step 3 and remembered under "Your gifts" on the creator's browser.
+  creator at step 3 and listed on their account page (`/account`, any phone).
+- Decision (2026-10-09): **accounts** (email + password), only for organizers, so we know who is who. Making a
+  gift needs one: step 2's "Create the gift" asks (sign up or log in) when logged out. Friends and the recipient
+  never sign up; a friend who happens to be logged in gets `userId` on their message. Gifts a browser made
+  before accounts join the account when it logs in. Team list: `/api/users?key=ADMIN_KEY`.
+  Not built yet: password reset / email verification (needs an email service).
 - Consent wording is demo-only for now ("I allow my voice to be saved for this gift", `consentVersion`
   `demo-2026-10`). It doesn't mention ASR training: change it (and the version) before collecting real data.
 - For the manager demo: dashboard → "Add 12 demo voices" (TTS, marked `demo`, not exported), then "Preview their page".

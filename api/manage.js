@@ -7,6 +7,7 @@ import path from 'node:path';
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
+import { forgetGift } from '../lib/accounts.js';
 
 const DEMO_DIR = path.join(process.cwd(), 'public', 'demo');
 
@@ -61,8 +62,10 @@ export default route({
     else if (b.action === 'delete') {
       const { msg, path } = await findMessage(gift.slug, String(b.id || ''));
       await deleteMessage(path, msg);
-    } else if (b.action === 'delete-gift') await deleteGift(gift.slug);
-    else throw new HttpError(400, 'Unknown action');
+    } else if (b.action === 'delete-gift') {
+      await deleteGift(gift.slug);
+      if (gift.ownerId) await forgetGift(gift.ownerId, gift.slug); // off the organizer's account page too
+    } else throw new HttpError(400, 'Unknown action');
     send(res, 200, { ok: true });
   }
 });

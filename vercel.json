@@ -18,6 +18,18 @@
     {
       "source": "/m/:slug",
       "destination": "/manage.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/account",
+      "destination": "/account.html"
     }
   ],
   "functions": {

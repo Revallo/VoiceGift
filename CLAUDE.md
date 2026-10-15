@@ -25,8 +25,9 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | landing |
-| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → friends' link + QR + dashboard |
+| `/` | `index.html` | landing ("Log in", or the account's initial, in the header) |
+| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → (account, if logged out) → friends' link + QR + dashboard |
+| `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | organizer dashboard (only with the key): who recorded (not content), recipient link, demo voices |
 | `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
@@ -54,17 +55,34 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 `scripts/demo-voices.py`). Dashboard → "Add 12 demo voices" (`POST /api/manage` action `add-demo`, needs the
 manage key) stores them like real messages with `demo: true`; `/api/export` leaves them out.
 
+## Accounts
+- Email + password, **only for organizers**: creating a gift needs one (`POST /api/gifts` → 401 without a session),
+  so we know who made each gift and `/account` lists it on any phone. Friends and the recipient never sign up
+  ("No sign-up" on the friends' page stays true).
+- `/new` asks at "Create the gift" (after decorating), in place: sign up or log in, then the gift is created.
+  Browser: `assets/auth.js` (`me()`, the form, the "Your gifts" row). Server: `lib/accounts.js`.
+- A friend who happens to be logged in is linked: the message gets `userId` (also in the export) and the page
+  says "Logged in as …". The name on the message is still the one they type.
+- Passwords: scrypt (`node:crypto`, no dependency). Sessions: a random token in an HttpOnly, SameSite=Lax cookie
+  (`vg_session`, 30 days); storage keeps only its sha256. 10 wrong passwords in a row → 15 minutes' wait.
+- Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
+  (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
+- Not built: password reset and email verification (they need an email service).
+
 ## API (`api/*.js`)
-- `POST /api/gifts` {recipient, organizer, occasion, cake{flavor,name,dots,stickers}} → {slug, manageKey, openKey}; `PATCH` same + {slug, key} → edit
+- `POST /api/gifts` {recipient, organizer, occasion, cake{flavor,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
+- `GET /api/account` → {user} or {user: null} (`?gifts=1`: + their gifts with keys); `POST` actions `signup`, `login`, `logout`, `claim`
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
 - `GET /api/reveal?slug&k=openKey` → messages **only with the recipient's key** (server-side rule)
 - `GET /api/audio?slug&id&k=openKey` (or `&token` for your own recording) → WAV with Range support (iOS)
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey / `add-demo`
-- `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent…
+- `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent… (+ `userId` if the speaker was logged in)
+- `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
 
-Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`.
+Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`;
+accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`.
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
@@ -76,7 +94,9 @@ timings). Set `ASR_URL` (+ `ASR_API_KEY`) to call the company API; adapt `fromPr
 - Never return message audio/text without the recipient's key (enforced in `api/`, not just the UI).
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
-- Consent checkbox on every recording; store `consentVersion`. No accounts, no phone numbers.
+- Consent checkbox on every recording; store `consentVersion`. Accounts only for organizers (email + password):
+  never make friends or the recipient sign up. No phone numbers.
+- Never send `passwordHash`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
 - Mobile first: test at 390×844, and desktop (the app is a centered 440 px column).
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 

@@ -1,6 +1,7 @@
 import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, copyText } from './common.js';
 import { theme, createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
+import { me } from './auth.js';
 
 addStars($('#app'), 18, 40);
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
@@ -36,6 +37,13 @@ async function load() {
   $('#countLine').textContent = t.countLine(count);
   try { $('#name').value = localStorage.getItem('vg-name') || ''; } catch {}
   showScreen('invite');
+  // No sign-up here. But a friend who is logged in (an organizer too, say) records as their account: say so.
+  me().then((u) => {
+    if (!u) return;
+    if (!$('#name').value) $('#name').value = u.name;
+    $('#signedIn').textContent = `Logged in as ${u.email}`;
+    $('#signedIn').hidden = false;
+  });
 }
 
 // ---------- invite → record ----------

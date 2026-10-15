@@ -21,6 +21,7 @@
     <div class="row">
       <a class="brand" href="/"><span class="logo" id="logo"></span>Voice Gift</a>
       <span class="proto">Prototype</span>
+      <a class="btn ghost sm" href="/login" id="account" hidden>Log in</a>
     </div>
     <div class="head">
       <h1 class="big">Collect voice messages for someone you love</h1>
@@ -43,13 +44,15 @@
     </div>
     <div id="mine" class="stack" hidden style="margin-top:12px">
       <h2>Your gifts</h2>
+      <p class="small muted" style="margin:-4px 0 0">Only on this phone. <a href="/login">Log in</a> to keep them in your account.</p>
       <div class="list" id="mineList"></div>
     </div>
   </section>
 </main>
 <script type="module">
-import { $, $$, h, api, icon, addStars, toast } from '/assets/common.js';
-import { theme, createScene, applyTheme } from '/assets/themes.js';
+import { $, $$, h, icon, addStars, initials } from '/assets/common.js';
+import { createScene, applyTheme } from '/assets/themes.js';
+import { me, giftItem } from '/assets/auth.js';
 
 $('#logo').innerHTML = icon.gift(17);
 addStars($('#app'), 26, 45);
@@ -77,34 +80,27 @@ function show(occasion) {
 $$('#occasions .chip').forEach((c) => c.addEventListener('click', () => show(c.dataset.v)));
 show('birthday');
 
-// Gifts this browser created (kept only on this device).
+// Gifts this browser created before accounts (kept only on this device). Logging in moves them into the account.
 function loadMine() {
   try { return JSON.parse(localStorage.getItem('vg-mine') || '[]'); } catch { return []; }
 }
 function showMine() {
   const mine = loadMine();
   $('#mine').hidden = !mine.length;
-  $('#mineList').textContent = '';
-  for (const g of mine.slice(-5).reverse()) {
-    $('#mineList').append(h('div', { class: 'item' },
-      h('a', { class: 'grow row', href: `/m/${g.slug}?k=${g.key}`, style: { color: '#fff', textDecoration: 'none' } },
-        h('div', { class: 'grow' }, h('b', {}, `${theme(g.occasion).emoji} For ${g.recipient}`), h('div', { class: 'small muted' }, theme(g.occasion).label)),
-        h('span', { class: 'small', style: { color: 'var(--gold)', fontWeight: '700' } }, 'Dashboard')),
-      h('button', { type: 'button', class: 'del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(), onclick: () => removeGift(g) })));
-  }
+  $('#mineList').replaceChildren(...mine.slice(-5).reverse().map((g) => giftItem(g, forget)));
 }
-// Deletes the gift on the server too (every message and recording), then forgets it here.
-async function removeGift(g) {
-  if (!confirm(`Delete the gift for ${g.recipient}, with every message and recording? This can't be undone.`)) return;
-  try {
-    await api('/api/manage', { method: 'POST', json: { slug: g.slug, key: g.key, action: 'delete-gift' } });
-  } catch (e) {
-    if (!/not found/i.test(e.message)) return toast(e.message); // already gone: just forget it
-  }
+// Deleted on the server (every message and recording): forget it here too.
+function forget(g) {
   try { localStorage.setItem('vg-mine', JSON.stringify(loadMine().filter((x) => x.slug !== g.slug))); } catch {}
   showMine();
 }
-showMine();
+
+// Logged in: their initial, which opens the account (their gifts are there). Logged out: "Log in".
+me().then((u) => {
+  if (u) return $('#account').replaceWith(h('a', { class: 'avatar acct', href: '/account', title: u.email, 'aria-label': 'Your account' }, initials(u.name)));
+  $('#account').hidden = false;
+  showMine();
+});
 </script>
 </body>
 </html>

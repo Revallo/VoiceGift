@@ -2,6 +2,7 @@ import { $, $$, h, api, icon, showScreen, copyText, addStars, toast } from './co
 import { BRUSHES } from './stage.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { friendUrl, qrSvg, shareRow, printQrCard } from './share.js';
+import { me, forgetMe, authForm } from './auth.js';
 
 addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
@@ -35,6 +36,8 @@ function setOccasion(key) {
   buildDecorate();
 }
 $$('#occasions .chip').forEach((c) => c.addEventListener('click', () => { if (c.dataset.v !== state.occasion) setOccasion(c.dataset.v); }));
+// Logged in: "Your name" starts as the account's name.
+me().then((u) => { if (u && !$('#organizer').value.trim()) $('#organizer').value = u.name; });
 
 $('#whoForm').addEventListener('submit', (e) => {
   e.preventDefault();
@@ -190,6 +193,7 @@ $('#clearDraw').addEventListener('click', () => scene.setDots([]));
 
 // Create the gift, or save the changes when the organizer came back from step 3.
 $('#createBtn').addEventListener('click', async () => {
+  if (!state.created && !(await me())) return askAccount(); // a new gift needs an account
   const btn = $('#createBtn');
   const err = $('#createError');
   const label = state.created ? 'Save changes' : 'Create the gift';
@@ -207,15 +211,11 @@ $('#createBtn').addEventListener('click', async () => {
       await api('/api/gifts', { method: 'PATCH', json: { ...body, slug: state.created.slug, key: state.created.manageKey } });
       toast('Saved');
     } else {
-      state.created = await api('/api/gifts', { method: 'POST', json: body });
-      try {
-        const mine = JSON.parse(localStorage.getItem('vg-mine') || '[]');
-        mine.push({ slug: state.created.slug, key: state.created.manageKey, recipient: body.recipient, occasion: body.occasion });
-        localStorage.setItem('vg-mine', JSON.stringify(mine.slice(-20)));
-      } catch {}
+      state.created = await api('/api/gifts', { method: 'POST', json: body }); // listed on the account page
     }
     showShare({ ...body, slug: state.created.slug }, state.created.manageKey);
   } catch (e) {
+    if (e.status === 401) { forgetMe(); return askAccount(); } // logged out in another tab
     err.textContent = e.message;
     err.hidden = false;
   } finally {
@@ -223,6 +223,25 @@ $('#createBtn').addEventListener('click', async () => {
     btn.textContent = state.created ? 'Save changes' : label;
   }
 });
+
+// ---------- account (only when logged out) ----------
+// Create an account or log in, then back to step 2, which creates the gift. So step 3's back still goes to step 2.
+const ACCOUNT_LEAD = {
+  signup: 'Create a free account to keep it. You’ll find its dashboard on any phone you log in on.',
+  login: 'Log in and it’s saved to your account.'
+};
+function askAccount() {
+  $('#accountLead').textContent = ACCOUNT_LEAD.signup;
+  $('#accountBox').replaceChildren(authForm({
+    name: $('#organizer').value.trim(),
+    onMode: (mode) => ($('#accountLead').textContent = ACCOUNT_LEAD[mode]),
+    onDone: () => {
+      window.addEventListener('popstate', () => $('#createBtn').click(), { once: true });
+      history.back();
+    }
+  }));
+  go('account');
+}
 
 // ---------- step 3 ----------
 function showShare(gift, manageKey) {

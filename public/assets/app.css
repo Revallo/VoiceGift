@@ -284,6 +284,13 @@ body[data-theme="wedding"] .stage .glow { background: radial-gradient(circle, rg
 .list .del { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 138, 138, 0.14); color: #FF8A8A; cursor: pointer; }
 .list .del:hover { background: rgba(255, 138, 138, 0.28); }
 
+/* accounts */
+.err { color: #FF8A8D; margin: 0; }
+.linkbtn { padding: 0; border: 0; background: none; color: var(--gold); font-family: inherit; font-weight: 700; cursor: pointer; }
+.linkbtn:not(.small) { font-size: inherit; }
+a.avatar.acct { background: var(--gold); text-decoration: none; }
+.wrap { overflow-wrap: anywhere; } /* long emails */
+
 /* printable QR card (for the guestbook table) */
 .printcard { display: none; }
 @media print {

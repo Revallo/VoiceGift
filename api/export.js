@@ -15,6 +15,7 @@ export default route({
         lines.push(JSON.stringify({
           gift: slug,
           id: m.id,
+          userId: m.userId, // the speaker's account, when they recorded while logged in (left out otherwise)
           audio: m.audioPath,
           durationSec: m.durationSec,
           asrProvider: m.asrProvider,

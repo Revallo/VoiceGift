@@ -11,7 +11,7 @@ const openKey = new URLSearchParams(location.search).get('k') || '';
 const NOTES = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 const el = { eyebrow: $('#eyebrow'), title: $('#title'), sub: $('#sub'), panel: $('#panel'), bottom: $('#bottom') };
 
-let gift, t, first = '', messages = [], scene, ac;
+let gift, t, first = '', messages = [], scene, ac, preview = false;
 let phase = 'loading';
 const buffers = [];
 const bufferJobs = [];
@@ -51,6 +51,7 @@ async function load() {
     return showScreen('error');
   }
   gift = data.gift;
+  preview = data.preview;
   t = applyTheme(gift.occasion);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
@@ -64,7 +65,8 @@ async function load() {
 function showEmpty() {
   phase = 'empty';
   scene.setCandles(0, { spots: 12 });
-  header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
+  if (preview) header('Preview · only you see this', 'Their voices are for ' + first, `Only ${first} can hear what your friends recorded. To see how it works, add demo voices on your dashboard.`);
+  else header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
   setPanel(null);
   setBottom(btn('Check again', { ghost: true, onclick: load }));
 }
@@ -75,7 +77,7 @@ function showReady() {
   scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), onTap: (i) => phase === 'cake' && play(i, false) });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
-  header(t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
+  header(preview ? 'Preview · only you see this' : t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
   const pile = h('div', { class: 'facepile' });
   for (let i = 0; i < Math.min(messages.length, 12); i++) pile.append(h('i', {}, '?'));
   setPanel(h('div', { class: 'row' }, pile));
@@ -125,6 +127,7 @@ function startLighting() {
   const dots = messages.map(() => h('i', { style: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--face)', transition: 'background .3s' } }));
   const count = h('p', { class: 'small soft center', style: { margin: '0' } }, t.progress(0, n));
   setBottom(h('div', { class: 'row', style: { justifyContent: 'center', flexWrap: 'wrap', gap: '7px' } }, n <= 40 ? dots : []), count);
+  // Each item lights with a chime and the friend's name. No voices yet: they play when the recipient taps an item.
   let at = 300;
   messages.forEach((m, i) => {
     at += i === 0 ? 300 : Math.max(170, 700 * Math.pow(0.86, i));
@@ -134,9 +137,8 @@ function startLighting() {
       count.textContent = t.progress(i + 1, n);
       setPanel(h('div', { class: 'caller' },
         h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
-        h('div', {}, h('div', { class: 'small soft', style: { fontWeight: '600' } }, m.sender), h('div', { class: 'shout' }, `“${first}!”`))));
+        h('div', { class: 'shout' }, m.sender)));
       tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.05);
-      playSnippet(i);
     }, at);
   });
   later(() => {
@@ -144,24 +146,6 @@ function startLighting() {
     header(eyebrow, t.greeting(first), t.gaveLine(n));
   }, at + 700);
   later(enterScene, at + 3200);
-}
-
-// The first moment of each recording, as its item lights (friends were asked to start with the name).
-function playSnippet(i) {
-  const b = buffers[i];
-  if (!b) return;
-  try {
-    const src = ac.createBufferSource();
-    const g = ac.createGain();
-    src.buffer = b;
-    const at = ac.currentTime;
-    g.gain.setValueAtTime(0.9, at);
-    g.gain.setValueAtTime(0.9, at + 1.0);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + 1.4);
-    src.connect(g);
-    g.connect(ac.destination);
-    src.start(at, 0, 1.45);
-  } catch {}
 }
 
 // ---------- listen ----------
@@ -414,7 +398,7 @@ function showKeepsake() {
   header(t.eyebrow(first), t.greeting(first), t.keepSub(n));
   const card = h('div', { class: 'panel row', style: { borderStyle: 'dashed', borderColor: 'rgba(246,185,59,0.5)' } },
     h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.gift(18) }),
-    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, 'Kept here. Open this link again any time.')));
+    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, preview ? 'Your preview, with demo voices only. It still opens fresh for them.' : 'Kept here. Open this link again any time.')));
   setPanel(card);
   const nameChip = (m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender);
   const names = h('div', { class: 'names' }, messages.slice(0, NAMES_SHOWN).map(nameChip));

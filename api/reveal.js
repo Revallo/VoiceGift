@@ -1,6 +1,8 @@
-// GET /api/reveal?slug=…&k=…  → the messages, only with the recipient's key (the link the organizer sends)
+// GET /api/reveal?slug=…&k=…  → the messages, only with the recipient's key (the link the organizer sends).
+// The organizer's own account gets the demo voices only (their preview): real voices are for the recipient.
 import { route, send, query, HttpError } from '../lib/http.js';
 import { loadGift, publicGift, canOpen, loadMessages } from '../lib/gifts.js';
+import { sessionUserId } from '../lib/accounts.js';
 import { evenWords } from '../lib/asr.js';
 
 export default route({
@@ -8,8 +10,10 @@ export default route({
     const { slug, k } = query(req);
     const gift = await loadGift(slug);
     if (!canOpen(gift, k)) throw new HttpError(403, `This link isn’t complete. Ask ${gift.organizer} for the link to the gift.`);
+    const preview = Boolean(gift.ownerId) && gift.ownerId === await sessionUserId(req);
     const messages = (await loadMessages(gift.slug))
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
+      .filter((m) => !preview || m.demo)
       .map((m) => {
         const text = m.finalText || m.asrText;
         return {
@@ -20,6 +24,6 @@ export default route({
           durationSec: m.durationSec
         };
       });
-    send(res, 200, { gift: publicGift(gift), messages });
+    send(res, 200, { gift: publicGift(gift), messages, preview });
   }
 });

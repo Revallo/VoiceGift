@@ -27,7 +27,8 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - Live: **https://voicegift-one.vercel.app** (production domain — share this one, not the
   per-deployment URLs, which require a Vercel login).
 - Vercel Blob store `voicegift` (Private) is connected; `BLOB_STORE_ID` is set.
-- Not set yet: `ADMIN_KEY` (export + account list), `ASR_URL`/`ASR_API_KEY` (ASR is still the mock).
+- Not set yet: `ADMIN_KEY` (export + account list), `ASR_URL`/`ASR_API_KEY` (company ASR). Interim ASR: set `GROQ_API_KEY`
+  (Groq Whisper large-v3); without it ASR is the mock. Each message stores `asrProvider`.
 
 ## How we work
 - Local: `npm run dev` → http://localhost:3000 (Windows, PowerShell, VS Code). Keep that terminal
@@ -53,6 +54,13 @@ Claude (claude.ai), so a new session can continue without re-asking.
   never sign up; a friend who happens to be logged in gets `userId` on their message. Gifts a browser made
   before accounts join the account when it logs in. Team list: `/api/users?key=ADMIN_KEY`.
   Not built yet: password reset / email verification (needs an email service).
+- Decision (2026-10-14, kept when `main` and `accounts` were merged 2026-11-05): the opening plays **no voices**,
+  each item lights with a chime and the friend's name. Voices play when the recipient taps an item or "Play all".
+  Only the recipient hears friends' voices: the organizer's preview and dashboard play demo voices only.
+- Merge 2026-11-05: `main`'s "accounts for everyone" (name + email, recipient claims the link) clashed with this
+  branch's organizer-only email + password; the organizer-only system was kept for now. Not settled with the manager.
+  Limit: the recipient's link still works for anyone who has it, including a logged-out organizer. Accounts and
+  claims made under the old system don't carry over.
 - Consent wording is demo-only for now ("I allow my voice to be saved for this gift", `consentVersion`
   `demo-2026-10`). It doesn't mention ASR training: change it (and the version) before collecting real data.
 - For the manager demo: dashboard → "Add 12 demo voices" (TTS, marked `demo`, not exported), then "Preview their page".

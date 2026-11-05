@@ -2,6 +2,7 @@
 // Streams one recording: to the recipient (k = the recipient's key) or to the person who recorded it (token).
 import { route, send, query, HttpError } from '../lib/http.js';
 import { loadGift, canOpen, findMessage, loadAudio } from '../lib/gifts.js';
+import { sessionUserId } from '../lib/accounts.js';
 
 export default route({
   async GET(req, res) {
@@ -9,8 +10,10 @@ export default route({
     const gift = await loadGift(q.slug);
     const { msg } = await findMessage(gift.slug, String(q.id || ''));
     const own = q.token && q.token === msg.token;
-    const isOrganizer = q.k && q.k === gift.manageKey;
-    if (!own && !isOrganizer && !canOpen(gift, q.k)) throw new HttpError(403, 'Not allowed');
+    // The organizer (dashboard key or their account) may only hear demo voices, even with the recipient's link.
+    const isOrganizer = (q.k && q.k === gift.manageKey) || (gift.ownerId && gift.ownerId === await sessionUserId(req));
+    const allowed = isOrganizer ? msg.demo : canOpen(gift, q.k);
+    if (!own && !allowed) throw new HttpError(403, 'Not allowed');
     const buf = await loadAudio(msg);
     if (!buf) throw new HttpError(404, 'Recording not found');
 

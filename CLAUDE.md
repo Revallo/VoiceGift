@@ -75,8 +75,8 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug&k=openKey` → messages **only with the recipient's key** (server-side rule)
-- `GET /api/audio?slug&id&k=openKey` (or `&token` for your own recording) → WAV with Range support (iOS)
+- `GET /api/reveal?slug&k=openKey` → messages **only with the recipient's key** (server-side rule); the organizer's own account gets demo voices only (`preview: true`)
+- `GET /api/audio?slug&id&k=openKey` (or `&token` for your own recording) → WAV with Range support (iOS); the organizer (manage key or account): demo voices only
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey / `add-demo`
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent… (+ `userId` if the speaker was logged in)
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
@@ -86,8 +86,9 @@ accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `emails/<sha25
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
-`lib/asr.js` is the only seam. Mock by default (returns the occasion's greeting, e.g. "Selamat ulang tahun, <name>!", with even word
-timings). Set `ASR_URL` (+ `ASR_API_KEY`) to call the company API; adapt `fromProvider()` to its response shape.
+`lib/asr.js` is the only seam. Mock by default (a plausible Indonesian greeting with typical ASR mistakes, with even word
+timings). Set `GROQ_API_KEY` for Groq Whisper large-v3 (interim, free tier), or `ASR_URL` (+ `ASR_API_KEY`) for the
+company API (wins over Groq; adapt `fromProvider()` to its response shape). Locally, keys go in `.env`.
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.

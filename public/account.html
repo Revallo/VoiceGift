@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1A0C19">
+<meta name="theme-color" content="#0F0F0F">
 <meta name="robots" content="noindex">
 <title>Your account · Voice Gift</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -18,29 +18,185 @@
 
   <!-- /signup and /login -->
   <section data-screen="auth" hidden>
-    <div class="topbar"><a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a><a class="brand" href="/" style="font-size:15px"><span class="logo" data-logo style="width:26px;height:26px"></span>Voice Gift</a></div>
-    <div class="head">
-      <h1 id="authTitle"></h1>
-      <p class="lead" id="authLead"></p>
+    <div class="nav-header">
+      <a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a>
+      <a class="brand" href="/"><span class="logo" data-logo></span>voice gift</a>
     </div>
-    <div id="authBox"></div>
+    <div class="web-col" style="max-width:440px;width:100%;margin:0 auto">
+      <div class="hero-card" style="padding:18px 20px;gap:12px">
+        <div class="row" style="justify-content:space-between">
+          <div class="stack" style="gap:2px">
+            <span style="font-size:.7rem;color:rgba(255,255,255,0.72);text-transform:lowercase">organizer studio · cloud sync</span>
+            <h1 id="authTitle" style="font-size:1.35rem;margin:0;color:#fff"></h1>
+          </div>
+          <span class="profile-badge" style="background:rgba(15,15,15,0.32);color:#fff;border-color:rgba(255,255,255,0.2)">16 khz · asr</span>
+        </div>
+        <p class="small" id="authLead" style="margin:0;color:rgba(255,255,255,0.82)"></p>
+      </div>
+      <div id="authBox"></div>
+    </div>
+
+    <nav class="app-tabbar" aria-label="Primary navigation">
+      <a class="tab-item" href="/"><span data-icon="home"></span><span>home</span></a>
+      <a class="tab-item" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
+      <a class="tab-item" href="/m/dimas-igdw?k=ffywhsimsfdhs3y"><span data-icon="sliders"></span><span>asr studio</span></a>
+      <a class="tab-item active" href="/account"><span data-icon="user"></span><span>profile</span></a>
+    </nav>
   </section>
 
   <!-- /account -->
   <section data-screen="me" hidden>
-    <div class="topbar"><a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a><a class="brand" href="/" style="font-size:15px"><span class="logo" data-logo style="width:26px;height:26px"></span>Voice Gift</a></div>
-    <div class="head">
-      <div class="eyebrow">Your account</div>
-      <h1 id="hello"></h1>
-      <p class="lead wrap" id="meEmail"></p>
+    <div class="web-grid">
+      <div class="web-col">
+        <!-- Purrweb Emerald Profile Hero Card -->
+        <div class="hero-card">
+          <div class="hero-top">
+            <div class="hero-greeting" style="flex:1;min-width:0">
+              <a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back" style="width:36px;height:36px;border-radius:12px;background:rgba(15,15,15,0.28);border:0;color:#fff;flex-shrink:0"></a>
+              <span class="hero-avatar-sq" id="acctAvatar" style="width:40px;height:40px;border-radius:13px;background:#0F0F0F;color:#7CE8D8;display:grid;place-items:center;font-weight:700;font-size:15px;flex-shrink:0">S</span>
+              <div class="hero-greeting-text" style="min-width:0">
+                <small id="meEmail" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></small>
+                <b id="hello" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></b>
+              </div>
+            </div>
+            <span class="profile-badge" style="background:rgba(15,15,15,0.32);color:#fff;border-color:rgba(255,255,255,0.22);flex-shrink:0">verified</span>
+          </div>
+
+          <div class="hero-balance">
+            <div class="hero-balance-label">
+              <span id="meBioLabel">total asr corpus</span>
+              <span>16 khz · verified</span>
+            </div>
+            <div class="hero-balance-val" id="acctHeroVal">0 voices</div>
+          </div>
+
+          <div class="dual-pills">
+            <button type="button" class="pill-btn dark" id="scrollSettingsBtn">
+              <span data-icon="settings"></span>
+              <span>settings</span>
+            </button>
+            <a class="pill-btn light" href="/new">
+              <span data-icon="plus"></span>
+              <span>create a gift</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="stack" style="gap:10px">
+          <div class="sec-bar">
+            <h2>your gifts</h2>
+            <a href="/new">+ new gift</a>
+          </div>
+          <div class="list" id="gifts"></div>
+        </div>
+
+        <div class="stack" style="gap:10px">
+          <div class="sec-bar">
+            <h2>asr corpus metrics</h2>
+            <a href="/api/account?export=1" download="voice-gift-asr-corpus.jsonl">export .jsonl ›</a>
+          </div>
+          <div class="stat-grid" id="acctStats"></div>
+          <a class="btn ghost small" href="/api/account?export=1" download="voice-gift-asr-corpus.jsonl" style="justify-content:space-between;padding:12px 16px">
+            <span>download verified asr training corpus (.jsonl)</span>
+            <span style="color:var(--emerald-light);font-weight:700">16 khz + word alignments ›</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Column: Full Profile & Settings Studio -->
+      <div class="web-col" id="settingsPanel">
+        <div class="stack" style="gap:10px">
+          <div class="sec-bar">
+            <h2>profile settings</h2>
+            <span class="profile-badge">account</span>
+          </div>
+          <form class="card stack" id="profileForm" style="gap:12px">
+            <div class="field">
+              <label for="profNameInput">display name</label>
+              <input class="input" id="profNameInput" name="name" maxlength="60" required placeholder="Your name">
+            </div>
+            <div class="field">
+              <label for="profBioInput">role / bio</label>
+              <input class="input" id="profBioInput" name="bio" maxlength="120" placeholder="e.g. Voice Gift Organizer · Jakarta">
+            </div>
+            <div class="field">
+              <label>verified email</label>
+              <input class="input" id="profEmailReadonly" disabled style="opacity:0.55;cursor:not-allowed">
+            </div>
+            <button type="submit" class="btn small" id="saveProfileBtn">save profile changes</button>
+          </form>
+        </div>
+
+        <div class="stack" style="gap:10px">
+          <div class="sec-bar">
+            <h2>asr &amp; privacy preferences</h2>
+            <span style="font-size:.74rem;color:var(--muted)">auto-saved</span>
+          </div>
+          <div class="settings-group">
+            <div class="toggle-row" style="cursor:default">
+              <div class="t-info">
+                <b>default speech language</b>
+                <span>primary language for automatic transcription</span>
+              </div>
+              <select class="input" id="prefLang" style="width:auto;min-width:154px;min-height:40px;padding:0 12px;border-radius:12px;font-size:13px;background:#0F0F0F">
+                <option value="id-ID">id-ID · Indonesia</option>
+                <option value="en-US">en-US · English</option>
+              </select>
+            </div>
+            <label class="toggle-row">
+              <div class="t-info">
+                <b>highlight low-confidence words</b>
+                <span>flag uncertain asr words in amber for 1-tap repair</span>
+              </div>
+              <span class="switch">
+                <input type="checkbox" id="prefHighlight" checked>
+                <i></i>
+              </span>
+            </label>
+            <label class="toggle-row">
+              <div class="t-info">
+                <b>include verified captions in asr corpus</b>
+                <span>pair 16 khz wav segments with human-corrected text</span>
+              </div>
+              <span class="switch">
+                <input type="checkbox" id="prefCorpus" checked>
+                <i></i>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="stack" style="gap:10px">
+          <div class="sec-bar">
+            <h2>security &amp; session</h2>
+            <span style="font-size:.74rem;color:var(--emerald-light)">scrypt N=32768</span>
+          </div>
+          <form class="card stack" id="passForm" style="gap:12px">
+            <div class="row" style="gap:10px;flex-wrap:wrap">
+              <div class="field" style="flex:1;min-width:140px">
+                <label for="curPassInput">current password</label>
+                <input class="input" id="curPassInput" type="password" autocomplete="current-password" placeholder="Current password" required>
+              </div>
+              <div class="field" style="flex:1;min-width:140px">
+                <label for="newPassInput">new password</label>
+                <input class="input" id="newPassInput" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
+              </div>
+            </div>
+            <div class="row" style="justify-content:space-between;gap:10px">
+              <button type="submit" class="btn ghost small" style="flex:1">update password</button>
+              <button type="button" class="btn ghost small" id="logout" style="flex:1;color:var(--coral);border-color:rgba(242,109,91,0.3)">log out</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-    <div class="stack">
-      <h2>Your gifts</h2>
-      <div class="list" id="gifts"></div>
-    </div>
-    <a class="btn" href="/new">Create a gift</a>
-    <div class="spacer"></div>
-    <button type="button" class="btn ghost" id="logout">Log out</button>
+
+    <nav class="app-tabbar" aria-label="Primary navigation">
+      <a class="tab-item" href="/"><span data-icon="home"></span><span>home</span></a>
+      <a class="tab-item" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
+      <a class="tab-item" href="/m/dimas-igdw?k=ffywhsimsfdhs3y"><span data-icon="sliders"></span><span>asr studio</span></a>
+      <a class="tab-item active" href="/account"><span data-icon="user"></span><span>profile</span></a>
+    </nav>
   </section>
 </main>
 <script type="module" src="/assets/account.js"></script>

@@ -4,6 +4,7 @@ import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, i
 import { createScene, applyTheme } from './themes.js';
 
 addStars($('#app'), 26, 55);
+if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
 
 const slug = slugFromPath();
 const openKey = new URLSearchParams(location.search).get('k') || '';
@@ -339,7 +340,7 @@ function startBlow() {
     if (blowing) progress = Math.min(1, progress + dt / 1.4);
     scene.setBend(blowing ? 1 : 0.15);
     const deg = Math.round(progress * 360);
-    ring.style.background = `conic-gradient(#FF5A5F ${deg}deg, rgba(255,255,255,0.14) ${deg}deg)`;
+    ring.style.background = `conic-gradient(var(--coral) ${deg}deg, var(--line) ${deg}deg)`;
     const nowOut = th.filter((x) => progress >= x).length;
     if (nowOut > out) {
       th.forEach((x, ci) => { if (progress >= x) scene.finaleOut(ci); });
@@ -422,13 +423,145 @@ function showKeepsake() {
       `+${n - NAMES_SHOWN} more ${t.people(2).split(' ')[1]}`);
     names.append(more);
   }
-  const save = btn('Save video', { icon: icon.download(16), onclick: () => toast('Coming soon: one video with every voice and caption.') });
+  const save = btn('Save video', { icon: icon.download(16), onclick: () => exportKeepsakeVideo(save) });
   const share = btn('Share', { ghost: true, icon: icon.share(16), onclick: async () => {
     if (navigator.share) { try { await navigator.share({ title: 'My voice gift', url: location.href }); } catch {} }
     else copyText(location.href);
   } });
   const again = btn('Listen again', { ghost: true, icon: icon.redo(15), onclick: () => { scene.reset(); enterScene(); } });
   setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), again);
+}
+
+async function exportKeepsakeVideo(saveBtn) {
+  const cv = document.createElement('canvas');
+  cv.width = 720;
+  cv.height = 900;
+  const ctx = cv.getContext('2d');
+
+  const drawFrame = (activeIdx, wordText, progressRatio) => {
+    ctx.fillStyle = '#0F0F0F';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+
+    // Emerald Hero Card at top
+    ctx.fillStyle = '#266A61';
+    ctx.beginPath();
+    ctx.roundRect?.(40, 40, cv.width - 80, 140, 28) || ctx.rect(40, 40, cv.width - 80, 140);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = '600 15px -apple-system, sans-serif';
+    ctx.fillText(t.eyebrow(first).toLowerCase(), 72, 86);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 40px -apple-system, sans-serif';
+    ctx.fillText(t.greeting(first), 72, 138);
+
+    // Stage well preview card
+    ctx.fillStyle = '#1A1A1A';
+    ctx.beginPath();
+    ctx.roundRect?.(40, 204, cv.width - 80, 310, 24) || ctx.rect(40, 204, cv.width - 80, 310);
+    ctx.fill();
+
+    // Draw glowing voice orbs inside stage well
+    const total = Math.min(messages.length, 16);
+    for (let i = 0; i < total; i++) {
+      const angle = (i / total) * Math.PI * 2;
+      const cx = cv.width / 2 + Math.cos(angle) * 140;
+      const cy = 360 + Math.sin(angle) * 85;
+      ctx.fillStyle = colorFor(i);
+      ctx.beginPath();
+      ctx.arc(cx, cy, i === activeIdx ? 18 : 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Active speaker & caption box
+    const msg = messages[activeIdx] || messages[0];
+    if (msg) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '700 24px -apple-system, sans-serif';
+      ctx.fillText(msg.sender, 56, 575);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.font = '400 23px -apple-system, sans-serif';
+      const words = String(wordText || msg.text || '').split(/\s+/);
+      let line = '', y = 625;
+      for (const w of words) {
+        if ((line + w).length > 38) {
+          ctx.fillText(line.trim(), 56, y);
+          line = w + ' ';
+          y += 36;
+        } else line += w + ' ';
+      }
+      if (line.trim()) ctx.fillText(line.trim(), 56, y);
+    }
+
+    // Progress bar
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(56, 820, cv.width - 112, 6);
+    ctx.fillStyle = '#389B8E';
+    ctx.fillRect(56, 820, (cv.width - 112) * Math.min(1, Math.max(0, progressRatio)), 6);
+  };
+
+  if (typeof MediaRecorder === 'undefined' || !cv.captureStream || !ac) {
+    drawFrame(0, messages[0]?.text || '', 1);
+    const url = cv.toDataURL('image/png');
+    const a = h('a', { href: url, download: `voice-gift-${slug}.png` });
+    a.click();
+    toast('Saved keepsake card');
+    return;
+  }
+
+  saveBtn.disabled = true;
+  const span = saveBtn.querySelector('span');
+  if (span) span.textContent = 'Rendering…';
+  try {
+    const dest = ac.createMediaStreamDestination();
+    const vStream = cv.captureStream(24);
+    const combined = new MediaStream([...vStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+      ? 'video/webm;codecs=vp9,opus'
+      : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
+    const rec = new MediaRecorder(combined, mime ? { mimeType: mime } : {});
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data); };
+    const stopped = new Promise((res) => (rec.onstop = res));
+    rec.start();
+
+    const clipCount = Math.min(messages.length, 4);
+    for (let i = 0; i < clipCount; i++) {
+      const buf = buffers[i] || (await loadBuffer(i).catch(() => null));
+      const dur = Math.min(2.2, buf ? buf.duration : 1.5);
+      if (buf) {
+        const src = ac.createBufferSource();
+        src.buffer = buf;
+        src.connect(dest);
+        src.start();
+        src.stop(ac.currentTime + dur);
+      }
+      const steps = Math.max(6, Math.round(dur * 15));
+      for (let s = 0; s < steps; s++) {
+        drawFrame(i, messages[i].text, (i + s / steps) / clipCount);
+        await new Promise((r) => setTimeout(r, (dur * 1000) / steps));
+      }
+    }
+    rec.stop();
+    await stopped;
+    const blob = new Blob(chunks, { type: mime || 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = h('a', { href: url, download: `voice-gift-${slug}.webm` });
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('Video saved');
+  } catch {
+    drawFrame(0, messages[0]?.text || '', 1);
+    const url = cv.toDataURL('image/png');
+    const a = h('a', { href: url, download: `voice-gift-${slug}.png` });
+    a.click();
+    toast('Saved keepsake card');
+  } finally {
+    saveBtn.disabled = false;
+    if (span) span.textContent = 'Save video';
+  }
 }
 
 // ---------- effects (confetti, caps, sky lanterns) ----------

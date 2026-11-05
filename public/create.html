@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1A0C19">
+<meta name="theme-color" content="#0F0F0F">
 <title>Create a voice gift</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -16,101 +16,184 @@
 
   <!-- Step 1 -->
   <section data-screen="who">
-    <div class="head">
-      <div class="topbar"><a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a><div class="eyebrow">Step 1 of 3</div></div>
-      <h1>Who is it for?</h1>
+    <div class="nav-header">
+      <a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a>
+      <div class="step-dots" style="margin-left:auto"><i class="on"></i><i></i><i></i></div>
     </div>
-    <form id="whoForm" class="stack" novalidate>
-      <div class="field">
-        <span class="label">Occasion</span>
-        <div class="chips" id="occasions">
-          <button type="button" class="chip on" data-v="birthday">🎂 Birthday</button>
-          <button type="button" class="chip" data-v="graduation">🎓 Graduation</button>
-          <button type="button" class="chip" data-v="wedding">💍 Wedding</button>
+
+    <!-- Purrweb Recipient Top Pill Card (from 00:04 "Roger Vetrovs **** 5498") -->
+    <div class="recipient-pill">
+      <span class="sq-avatar" id="whoAvatar">D</span>
+      <div class="rec-info">
+        <b id="whoPillName">New voice gift</b>
+        <span id="whoPillSub">**** birthday transfer</span>
+      </div>
+      <button type="button" class="btn ghost sm" id="whoPreviewToggle" style="height:34px;min-height:34px;padding:0 12px">preview</button>
+    </div>
+
+    <div class="web-grid">
+      <div class="web-col">
+        <form id="whoForm" class="stack" novalidate>
+          <div class="field">
+            <span class="label">occasion</span>
+            <div class="chips" id="occasions">
+              <button type="button" class="chip on" data-v="birthday">birthday</button>
+              <button type="button" class="chip" data-v="graduation">graduation</button>
+              <button type="button" class="chip" data-v="wedding">wedding</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="recipient" id="recipientLabel">Their name</label>
+            <input class="input" id="recipient" maxlength="40" autocomplete="off" placeholder="e.g. Dimas" required>
+          </div>
+          <div class="field">
+            <label for="organizer">Your name</label>
+            <input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required>
+          </div>
+          <p class="small err" id="whoError" hidden></p>
+          <button class="btn emerald-track" type="submit" id="nextBtn"><span>Next: customize gift</span></button>
+        </form>
+      </div>
+
+      <div class="web-col">
+        <div class="customize-drawer" id="whoPreviewDrawer" hidden>
+          <div class="sec-bar">
+            <span class="sec-title">live scene preview</span>
+            <span class="sec-action">15s voice transfer</span>
+          </div>
+          <div class="stage-showcase">
+            <div id="whoPreview" style="width:100%"></div>
+          </div>
         </div>
       </div>
-      <div class="field">
-        <label for="recipient" id="recipientLabel">Their name</label>
-        <input class="input" id="recipient" maxlength="40" autocomplete="off" placeholder="e.g. Dimas" required>
-      </div>
-      <div class="field">
-        <label for="organizer">Your name</label>
-        <input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required>
-      </div>
-      <p class="small" id="whoError" style="color:#FF8A8D;margin:0" hidden></p>
-      <div class="spacer"></div>
-      <button class="btn" type="submit" id="nextBtn">Next: decorate the cake</button>
-    </form>
+    </div>
   </section>
 
-  <!-- Step 2 -->
+  <!-- Step 2: Customize Studio -->
   <section data-screen="decorate" hidden>
-    <div class="head">
-      <div class="topbar"><button type="button" class="backbtn" data-back aria-label="Back" data-icon="back"></button><div class="eyebrow">Step 2 of 3</div></div>
-      <h1 id="decorTitle"></h1>
-      <p class="lead" id="decorLead"></p>
+    <div class="nav-header">
+      <button type="button" class="backbtn" data-back aria-label="Back" data-icon="back"></button>
+      <div class=" grow" style="min-width:0">
+        <b id="decorTitle" style="font-size:15px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></b>
+        <span class="tiny muted" id="decorLead"></span>
+      </div>
+      <button type="button" class="badge-pill green" id="decorToolsToggle" style="cursor:pointer">customize</button>
     </div>
-    <div id="decorCake"></div>
-    <div class="stack">
-      <div class="row">
-        <span class="label" style="width:52px;flex-shrink:0" id="swatchLabel">Flavor</span>
-        <div class="slider" id="flavors"></div>
+
+    <div class="web-grid">
+      <div class="web-col">
+        <div class="stage-showcase">
+          <div id="decorCake" style="width:100%"></div>
+        </div>
       </div>
-      <div class="row">
-        <span class="label" style="width:52px;flex-shrink:0">Stickers</span>
-        <div class="slider" id="stickerTray"></div>
+
+      <div class="web-col">
+        <div class="card stack" id="decorToolsCard" style="gap:14px">
+          <div class="row">
+            <span class="label" style="width:58px;flex-shrink:0" id="swatchLabel">Style</span>
+            <div class="slider" id="flavors"></div>
+          </div>
+          <div class="row">
+            <span class="label" style="width:58px;flex-shrink:0">Accents</span>
+            <div class="slider" id="stickerTray"></div>
+          </div>
+          <div class="row">
+            <label class="label" for="cakeName" style="width:58px;flex-shrink:0" id="nameLabel">Title</label>
+            <input class="input" id="cakeName" maxlength="14" style="min-height:44px">
+          </div>
+          <div class="row" style="justify-content:space-between" id="drawRow">
+            <span class="label" style="width:58px;flex-shrink:0">Sketch</span>
+            <div class="slider" id="brushes"></div>
+            <button type="button" class="btn ghost sm" id="clearDraw">Clear</button>
+          </div>
+        </div>
+        <p class="small err" id="createError" hidden></p>
+        <div class="spacer"></div>
+        <div class="row">
+          <button type="button" class="btn ghost" data-back style="width:auto;padding:0 18px">Back</button>
+          <button type="button" class="btn grow" id="createBtn">Create the gift</button>
+        </div>
       </div>
-      <p class="small muted" id="stickerHint" style="margin:-6px 0 0 62px">Tap a sticker to add it. Drag it to move it; tap it, then × to remove it.</p>
-      <div class="row">
-        <label class="label" for="cakeName" style="width:52px" id="nameLabel">Name</label>
-        <input class="input" id="cakeName" maxlength="14" style="font-family:var(--serif);font-style:italic">
-      </div>
-      <div class="row" style="justify-content:space-between" id="drawRow">
-        <span class="label" style="width:52px;flex-shrink:0">Draw</span>
-        <div class="slider" id="brushes"></div>
-        <button type="button" class="btn ghost sm" id="clearDraw">Clear</button>
-      </div>
-    </div>
-    <p class="small" id="createError" style="color:#FF8A8D;margin:0" hidden></p>
-    <div class="spacer"></div>
-    <div class="row">
-      <button type="button" class="btn ghost" data-back style="width:auto;padding:0 18px">Back</button>
-      <button type="button" class="btn grow" id="createBtn">Create the gift</button>
     </div>
   </section>
 
   <!-- Between step 2 and 3, only when logged out: a new gift needs an account -->
   <section data-screen="account" hidden>
-    <div class="head">
-      <div class="topbar"><button type="button" class="backbtn" data-back aria-label="Back" data-icon="back"></button><div class="eyebrow">Almost done</div></div>
-      <h1>Save your gift</h1>
-      <p class="lead" id="accountLead"></p>
+    <div class="nav-header">
+      <button type="button" class="backbtn" data-back aria-label="Back" data-icon="back"></button>
+      <div class="step-dots" style="margin-left:auto"><i class="done"></i><i class="done"></i><i class="on"></i></div>
     </div>
-    <div id="accountBox"></div>
+    <div class="web-col" style="max-width:420px;width:100%;margin:0 auto">
+      <div class="head">
+        <h1>Save your gift</h1>
+        <p class="small muted" id="accountLead" style="margin:0"></p>
+      </div>
+      <div id="accountBox"></div>
+    </div>
   </section>
 
-  <!-- Step 3 -->
+  <!-- Step 3: Share & Dashboard -->
   <section data-screen="share" hidden>
-    <div class="head">
-      <div class="topbar"><button type="button" class="backbtn" data-back aria-label="Back to edit the gift" data-icon="back"></button><div class="eyebrow">Step 3 of 3</div></div>
-      <h1>Your gift link is ready</h1>
-      <p class="lead" id="shareLead"></p>
+    <div class="nav-header">
+      <button type="button" class="backbtn" data-back aria-label="Back to edit the gift" data-icon="back"></button>
+      <div class="step-dots" style="margin-left:auto"><i class="done"></i><i class="done"></i><i class="on"></i></div>
     </div>
-    <div class="stack">
-      <div class="label">Link for friends</div>
-      <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
-      <div id="waBtn"></div>
-      <div class="card row">
-        <div class="qr" id="qr"></div>
-        <div class="grow stack" style="gap:8px"><div><b>Or show a QR code</b><div class="small muted" id="qrNote">Friends scan it with their phone camera.</div></div>
-          <button type="button" class="btn ghost sm" id="printQr" style="align-self:flex-start">Print</button></div>
+
+    <div class="web-grid">
+      <div class="web-col">
+        <!-- Purrweb Emerald Hero Card on Share Screen -->
+        <div class="hero-card">
+          <div class="hero-balance">
+            <div class="hero-balance-label">
+              <span>voice transfer link ready</span>
+              <span id="shareLead">secret invite</span>
+            </div>
+            <div class="hero-balance-val" id="shareHeroTitle">Ready to share</div>
+          </div>
+          <div class="dual-pills">
+            <button type="button" class="pill-btn dark" data-back>
+              <span>customize</span>
+            </button>
+            <a class="pill-btn light" id="manageBtn">
+              <span>open dashboard</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
+          <div id="waBtn"></div>
+          <div class="card row">
+            <div class="qr" id="qr"></div>
+            <div class="grow stack" style="gap:6px">
+              <b>qr guest card</b>
+              <div class="tiny muted" id="qrNote">scan with camera</div>
+              <button type="button" class="btn ghost sm" id="printQr" style="align-self:flex-start">Print</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="web-col">
+        <div class="customize-drawer">
+          <div class="sec-bar">
+            <span class="sec-title">gift preview</span>
+            <button type="button" class="sec-action" data-back>edit design →</button>
+          </div>
+          <div class="stage-showcase">
+            <div id="sharePreview" style="width:100%"></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="card stack">
-      <div><b>Your dashboard</b><div class="small muted">Only you get this link. See who recorded, and add demo voices to try it out.</div></div>
-      <a class="btn ghost" id="manageBtn">Open dashboard</a>
-    </div>
   </section>
+
+  <nav class="app-tabbar" aria-label="Primary navigation">
+    <a class="tab-item" href="/"><span data-icon="home"></span><span>home</span></a>
+    <a class="tab-item active" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
+    <a class="tab-item" href="/m/dimas-igdw?k=ffywhsimsfdhs3y"><span data-icon="sliders"></span><span>asr studio</span></a>
+    <a class="tab-item" href="/account"><span data-icon="user"></span><span>profile</span></a>
+  </nav>
 </main>
 <script type="module" src="/assets/create.js"></script>
 </body>

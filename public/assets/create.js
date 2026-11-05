@@ -1,4 +1,4 @@
-import { $, $$, h, api, icon, showScreen, copyText, addStars, toast } from './common.js';
+import { $, $$, h, api, icon, showScreen, copyText, addStars, toast, initials } from './common.js';
 import { BRUSHES } from './stage.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { friendUrl, qrSvg, shareRow, printQrCard } from './share.js';
@@ -14,7 +14,6 @@ let t = theme(state.occasion);
 const MAX_STICKERS = 30;
 
 // ---------- steps + back ----------
-// Each step is a browser history entry, so the phone's back gesture goes to the previous step.
 function go(screen) {
   history.pushState({ screen }, '');
   showScreen(screen);
@@ -24,18 +23,69 @@ window.addEventListener('popstate', (e) => showScreen(e.state?.screen || 'who'))
 $$('[data-back]').forEach((b) => b.addEventListener('click', () => history.back()));
 
 // ---------- step 1 ----------
+let whoScene;
+function updateWhoPill() {
+  const rec = $('#recipient').value.trim();
+  const defName = state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas';
+  if ($('#whoAvatar')) $('#whoAvatar').textContent = initials(rec || defName);
+  if ($('#whoPillName')) $('#whoPillName').textContent = rec ? `For ${rec}` : 'New voice gift';
+  if ($('#whoPillSub')) $('#whoPillSub').textContent = `**** ${state.occasion} transfer`;
+}
+
+function renderWhoPreview() {
+  const host = $('#whoPreview');
+  if (!host) return;
+  host.textContent = '';
+  const rec = $('#recipient').value.trim() || (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
+  whoScene = createScene(host, {
+    occasion: state.occasion,
+    recipient: rec,
+    cake: { flavor: state.flavor || t.decorate.flavor, name: t.decorate.name(rec) }
+  });
+  whoScene.setCandles(8);
+  whoScene.lightAll();
+}
+
 function setOccasion(key) {
   state.occasion = key;
   t = applyTheme(key);
   $$('#occasions .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === key));
   $('#recipientLabel').textContent = t.recipientLabel;
   $('#recipient').placeholder = t.recipientPlaceholder;
-  $('#nextBtn').textContent = t.decorate.next;
+  const nb = $('#nextBtn');
+  const nbSpan = nb.querySelector('span');
+  if (nbSpan) nbSpan.textContent = t.decorate.next;
+  else nb.textContent = t.decorate.next;
   state.flavor = t.decorate.flavor;
   state.nameTouched = false;
+  updateWhoPill();
+  renderWhoPreview();
   buildDecorate();
 }
 $$('#occasions .chip').forEach((c) => c.addEventListener('click', () => { if (c.dataset.v !== state.occasion) setOccasion(c.dataset.v); }));
+$('#recipient').addEventListener('input', () => {
+  updateWhoPill();
+  const rec = $('#recipient').value.trim() || (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
+  if (whoScene) {
+    whoScene.setName(t.decorate.name(rec));
+    whoScene.setNames?.(rec);
+  }
+});
+
+$('#whoPreviewToggle')?.addEventListener('click', () => {
+  const dr = $('#whoPreviewDrawer');
+  if (!dr) return;
+  dr.hidden = !dr.hidden;
+  $('#whoPreviewToggle').textContent = dr.hidden ? 'preview' : 'hide';
+  if (!dr.hidden) renderWhoPreview();
+});
+
+$('#decorToolsToggle')?.addEventListener('click', () => {
+  const card = $('#decorToolsCard');
+  if (!card) return;
+  card.hidden = !card.hidden;
+  $('#decorToolsToggle').textContent = card.hidden ? 'show tools' : 'customize';
+});
 // Logged in: "Your name" starts as the account's name.
 me().then((u) => { if (u && !$('#organizer').value.trim()) $('#organizer').value = u.name; });
 
@@ -247,9 +297,10 @@ function askAccount() {
 function showShare(gift, manageKey) {
   const friend = friendUrl(gift);
   const name = t.callName(gift.recipient);
+  if ($('#shareHeroTitle')) $('#shareHeroTitle').textContent = `For ${name}`;
   $('#shareLead').textContent = gift.occasion === 'wedding'
-    ? `Send it to the guests, or put the QR code on the guestbook table.`
-    : `Send it to friends and family. Not to ${name}: it’s a surprise.`;
+    ? `share with guests`
+    : `keep secret from ${name}`;
   $('#friendLink').textContent = friend.replace(/^https?:\/\//, '');
   const b = $('#copyFriend');
   b.innerHTML = icon.copy(14);
@@ -257,12 +308,40 @@ function showShare(gift, manageKey) {
   b.onclick = () => copyText(friend);
   $('#waBtn').replaceWith(Object.assign(shareRow(t.waFriends(name), friend), { id: 'waBtn' }));
   $('#qr').innerHTML = qrSvg(friend);
-  $('#qrNote').textContent = gift.occasion === 'wedding' ? 'Print it for the guestbook table. Guests scan and record.' : 'Friends scan it with their phone camera.';
+  $('#qrNote').textContent = 'scan to record';
   $('#printQr').innerHTML = icon.print(14);
   $('#printQr').append(h('span', {}, 'Print'));
   $('#printQr').onclick = () => printQrCard(gift);
   $('#manageBtn').href = `/m/${gift.slug}?k=${manageKey}`;
+  const sp = $('#sharePreview');
+  if (sp) {
+    sp.textContent = '';
+    const s = createScene(sp, gift);
+    s.setCandles(1, { spots: 12 });
+    s.lightAll();
+  }
   go('share');
 }
 
 setOccasion(state.occasion);
+
+// Support /new?edit=slug&k=key from the Dashboard's "customize" button
+const editSlug = params.get('edit');
+const editKey = params.get('k');
+if (editSlug && editKey) {
+  api(`/api/manage?slug=${encodeURIComponent(editSlug)}&key=${encodeURIComponent(editKey)}`).then(({ gift }) => {
+    state.created = { slug: gift.slug, manageKey: editKey };
+    setOccasion(gift.occasion);
+    $('#recipient').value = gift.recipient || '';
+    $('#organizer').value = gift.organizer || '';
+    updateWhoPill();
+    if (gift.cake) {
+      if (gift.cake.flavor) { state.flavor = gift.cake.flavor; scene.setFlavor(gift.cake.flavor); renderSwatches(); }
+      if (gift.cake.name) { state.nameTouched = true; $('#cakeName').value = gift.cake.name; scene.setName(gift.cake.name); }
+      if (Array.isArray(gift.cake.dots)) scene.setDots(gift.cake.dots);
+      if (Array.isArray(gift.cake.stickers)) scene.stickers.set(gift.cake.stickers);
+    }
+    $('#createBtn').textContent = 'Save changes';
+    go('decorate');
+  }).catch(() => {});
+}

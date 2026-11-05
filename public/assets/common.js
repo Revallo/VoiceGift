@@ -1,6 +1,6 @@
 // Shared helpers for every page.
 
-export const PALETTE = ['#FF8FA3', '#F6B93B', '#6FB7FF', '#5CC8A8', '#B79CFF', '#FFA36C', '#FF7AC6', '#A8D86E', '#3FB8C8', '#D98CE0', '#8C9CFF', '#FFCB57'];
+export const PALETTE = ['#389B8E', '#E2A04A', '#5E8CE6', '#45B899', '#9E7CF4', '#E07A5F', '#D86C9F', '#7BC462', '#3BA8B8', '#C678DD', '#7986CB', '#E8B84B'];
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -101,7 +101,59 @@ export function waShare(text) {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
+export function initViewportSwitcher() {
+  if (typeof document === 'undefined' || document.querySelector('.proto-switcher')) return;
+  const urlView = new URLSearchParams(location.search).get('view');
+  let mode = urlView === 'desktop' || urlView === 'mobile'
+    ? urlView
+    : (localStorage.getItem('vg-viewport') || 'mobile');
+
+  const dimBadge = h('span', { class: 'proto-dim' });
+  const btnMobile = h('button', {
+    type: 'button',
+    class: 'proto-btn',
+    'aria-label': 'Switch to Mobile view',
+    onclick: () => apply('mobile')
+  }, h('span', { html: icon.smartphone(14) }), h('span', {}, 'mobile'));
+
+  const btnDesktop = h('button', {
+    type: 'button',
+    class: 'proto-btn',
+    'aria-label': 'Switch to Desktop view',
+    onclick: () => apply('desktop')
+  }, h('span', { html: icon.monitor(14) }), h('span', {}, 'desktop'));
+
+  const bar = h('div', { class: 'proto-switcher', role: 'region', 'aria-label': 'Prototype viewport switcher' },
+    h('div', { class: 'proto-meta' },
+      h('span', { class: 'proto-dot' }),
+      h('span', { class: 'proto-title' }, 'prototype'),
+      dimBadge
+    ),
+    h('div', { class: 'proto-seg' }, btnMobile, btnDesktop)
+  );
+
+  function apply(next) {
+    mode = next === 'desktop' ? 'desktop' : 'mobile';
+    document.body.dataset.viewport = mode;
+    try { localStorage.setItem('vg-viewport', mode); } catch {}
+    btnMobile.classList.toggle('on', mode === 'mobile');
+    btnDesktop.classList.toggle('on', mode === 'desktop');
+    dimBadge.textContent = mode === 'mobile' ? '412px · ios/android' : '960px · web studio';
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 320);
+  }
+
+  const appEl = document.getElementById('app');
+  if (appEl && appEl.parentNode) {
+    appEl.parentNode.insertBefore(bar, appEl);
+  } else {
+    document.body.prepend(bar);
+  }
+  apply(mode);
+}
+
 export function addStars(root, n = 24, maxTop = 70) {
+  initViewportSwitcher();
   const box = h('div', { class: 'stars', 'aria-hidden': 'true' });
   for (let i = 0; i < n; i++) {
     box.append(h('i', { style: { left: `${Math.random() * 100}%`, top: `${Math.random() * maxTop}%`, animationDelay: `${-Math.random() * 4}s`, animationDuration: `${2 + Math.random() * 3}s` } }));
@@ -129,8 +181,28 @@ export const icon = {
   print: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
   back: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>`,
   x: (s = 14) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`,
-  arrow: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`
+  arrow: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
+  shield: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
+  edit: (s = 13) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`,
+  wand: (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 4-1 1 6 6 1-1a2.83 2.83 0 1 0-4-4l-2-2Z"/><path d="m13 6-9.5 9.5a2.12 2.12 0 1 0 3 3L16 9"/><path d="M9 3v2M3 9h2M7 7 5.5 5.5"/></svg>`,
+  menu: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9h14M4 15h10"/></svg>`,
+  sliders: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="2" y1="14" x2="6" y2="14"/><line x1="10" y1="8" x2="14" y2="8"/><line x1="18" y1="16" x2="22" y2="16"/></svg>`,
+  chevrons: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 17 5-5-5-5M11 17l5-5-5-5M17 17l5-5-5-5"/></svg>`,
+  plus: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`,
+  user: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  settings: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  home: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  smartphone: (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg>`,
+  monitor: (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2.5"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`
 };
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initViewportSwitcher, { once: true });
+  } else {
+    initViewportSwitcher();
+  }
+}
 
 // Soft chime for candles lighting, built with Web Audio (no files).
 export function tone(ac, freq, when = 0, dur = 1, vol = 0.1) {

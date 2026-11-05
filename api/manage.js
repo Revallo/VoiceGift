@@ -49,6 +49,7 @@ export default route({
       createdAt: m.createdAt,
       sent: Boolean(m.finalText),
       edited: Boolean(m.edited),
+      fixes: Array.isArray(m.corrections) && m.corrections.length ? m.corrections.length : (m.edited ? 1 : 0),
       demo: Boolean(m.demo),
       durationSec: m.durationSec
     }));

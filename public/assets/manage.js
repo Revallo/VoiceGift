@@ -3,13 +3,33 @@ import { createScene, applyTheme } from './themes.js';
 import { friendUrl, recipientUrl, qrSvg, shareRow, recipientCard, printQrCard } from './share.js';
 import { me } from './auth.js';
 
-addStars($('#app'), 16, 30);
+addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const slug = slugFromPath();
 const key = new URLSearchParams(location.search).get('k') || '';
 let scene;
+let previewAudio = null, previewBtn = null, previewId = '';
+
+function togglePreview(id, btn) {
+  if (previewAudio && previewId === id && !previewAudio.paused) {
+    previewAudio.pause();
+    return;
+  }
+  if (previewAudio) {
+    previewAudio.pause();
+    if (previewBtn) { previewBtn.classList.remove('playing'); previewBtn.innerHTML = icon.play(11); }
+  }
+  previewId = id;
+  previewBtn = btn;
+  previewAudio = new Audio(`/api/audio?slug=${encodeURIComponent(slug)}&id=${encodeURIComponent(id)}&k=${encodeURIComponent(key)}`);
+  btn.classList.add('playing');
+  btn.innerHTML = icon.pause(11);
+  previewAudio.onpause = () => { btn.classList.remove('playing'); btn.innerHTML = icon.play(11); };
+  previewAudio.onended = () => { btn.classList.remove('playing'); btn.innerHTML = icon.play(11); };
+  previewAudio.play().catch(() => { btn.classList.remove('playing'); btn.innerHTML = icon.play(11); });
+}
 
 // Logged in: "back" goes to the account's list of gifts.
 me().then((u) => {
@@ -30,23 +50,68 @@ async function load() {
   const t = applyTheme(gift.occasion);
   const name = t.callName(gift.recipient);
   const sentMsgs = messages.filter((m) => m.sent);
-  const msgs = `${sentMsgs.length} ${sentMsgs.length === 1 ? 'message' : 'messages'}`;
-  $('#title').textContent = `Gift for ${gift.recipient}`;
-  $('#status').textContent = `${msgs} so far`;
+  const realEdited = messages.filter((m) => !m.demo && m.edited);
+  const totalSec = Math.round(sentMsgs.reduce((acc, m) => acc + (Number(m.durationSec) || 0), 0));
+  const msgs = `${sentMsgs.length} ${sentMsgs.length === 1 ? 'voice' : 'voices'}`;
+  $('#title').textContent = `For ${gift.recipient}`;
+  $('#status').textContent = `${msgs} · ${totalSec}s`;
+  if ($('#asrStatBadge')) $('#asrStatBadge').textContent = `${realEdited.length} asr fixed`;
+  if ($('#voiceCountSub')) $('#voiceCountSub').textContent = `${messages.length} total`;
+  if ($('#editDesignLink')) $('#editDesignLink').href = `/new?edit=${encodeURIComponent(slug)}&k=${encodeURIComponent(key)}`;
 
-  if (!scene) scene = createScene($('#cake'), gift);
-  scene.setCandles(sentMsgs.length, { spots: Math.max(12, sentMsgs.length) });
-  scene.lightAll();
+  const renderDashScene = () => {
+    $('#cake').textContent = '';
+    scene = createScene($('#cake'), gift);
+    scene.setCandles(sentMsgs.length, { spots: Math.max(12, sentMsgs.length) });
+    scene.lightAll();
+  };
+  renderDashScene();
+
+  const custBtn = $('#customizeDashBtn');
+  if (custBtn) {
+    custBtn.onclick = () => {
+      const dr = $('#cakeDrawer');
+      if (!dr) return;
+      dr.hidden = !dr.hidden;
+      custBtn.classList.toggle('active-toggle', !dr.hidden);
+      if (!dr.hidden) renderDashScene();
+    };
+  }
 
   const list = $('#list');
   list.textContent = '';
   if (!messages.length) list.append(h('div', { class: 'item small muted' }, 'Nobody yet. Share the link below.'));
   messages.forEach((m, i) => {
+    const fixNote = m.demo
+      ? 'demo'
+      : m.edited
+        ? `${m.fixes || 1} fixed`
+        : m.sent ? 'sent' : 'draft';
+    const playBtn = h('button', {
+      type: 'button',
+      class: 'play-mini',
+      'aria-label': `Play ${m.sender}'s voice`,
+      title: 'Play voice preview',
+      html: icon.play(11),
+      onclick: () => togglePreview(m.id, playBtn)
+    });
     list.append(h('div', { class: 'item' },
-      h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
-      h('div', { class: 'grow' }, h('b', {}, m.sender), h('div', { class: 'small muted' }, `${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)} s${m.demo ? ' · demo voice' : m.edited ? ' · fixed the caption' : ''}`)),
-      h('span', { class: 'small', style: { color: m.sent ? '#7FE0B0' : 'var(--muted)', fontWeight: '700' } }, m.sent ? 'Sent' : 'Not sent'),
-      h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(), onclick: () => remove(m) })));
+      h('div', { class: 'bento-top' },
+        h('span', { class: 'avatar', style: { background: colorFor(i), width: '32px', height: '32px', borderRadius: '10px', fontSize: '12px' } }, initials(m.sender)),
+        h('div', { class: 'bento-meta' },
+          h('b', {}, m.sender),
+          h('span', {}, fmtAgo(m.createdAt))
+        ),
+        h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(12), onclick: () => remove(m) })
+      ),
+      h('div', { class: 'bento-val' },
+        h('span', { class: 'tag-plus' }, `+ ${Math.round(m.durationSec)}s`),
+        h('div', { class: 'row', style: { gap: '6px' } },
+          h('span', { class: 'tiny muted', style: { fontWeight: '600' } }, fixNote),
+          playBtn
+        )
+      )
+    ));
   });
 
   const friend = friendUrl(gift);

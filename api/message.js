@@ -1,10 +1,10 @@
 // POST   /api/message?slug=…&name=…&consent=1&dur=…   body: WAV (application/octet-stream)
-//        → stores the recording, runs ASR, returns the caption for the friend to check
-// PATCH  /api/message   { slug, id, token, text }  → saves the caption the friend corrected
+//        → stores the recording, runs ASR, returns the caption + suspected ASR typos for the friend to check
+// PATCH  /api/message   { slug, id, token, text }  → saves the caption the friend corrected + word-level diffs
 // DELETE /api/message   { slug, id, token }        → "record again"
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { loadGift, createMessage, findMessage, updateMessage, deleteMessage, wavDuration, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
-import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
+import { loadGift, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
+import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
 import { sessionUserId } from '../lib/accounts.js';
 
 async function authorized(body) {
@@ -22,17 +22,27 @@ export default route({
     if (!name) throw new HttpError(400, 'Please enter your name.');
     if (q.consent !== '1') throw new HttpError(400, 'Please allow saving your voice first.');
     const wav = await rawBody(req);
-    const durationSec = wavDuration(wav);
-    if (durationSec === null) throw new HttpError(400, 'The recording could not be read. Please record again.');
+    const info = analyzeWav(wav);
+    if (!info) throw new HttpError(400, 'The recording could not be read. Please record again.');
+    const { durationSec, peak, waveform, speechStartSec, speechEndSec } = info;
     if (durationSec < 0.8) throw new HttpError(400, 'That was too short. Please record again.');
     if (durationSec > 20) throw new HttpError(400, 'Recordings can be up to 15 seconds.');
+    if (peak < 0.005) throw new HttpError(400, 'No voice detected. Speak a little louder.');
 
     let asr;
     try {
-      asr = await transcribe({ wav, durationSec, recipient: gift.recipient, occasion: gift.occasion });
+      asr = await transcribe({
+        wav,
+        durationSec,
+        recipient: gift.recipient,
+        occasion: gift.occasion,
+        speechStartSec,
+        speechEndSec,
+        clientHint: cleanText(q.hint, 300)
+      });
     } catch (e) {
       console.error(e);
-      asr = { text: '', words: [] }; // never lose the recording because ASR failed
+      asr = { text: '', words: [], typos: [] }; // never lose the recording because ASR failed
     }
 
     // Friends never need an account, but one who is logged in (an organizer too, say) is linked: we know who spoke.
@@ -41,17 +51,31 @@ export default route({
       sender: name,
       userId: userId || undefined,
       durationSec: +durationSec.toFixed(2),
+      speechStartSec,
+      speechEndSec,
+      waveform,
       asrProvider,
       asrText: asr.text,
       asrWords: asr.words,
+      asrTypos: asr.typos || [],
       finalText: null,
       edited: false,
+      corrections: [],
       consent: true,
       consentVersion: CONSENT_VERSION,
       userAgent: cleanText(req.headers['user-agent'], 300)
     }, wav);
 
-    send(res, 201, { id: msg.id, token: msg.token, asrText: msg.asrText, asrProvider, durationSec: msg.durationSec });
+    send(res, 201, {
+      id: msg.id,
+      token: msg.token,
+      asrText: msg.asrText,
+      asrWords: msg.asrWords,
+      asrTypos: msg.asrTypos,
+      waveform: msg.waveform,
+      asrProvider,
+      durationSec: msg.durationSec
+    });
   },
 
   async PATCH(req, res) {
@@ -61,10 +85,13 @@ export default route({
     if (!text) throw new HttpError(400, 'The caption is empty.');
     msg.finalText = text;
     msg.edited = text !== (msg.asrText || '').trim();
-    msg.finalWords = msg.edited ? evenWords(text, msg.durationSec) : msg.asrWords;
+    msg.corrections = computeCorrections(msg.asrText, text, msg.asrTypos);
+    msg.finalWords = msg.edited
+      ? evenWords(text, msg.durationSec, new Set(), msg.speechStartSec || 0, msg.speechEndSec || null)
+      : msg.asrWords;
     msg.sentAt = new Date().toISOString();
     await updateMessage(path, msg);
-    send(res, 200, { ok: true, edited: msg.edited });
+    send(res, 200, { ok: true, edited: msg.edited, corrections: msg.corrections });
   },
 
   async DELETE(req, res) {

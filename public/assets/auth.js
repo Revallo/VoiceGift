@@ -1,6 +1,6 @@
 // Accounts in the browser: who is logged in, the create-account / log-in form (on /signup and /login, and in
 // /new when a new gift needs an account), and the rows of "Your gifts".
-import { h, api, icon, toast, fmtAgo } from './common.js';
+import { h, api, icon, toast, fmtAgo, initials } from './common.js';
 import { theme } from './themes.js';
 
 let current;
@@ -43,9 +43,8 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
   function render() {
     const m = MODES[mode];
     const nameIn = mode === 'signup' && h('input', { class: 'input', id: 'acName', name: 'name', maxlength: '40', autocomplete: 'name', placeholder: 'e.g. Sari', value: name });
-    // autocomplete "username": password managers save the email with the password.
     const emailIn = h('input', { class: 'input', id: 'acEmail', name: 'email', type: 'email', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', maxlength: '254', placeholder: 'you@example.com', value: email });
-    const passIn = h('input', { class: 'input', id: 'acPass', name: 'password', type: 'password', autocomplete: m.autocomplete, maxlength: '200', placeholder: mode === 'signup' ? 'At least 8 characters' : '' });
+    const passIn = h('input', { class: 'input', id: 'acPass', name: 'password', type: 'password', autocomplete: m.autocomplete, maxlength: '200', placeholder: mode === 'signup' ? 'At least 8 characters' : 'Your password' });
     const show = h('button', { type: 'button', class: 'linkbtn small', onclick: () => {
       const hidden = passIn.type === 'password';
       passIn.type = hidden ? 'text' : 'password';
@@ -54,20 +53,55 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
     const err = h('p', { class: 'small err', role: 'alert', hidden: true });
     const fail = (msg) => { err.textContent = msg; err.hidden = !msg; };
     const submit = h('button', { class: 'btn', type: 'submit' }, m.submit);
-    const other = h('button', { type: 'button', class: 'linkbtn', onclick: () => {
+
+    const switchMode = (targetMode) => {
+      if (targetMode === mode) return;
       if (nameIn) name = nameIn.value;
       email = emailIn.value;
-      mode = mode === 'signup' ? 'login' : 'signup';
+      mode = targetMode;
       render();
       onMode?.(mode);
-    } }, m.other);
+    };
 
-    const form = h('form', { class: 'stack', novalidate: true },
-      nameIn && h('div', { class: 'field' }, h('label', { for: 'acName' }, 'Your name'), nameIn),
-      h('div', { class: 'field' }, h('label', { for: 'acEmail' }, 'Email'), emailIn),
-      h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'Password'), show), passIn),
+    const tabs = h('div', { class: 'auth-tabs' },
+      h('button', { type: 'button', class: 'auth-tab' + (mode === 'login' ? ' on' : ''), onclick: () => switchMode('login') }, 'log in'),
+      h('button', { type: 'button', class: 'auth-tab' + (mode === 'signup' ? ' on' : ''), onclick: () => switchMode('signup') }, 'create account')
+    );
+
+    const demoBtn = h('button', {
+      type: 'button',
+      class: 'btn ghost sm',
+      style: { width: '100%', minHeight: '42px', borderStyle: 'dashed' },
+      onclick: async () => {
+        demoBtn.disabled = true;
+        demoBtn.textContent = 'Signing in as Sari…';
+        try {
+          const { user } = await api('/api/account', {
+            method: 'POST',
+            json: { action: 'login', email: 'sari@voicegift.id', password: 'password123' }
+          });
+          current = Promise.resolve(user);
+          await claimDeviceGifts();
+          await onDone(user);
+        } catch (e) {
+          fail(e.message);
+        } finally {
+          demoBtn.disabled = false;
+          demoBtn.textContent = '1-tap demo login · Sari (organizer)';
+        }
+      }
+    }, '1-tap demo login · Sari (organizer)');
+
+    const other = h('button', { type: 'button', class: 'linkbtn', onclick: () => switchMode(mode === 'signup' ? 'login' : 'signup') }, m.other);
+
+    const form = h('form', { class: 'card stack', style: { gap: '14px' }, novalidate: true },
+      tabs,
+      nameIn && h('div', { class: 'field' }, h('label', { for: 'acName' }, 'your name'), nameIn),
+      h('div', { class: 'field' }, h('label', { for: 'acEmail' }, 'email address'), emailIn),
+      h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'password'), show), passIn),
       err,
       submit,
+      demoBtn,
       h('p', { class: 'small muted center', style: { margin: 0 } }, `${m.ask} `, other));
 
     form.addEventListener('submit', async (e) => {
@@ -113,9 +147,20 @@ export function giftItem(g, onDeleted) {
     }
     onDeleted(g);
   }
+  const sub = [t.label.toLowerCase(), g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
+  const countLabel = typeof g.count === 'number' ? `+ ${g.count} ${g.count === 1 ? 'voice' : 'voices'}` : '+ open';
   return h('div', { class: 'item' },
-    h('a', { class: 'grow row', href: `/m/${g.slug}?k=${g.key}`, style: { color: '#fff', textDecoration: 'none' } },
-      h('div', { class: 'grow' }, h('b', {}, `${t.emoji} For ${g.recipient}`), h('div', { class: 'small muted' }, g.createdAt ? `${t.label} · ${fmtAgo(g.createdAt)}` : t.label)),
-      h('span', { class: 'small', style: { color: 'var(--gold)', fontWeight: '700' } }, 'Dashboard')),
-    h('button', { type: 'button', class: 'del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(), onclick: remove }));
+    h('div', { class: 'bento-top' },
+      h('span', { class: 'avatar', style: { background: 'var(--emerald)', color: '#fff', width: '32px', height: '32px', borderRadius: '10px', fontSize: '12px' } }, initials(g.recipient)),
+      h('div', { class: 'bento-meta' },
+        h('b', {}, g.recipient),
+        h('span', {}, sub)
+      ),
+      h('button', { type: 'button', class: 'del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(12), onclick: remove })
+    ),
+    h('a', { class: 'bento-val', href: `/m/${g.slug}?k=${g.key}`, style: { textDecoration: 'none' } },
+      h('span', { class: 'tag-plus' }, countLabel),
+      h('span', { class: 'tiny muted', style: { fontWeight: '500' } }, g.editedCount ? `${g.editedCount} fixed` : 'dashboard →')
+    )
+  );
 }

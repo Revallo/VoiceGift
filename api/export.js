@@ -22,6 +22,7 @@ export default route({
           asrText: m.asrText,
           finalText: m.finalText,
           edited: m.edited,
+          corrections: m.corrections || [],
           consent: m.consent,
           consentVersion: m.consentVersion,
           createdAt: m.createdAt

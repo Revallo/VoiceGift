@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1A0C19">
+<meta name="theme-color" content="#0F0F0F">
 <meta name="robots" content="noindex">
 <title>Gift dashboard</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -19,35 +19,91 @@
     <div class="loading"><h1>Hmm.</h1><p class="lead" id="errorText"></p><a class="btn ghost" href="/" style="max-width:240px">Go to Voice Gift</a></div>
   </section>
   <section data-screen="main" hidden>
-    <div class="topbar"><a class="backbtn" href="/" aria-label="Back to the home page" data-icon="back"></a><a class="brand" href="/" style="font-size:15px"><span class="logo" data-logo style="width:26px;height:26px"></span>Voice Gift</a></div>
-    <div class="head">
-      <div class="eyebrow">Your dashboard</div>
-      <h1 id="title"></h1>
-      <p class="lead" id="status"></p>
-    </div>
-    <div id="cake"></div>
-    <div class="stack">
-      <div class="row"><h2 class="grow">Who has recorded</h2><button class="btn ghost sm" id="refresh">Refresh</button></div>
-      <p class="small muted" style="margin:-4px 0 0">You see who recorded, not what they said.</p>
-      <div class="list" id="list"></div>
-    </div>
-    <div class="card stack">
-      <b id="inviteTitle">Invite more friends</b>
-      <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
-      <div id="waBtn"></div>
-      <div class="row">
-        <div class="qr" id="qr"></div>
-        <div class="grow stack" style="gap:8px"><div class="small muted">Or let them scan this. For events, print it for the table.</div>
-          <button type="button" class="btn ghost sm" id="printQr" style="align-self:flex-start"></button></div>
+    <div class="web-grid">
+      <div class="web-col">
+        <!-- Purrweb Emerald Hero Card (#266A61) -->
+        <div class="hero-card">
+          <div class="hero-top">
+            <a class="hero-greeting backbtn" href="/" aria-label="Back to the home page" data-icon="back" style="width:36px;height:36px;border-radius:12px;background:rgba(15,15,15,0.28);border:0;color:#fff"></a>
+            <div class="hero-greeting-text" style="flex:1">
+              <small>organizer dashboard</small>
+              <b id="title">Gift</b>
+            </div>
+            <button type="button" class="hero-bell" id="refresh" title="Refresh" aria-label="Refresh">↻</button>
+          </div>
+
+          <div class="hero-balance">
+            <div class="hero-balance-label">
+              <span>total voices collected</span>
+              <span id="asrStatBadge"></span>
+            </div>
+            <div class="hero-balance-val" id="status">0 voices</div>
+          </div>
+
+          <div class="dual-pills">
+            <button type="button" class="pill-btn dark" id="customizeDashBtn">
+              <span>customize</span>
+            </button>
+            <a class="pill-btn light" id="openReveal" target="_blank" rel="noopener">
+              <span>preview gift</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Collapsible Customize & Scene Drawer (hidden until "customize" is tapped) -->
+        <div class="customize-drawer" id="cakeDrawer" hidden>
+          <div class="sec-bar">
+            <span class="sec-title">gift design</span>
+            <a class="sec-action" id="editDesignLink" href="/new">edit design →</a>
+          </div>
+          <div class="stage-showcase">
+            <div id="cake" style="width:100%"></div>
+          </div>
+        </div>
+
+        <!-- 2-Column "history" Bento Grid for Voices -->
+        <div class="stack" style="gap:10px">
+          <div class="sec-bar">
+            <h2>history · voices</h2>
+            <span class="sec-action" id="voiceCountSub"></span>
+          </div>
+          <div class="list" id="list"></div>
+        </div>
+      </div>
+
+      <div class="web-col">
+        <div id="delivery"></div>
+
+        <div class="card stack">
+          <div class="sec-bar">
+            <h2 id="inviteTitle">quick send · invite</h2>
+          </div>
+          <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
+          <div id="waBtn"></div>
+          <div class="row">
+            <div class="qr" id="qr"></div>
+            <div class="grow stack" style="gap:6px">
+              <b>qr guest card</b>
+              <button type="button" class="btn ghost sm" id="printQr" style="align-self:flex-start"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card subtle row" id="demoCard" style="justify-content:space-between">
+          <b>sample voices</b>
+          <button class="btn ghost sm" id="addDemo">Add 12 demo voices</button>
+        </div>
+
+        <button class="btn ghost sm" id="deleteGift" style="align-self:center;color:var(--coral)">Delete this gift</button>
       </div>
     </div>
-    <div id="delivery"></div>
-    <a class="btn ghost" id="openReveal" target="_blank" rel="noopener">Preview their page</a>
-    <div class="card stack" id="demoCard">
-      <div><b>Demo</b><div class="small muted">Show how it works without waiting for real friends: add 12 demo voices, then tap “Preview their page”.</div></div>
-      <button class="btn ghost" id="addDemo">Add 12 demo voices</button>
-    </div>
-    <button class="btn ghost sm" id="deleteGift" style="align-self:center;color:#FF8A8A">Delete this gift</button>
+
+    <nav class="app-tabbar" aria-label="Primary navigation">
+      <a class="tab-item" href="/"><span data-icon="home"></span><span>home</span></a>
+      <a class="tab-item" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
+      <a class="tab-item active" href="/m/dimas-igdw?k=ffywhsimsfdhs3y"><span data-icon="sliders"></span><span>asr studio</span></a>
+      <a class="tab-item" href="/account"><span data-icon="user"></span><span>profile</span></a>
+    </nav>
   </section>
 </main>
 <script type="module" src="/assets/manage.js"></script>

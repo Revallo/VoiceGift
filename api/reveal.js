@@ -18,7 +18,6 @@ export default route({
     }
     const messages = (await loadMessages(gift.slug))
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
-      .filter((m) => !preview || m.demo)
       .map((m) => {
         const text = m.finalText || m.asrText;
         return {

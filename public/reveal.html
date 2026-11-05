@@ -23,6 +23,67 @@
     <div class="loading"><h1>Hmm.</h1><p class="lead" id="errorText"></p><a class="btn ghost" href="/" style="max-width:240px">Go to Voice Gift</a></div>
   </section>
 
+  <!-- Step 0 (Only when Recipient has NO Account): Verification Question Gate -->
+  <section data-screen="verify" hidden>
+    <div class="web-grid">
+      <div class="web-col" style="max-width:440px;width:100%;margin:0 auto">
+        <div class="hero-card">
+          <div class="hero-top">
+            <a class="hero-greeting" href="/">
+              <span class="hero-menu-ico" id="verLogo"></span>
+              <span class="hero-greeting-text">
+                <small id="verifyOrganizer">invited you</small>
+                <b>Voice Gift</b>
+              </span>
+            </a>
+            <span class="profile-badge" style="background:rgba(15,15,15,0.32);color:#fff;border-color:rgba(255,255,255,0.2)">guest verify</span>
+          </div>
+
+          <div class="hero-balance">
+            <div class="hero-balance-label">
+              <span>recipient verification</span>
+              <span id="verifyCountBadge">secret voices</span>
+            </div>
+            <div class="hero-balance-val" id="verifyHeroTitle" style="font-size:clamp(24px,5.5vw,32px)">For you</div>
+          </div>
+        </div>
+
+        <form class="card stack" id="verifyForm" style="gap:14px" novalidate>
+          <div class="stack" style="gap:4px">
+            <span class="tiny muted" style="text-transform:lowercase;font-weight:600;color:#7CE8D8">1 · belum login akun · jawab pertanyaan verifikasi</span>
+            <b id="verifyQuestionText" style="font-size:15.5px;color:#fff;line-height:1.4">Siapa nama panggilan akrab penerima kado ini?</b>
+          </div>
+          <div class="field">
+            <label for="verifyAnswerInput">jawaban kamu</label>
+            <input class="input" id="verifyAnswerInput" autocomplete="off" placeholder="Tulis jawaban verifikasi..." required>
+          </div>
+          <p class="small err" id="verifyError" hidden style="margin:0"></p>
+          <button type="submit" class="btn emerald-track" id="verifySubmitBtn">
+            <span>verifikasi &amp; buka voice gift</span>
+          </button>
+        </form>
+
+        <div class="stack" style="gap:8px">
+          <div class="sec-bar">
+            <h2>2 · sudah punya akun?</h2>
+            <span style="font-size:.72rem;color:var(--muted)">langsung buka</span>
+          </div>
+          <div class="nav-list">
+            <button type="button" class="nav-row" id="verifyLoginSheetBtn">
+              <span class="nav-ico" id="verUserIco"></span>
+              <div class="nav-info">
+                <b>masuk dengan akun penerima</b>
+                <small>otomatis buka voice gift tanpa pertanyaan</small>
+              </div>
+              <span class="nav-val">login</span>
+              <span class="nav-chev" id="verChevIco"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section data-screen="scene" hidden>
     <div class="web-grid">
       <div class="web-col">
@@ -35,7 +96,7 @@
                 <b>Voice Gift</b>
               </span>
             </a>
-            <span class="badge-pill" style="background:rgba(15,15,15,0.28);color:#fff;border:0">keepsake</span>
+            <span class="badge-pill" id="revealAccessBadge" style="background:rgba(15,15,15,0.28);color:#fff;border:0">keepsake</span>
           </div>
           <div class="hero-balance">
             <div class="hero-balance-val" id="title" style="font-size:clamp(24px,5.5vw,32px)"></div>

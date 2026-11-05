@@ -4,10 +4,10 @@
 //                                            action "delete-gift": removes the whole gift from storage
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
-import { loadGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
+import { route, send, query, jsonBody, cleanText, HttpError } from '../lib/http.js';
+import { loadGift, saveGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
-import { forgetGift } from '../lib/accounts.js';
+import { forgetGift, sendGiftToEmail } from '../lib/accounts.js';
 
 const DEMO_DIR = path.join(process.cwd(), 'public', 'demo');
 
@@ -53,14 +53,30 @@ export default route({
       demo: Boolean(m.demo),
       durationSec: m.durationSec
     }));
-    send(res, 200, { gift: publicGift(gift), openKey: gift.openKey, messages });
+    send(res, 200, {
+      gift: {
+        ...publicGift(gift),
+        recipientEmail: gift.recipientEmail || '',
+        verifyQuestion: gift.verifyQuestion || '',
+        verifyAnswer: gift.verifyAnswer || ''
+      },
+      openKey: gift.openKey,
+      messages
+    });
   },
 
   async POST(req, res) {
     const b = await jsonBody(req);
     const gift = await authed(b.slug, b.key);
     if (b.action === 'add-demo') await addDemo(gift);
-    else if (b.action === 'delete') {
+    else if (b.action === 'update-delivery') {
+      gift.recipientEmail = cleanText(b.recipientEmail || '', 120).toLowerCase();
+      gift.verifyQuestion = cleanText(b.verifyQuestion || '', 140);
+      gift.verifyAnswer = cleanText(b.verifyAnswer || '', 80);
+      gift.updatedAt = new Date().toISOString();
+      await saveGift(gift);
+      if (gift.recipientEmail) await sendGiftToEmail(gift.recipientEmail, gift.slug);
+    } else if (b.action === 'delete') {
       const { msg, path } = await findMessage(gift.slug, String(b.id || ''));
       await deleteMessage(path, msg);
     } else if (b.action === 'delete-gift') {

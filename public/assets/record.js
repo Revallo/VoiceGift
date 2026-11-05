@@ -1,4 +1,4 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, copyText, toast } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, copyText, toast, openSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { me } from './auth.js';
@@ -55,10 +55,15 @@ async function load() {
   };
   renderInviteScene();
   $('#inviteSceneToggle')?.addEventListener('click', () => {
-    const dr = $('#inviteCakeDrawer');
-    if (!dr) return;
-    dr.hidden = !dr.hidden;
-    if (!dr.hidden) renderInviteScene();
+    const box = h('div', { style: { width: '100%' } });
+    openSheet({
+      title: `for ${first.toLowerCase()}`,
+      subtitle: `${t.countLine(count)} · secret until opened`,
+      content: h('div', { class: 'stage-showcase' }, box)
+    });
+    const sc = createScene(box, gift);
+    sc.setCandles(count, { spots: Math.max(12, count + 1) });
+    sc.lightAll();
   });
   $('#countLine').textContent = t.countLine(count);
   try { $('#name').value = localStorage.getItem('vg-name') || ''; } catch {}
@@ -452,10 +457,16 @@ async function showDone() {
   const toggleBtn = $('#doneSceneToggle');
   if (toggleBtn) {
     toggleBtn.onclick = () => {
-      const dr = $('#doneCakeDrawer');
-      if (!dr) return;
-      dr.hidden = !dr.hidden;
-      if (!dr.hidden) renderDoneScene();
+      const box = h('div', { style: { width: '100%' } });
+      openSheet({
+        title: `for ${first.toLowerCase()}`,
+        subtitle: t.doneCount(n),
+        content: h('div', { class: 'stage-showcase' }, box)
+      });
+      const sc = createScene(box, gift);
+      sc.setCandles(n, { spots: Math.max(12, n) });
+      sc.lightAll();
+      sc.mark(n - 1);
     };
   }
   $('#doneCount').textContent = t.doneCount(n);

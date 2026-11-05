@@ -2,7 +2,7 @@
 // PATCH /api/gifts  {slug, key, recipient, organizer, occasion, cake}    → the organizer edits it (back from step 3)
 import { route, send, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { createGift, loadGift, saveGift, OCCASIONS } from '../lib/gifts.js';
-import { sessionUserId, addGift } from '../lib/accounts.js';
+import { sessionUserId, addGift, sendGiftToEmail } from '../lib/accounts.js';
 
 // cake = the decoration of any scene: { flavor, name, dots: [[x, y, colour]], stickers: [[emoji, x, y]] }
 function cleanCake(cake = {}) {
@@ -28,7 +28,10 @@ function readGift(b) {
   if (!recipient) throw new HttpError(400, 'Please enter who the gift is for.');
   if (!organizer) throw new HttpError(400, 'Please enter your name.');
   const occasion = OCCASIONS.includes(b.occasion) ? b.occasion : 'birthday';
-  return { recipient, organizer, occasion, cake: cleanCake(b.cake) };
+  const recipientEmail = cleanText(b.recipientEmail || '', 120).toLowerCase();
+  const verifyQuestion = cleanText(b.verifyQuestion || '', 140);
+  const verifyAnswer = cleanText(b.verifyAnswer || '', 80);
+  return { recipient, organizer, occasion, recipientEmail, verifyQuestion, verifyAnswer, cake: cleanCake(b.cake) };
 }
 
 export default route({
@@ -36,8 +39,10 @@ export default route({
     // Only with an account: we know who made it, and the account page lists it on any phone.
     const userId = await sessionUserId(req);
     if (!userId) throw new HttpError(401, 'Please log in to create a gift.');
-    const gift = await createGift({ ...readGift(await jsonBody(req)), ownerId: userId });
+    const input = readGift(await jsonBody(req));
+    const gift = await createGift({ ...input, ownerId: userId });
     await addGift(userId, gift.slug);
+    if (gift.recipientEmail) await sendGiftToEmail(gift.recipientEmail, gift.slug);
     send(res, 201, { slug: gift.slug, manageKey: gift.manageKey, openKey: gift.openKey });
   },
 
@@ -45,8 +50,10 @@ export default route({
     const b = await jsonBody(req);
     const gift = await loadGift(b.slug);
     if (!b.key || b.key !== gift.manageKey) throw new HttpError(403, 'Not allowed');
-    Object.assign(gift, readGift(b), { updatedAt: new Date().toISOString() });
+    const updates = readGift(b);
+    Object.assign(gift, updates, { updatedAt: new Date().toISOString() });
     await saveGift(gift);
+    if (gift.recipientEmail) await sendGiftToEmail(gift.recipientEmail, gift.slug);
     send(res, 200, { ok: true });
   }
 });

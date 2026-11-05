@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0F0F0F">
-<title>Voice Gift — send a voice transfer to someone you love</title>
-<meta name="description" content="Friends record 15s voice transfers and verify AI captions. Unveiled together as one surprise.">
+<title>Voice Gift — speech-to-text voice transfer studio</title>
+<meta name="description" content="Friends record 15s voice transfers and verify AI speech-to-text captions. Unveiled together as one surprise.">
 <meta property="og:title" content="Voice Gift">
 <meta property="og:description" content="Friends record secret voice messages. Unveiled together as one surprise.">
 <meta property="og:image" content="/og.png">
@@ -20,188 +20,142 @@
   <section data-screen="home">
     <div class="web-grid">
       <div class="web-col">
-        <!-- Purrweb Emerald Hero Card (#266A61) -->
+        <!-- 1. Purrweb Dribbble Emerald Hero Card (#266A61) -->
         <div class="hero-card">
           <div class="hero-top">
-            <div class="hero-greeting" id="menuToggle" role="button" tabindex="0" style="cursor:pointer" title="Open app menu & settings">
+            <div class="hero-greeting" id="menuToggle" role="button" tabindex="0" style="cursor:pointer" title="Open navigation sheet">
               <span class="hero-menu-ico" id="logo"></span>
               <span class="hero-greeting-text">
                 <small id="greetingTime">good evening,</small>
-                <b id="greetingName">Voice Gift</b>
+                <b id="greetingName">Sari</b>
               </span>
             </div>
-            <a class="badge-pill" href="/login" id="account" hidden style="background:rgba(15,15,15,0.32);color:#fff;border:1px solid rgba(255,255,255,0.18);text-decoration:none;padding:6px 13px">log in</a>
+            <button type="button" class="hero-bell" id="bellBtn" aria-label="Activity and account notifications">
+              <span id="bellIco"></span>
+              <span class="hero-bell-dot"></span>
+            </button>
           </div>
 
           <div class="hero-balance">
             <div class="hero-balance-label">
-              <span>voice transfer studio</span>
-              <span id="how2">adds a candle</span>
+              <span id="corpusLabel">speech-to-text corpus</span>
+              <button type="button" class="hero-eye" id="eyeToggle" aria-label="Toggle metric view" title="Switch ASR metric"></button>
             </div>
-            <div class="hero-balance-val" id="heroMetric">15s · birthday</div>
+            <div class="hero-balance-val" id="heroMetric">14 voices · 98%</div>
           </div>
 
           <div class="dual-pills">
-            <button type="button" class="pill-btn dark" id="customizeToggle">
-              <span id="custIco"></span>
-              <span>customize</span>
+            <button type="button" class="pill-btn dark" id="recordQuickBtn">
+              <span>record</span>
             </button>
             <a class="pill-btn light" href="/new" id="createLink">
-              <span>send gift</span>
+              <span>send</span>
             </a>
           </div>
         </div>
 
-        <!-- Slide-Down Menu & Quick Settings Sheet (toggled by top-left '=' menu button) -->
-        <div class="menu-sheet" id="appMenuSheet" hidden>
-          <div class="sec-bar">
-            <span class="sec-title">navigation &amp; settings</span>
-            <button type="button" class="sec-action" id="closeMenuBtn">close ×</button>
-          </div>
-          <div class="menu-links">
-            <a class="menu-link" href="/account"><i id="mIcoUser"></i><span>profile &amp; gifts</span></a>
-            <a class="menu-link" href="/account#settings"><i id="mIcoSet"></i><span>settings</span></a>
-            <a class="menu-link" href="/signup"><i id="mIcoPlus"></i><span>create account</span></a>
-            <a class="menu-link" href="/g/dimas-igdw"><i id="mIcoMic"></i><span>asr studio</span></a>
-          </div>
-        </div>
-
-        <!-- Quick Send (Squircle Rail) -->
+        <!-- 2. Purrweb Dribbble "quick send" Squircle Avatar Rail -->
         <div class="stack" style="gap:10px">
           <div class="sec-bar">
             <h2>quick send</h2>
-            <span class="sec-action" id="how3">candles glow</span>
+            <button type="button" class="sec-action" id="viewAllQuick">view all</button>
           </div>
-          <div class="quick-rail">
-            <a class="sq-plus" href="/new" id="quickPlus" aria-label="Create new voice gift"></a>
-            <div class="chips" id="occasions">
-              <button type="button" class="chip on" data-v="birthday">birthday</button>
-              <button type="button" class="chip" data-v="graduation">graduation</button>
-              <button type="button" class="chip" data-v="wedding">wedding</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Collapsible Customize Drawer -->
-        <div class="customize-drawer" id="customizeCard" hidden>
-          <div class="sec-bar">
-            <span class="sec-title">customize preview</span>
-            <a class="sec-action" href="/new" id="openStudioLink">open studio →</a>
-          </div>
-          <div class="stage-showcase">
-            <div id="cake" style="width:100%;cursor:pointer" title="Tap to replay"></div>
+          <div class="sq-rail" id="quickRail">
+            <a class="sq-person" href="/new" aria-label="Create new voice gift">
+              <span class="sq-person-tile" id="quickPlusTile" style="background:var(--panel);color:#fff"></span>
+              <span class="sq-person-name">new</span>
+            </a>
+            <button type="button" class="sq-person" data-person="dimas">
+              <span class="sq-person-tile" style="background:linear-gradient(145deg,#389B8E,#1B544C)">
+                D
+                <span class="sq-person-tag">13v</span>
+              </span>
+              <span class="sq-person-name">dimas</span>
+            </button>
+            <button type="button" class="sq-person" data-person="nadia">
+              <span class="sq-person-tile" style="background:linear-gradient(145deg,#E2A04A,#8C5818)">
+                N
+                <span class="sq-person-tag">grad</span>
+              </span>
+              <span class="sq-person-name">nadia</span>
+            </button>
+            <button type="button" class="sq-person" data-person="rina">
+              <span class="sq-person-tile" style="background:linear-gradient(145deg,#5E8CE6,#2B4C8C)">
+                R
+                <span class="sq-person-tag">wed</span>
+              </span>
+              <span class="sq-person-name">rina</span>
+            </button>
+            <button type="button" class="sq-person" data-person="budi">
+              <span class="sq-person-tile" style="background:linear-gradient(145deg,#9E7CF4,#523696)">
+                B
+                <span class="sq-person-tag">asr</span>
+              </span>
+              <span class="sq-person-name">budi</span>
+            </button>
           </div>
         </div>
       </div>
 
       <div class="web-col">
-        <!-- Homepage Account, Profile & Settings Hub Card -->
+        <!-- 3. Purrweb Dribbble "history" 2-Column Bento Cards (Speech-to-Text & Voice Transfers) -->
         <div class="stack" style="gap:10px">
           <div class="sec-bar">
-            <h2>account &amp; settings</h2>
-            <a class="sec-action" href="/account" id="acctHubLink">open profile →</a>
+            <h2>history</h2>
+            <button type="button" class="sec-action" id="viewAllHistory">view all</button>
           </div>
-
-          <!-- Shown when logged out: Pembuatan Akun (Create Account) + Log In + 1-Tap Demo -->
-          <div class="card stack" id="guestAcctCard" style="gap:12px">
-            <div class="recipient-pill" style="padding:10px 12px;background:var(--panel-subtle)">
-              <span class="sq-avatar" id="guestAvatarIco"></span>
-              <div class="rec-info">
-                <b>Organizer Account &amp; Profile</b>
-                <span>sync gifts · asr corpus · privacy settings</span>
-              </div>
-            </div>
-            <div class="row">
-              <a class="btn ghost grow" href="/login" style="min-height:44px">log in</a>
-              <a class="btn grow" href="/signup" style="min-height:44px">create account</a>
-            </div>
-            <button type="button" class="btn ghost sm" id="homeDemoLogin" style="width:100%;min-height:38px;border-style:dashed">1-tap demo account · Sari</button>
-          </div>
-
-          <!-- Shown when logged in: Live Profile & Settings Quick Card -->
-          <div class="card stack" id="userAcctCard" style="gap:12px" hidden>
-            <div class="recipient-pill" style="padding:10px 12px;background:var(--panel-subtle)">
-              <span class="sq-avatar" id="userSqAvatar">S</span>
-              <div class="rec-info">
-                <b id="userCardName">Sari</b>
-                <span id="userCardEmail">sari@voicegift.id</span>
-              </div>
-              <span class="badge-pill green">organizer</span>
-            </div>
-            <div class="row">
-              <a class="btn ghost grow" href="/account#settings" style="min-height:42px;font-size:13px">profile settings</a>
-              <a class="btn grow" href="/account" style="min-height:42px;font-size:13px">my gifts &amp; asr</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Your Gifts (when saved on device) -->
-        <div id="mine" class="stack" hidden>
-          <div class="sec-bar">
-            <h2>your gifts</h2>
-            <a class="sec-action" href="/login">sync account</a>
-          </div>
-          <div class="list" id="mineList"></div>
-        </div>
-
-        <!-- 2-Column "history" Bento Cards -->
-        <div class="stack" style="gap:10px">
-          <div class="sec-bar">
-            <h2>recent transfers</h2>
-            <a class="sec-action" href="/g/dimas-igdw">try demo →</a>
-          </div>
-          <div class="bento-grid">
-            <a class="bento-card" href="/r/dimas-igdw?k=fodwtdk1iemng">
+          <div class="bento-grid" id="historyGrid">
+            <button type="button" class="bento-card" data-history="budi" style="text-align:left;cursor:pointer">
               <div class="bento-top">
-                <span class="avatar" style="background:#389B8E;color:#fff;width:30px;height:30px;border-radius:10px;font-size:12px">D</span>
+                <span class="avatar" style="background:#389B8E;color:#fff;width:32px;height:32px;border-radius:10px;font-size:12px">B</span>
+                <div class="bento-meta">
+                  <b>Budi</b>
+                  <span>03/11/2026 · id-ID</span>
+                </div>
+              </div>
+              <div class="bento-val">
+                <span class="tag-plus">+ 14 words</span>
+              </div>
+            </button>
+
+            <button type="button" class="bento-card" data-history="siti" style="text-align:left;cursor:pointer">
+              <div class="bento-top">
+                <span class="avatar" style="background:#E2A04A;color:#0F0F0F;width:32px;height:32px;border-radius:10px;font-size:12px">S</span>
+                <div class="bento-meta">
+                  <b>Siti</b>
+                  <span>03/11/2026 · typo fix</span>
+                </div>
+              </div>
+              <div class="bento-val">
+                <span>+ 1 fixed</span>
+              </div>
+            </button>
+
+            <button type="button" class="bento-card" data-history="dimas" style="text-align:left;cursor:pointer">
+              <div class="bento-top">
+                <span class="avatar" style="background:#5E8CE6;color:#fff;width:32px;height:32px;border-radius:10px;font-size:12px">D</span>
                 <div class="bento-meta">
                   <b>Dimas</b>
-                  <span>birthday gift</span>
+                  <span>03/11/2026 · birthday</span>
                 </div>
               </div>
               <div class="bento-val">
                 <span class="tag-plus">+ 13 voices</span>
               </div>
-            </a>
+            </button>
 
-            <a class="bento-card" href="/g/dimas-igdw">
+            <button type="button" class="bento-card" data-history="nadia" style="text-align:left;cursor:pointer">
               <div class="bento-top">
-                <span class="avatar" style="background:#E2A04A;color:#0F0F0F;width:30px;height:30px;border-radius:10px;font-size:12px">B</span>
+                <span class="avatar" style="background:#9E7CF4;color:#fff;width:32px;height:32px;border-radius:10px;font-size:12px">N</span>
                 <div class="bento-meta">
-                  <b>Record voice</b>
-                  <span>asr typo studio</span>
+                  <b>Nadia</b>
+                  <span>02/11/2026 · 16 khz</span>
                 </div>
               </div>
               <div class="bento-val">
-                <span>+ 0:15</span>
+                <span>+ 99% asr</span>
               </div>
-            </a>
-
-            <a class="bento-card" href="/m/dimas-igdw?k=ffywhsimsfdhs3y">
-              <div class="bento-top">
-                <span class="avatar" style="background:#5E8CE6;color:#fff;width:30px;height:30px;border-radius:10px;font-size:12px">S</span>
-                <div class="bento-meta">
-                  <b>Dashboard</b>
-                  <span>organizer console</span>
-                </div>
-              </div>
-              <div class="bento-val">
-                <span class="tag-plus">+ manage</span>
-              </div>
-            </a>
-
-            <a class="bento-card" href="/account#settings">
-              <div class="bento-top">
-                <span class="avatar" style="background:#9E7CF4;color:#fff;width:30px;height:30px;border-radius:10px;font-size:12px">⚙</span>
-                <div class="bento-meta">
-                  <b>Profile &amp; ASR</b>
-                  <span>account settings</span>
-                </div>
-              </div>
-              <div class="bento-val">
-                <span>+ settings</span>
-              </div>
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -217,18 +171,14 @@
   </section>
 </main>
 <script type="module">
-import { $, $$, h, api, icon, initials, toast } from '/assets/common.js';
-import { createScene, applyTheme } from '/assets/themes.js';
-import { me, giftItem } from '/assets/auth.js';
+import { $, $$, h, api, icon, initials, toast, openSheet, closeSheet } from '/assets/common.js';
+import { createScene } from '/assets/themes.js';
+import { me } from '/assets/auth.js';
 
 $('#logo').innerHTML = icon.menu(18);
-$('#custIco').innerHTML = icon.sliders(15);
-$('#quickPlus').innerHTML = icon.plus(18);
-$('#guestAvatarIco').innerHTML = icon.user(18);
-$('#mIcoUser').innerHTML = icon.user(15);
-$('#mIcoSet').innerHTML = icon.settings(15);
-$('#mIcoPlus').innerHTML = icon.plus(15);
-$('#mIcoMic').innerHTML = icon.mic(15);
+$('#bellIco').innerHTML = icon.bell(16);
+$('#eyeToggle').innerHTML = icon.eye(16);
+$('#quickPlusTile').innerHTML = icon.plus(20);
 $('#tabHome').innerHTML = icon.home(17);
 $('#tabNew').innerHTML = icon.gift(17);
 $('#tabAsr').innerHTML = icon.mic(17);
@@ -237,97 +187,288 @@ $('#tabProf').innerHTML = icon.user(17);
 const hr = new Date().getHours();
 $('#greetingTime').textContent = hr < 12 ? 'good morning,' : hr < 18 ? 'good afternoon,' : 'good evening,';
 
-// Toggle top-left '=' App Menu Sheet
-$('#menuToggle').addEventListener('click', () => {
-  const sheet = $('#appMenuSheet');
-  sheet.hidden = !sheet.hidden;
-});
-$('#closeMenuBtn').addEventListener('click', () => { $('#appMenuSheet').hidden = true; });
-
-const SAMPLES = {
-  birthday: { recipient: 'Dimas', cake: { flavor: 'strawberry', name: 'Dimas' } },
-  graduation: { recipient: 'Nadia', cake: { flavor: 'strawberry', name: 'Nadia, S.Kom.' } },
-  wedding: { recipient: 'Rina & Bayu', cake: { flavor: 'vanilla', name: 'Selamat menempuh hidup baru' } }
-};
-let timer;
-let currentOccasion = 'birthday';
-function show(occasion) {
-  currentOccasion = occasion;
-  const t = applyTheme(occasion);
-  $$('#occasions .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === occasion));
-  const targetHref = occasion === 'birthday' ? '/new' : `/new?occasion=${occasion}`;
-  $('#createLink').href = targetHref;
-  $('#quickPlus').href = targetHref;
-  $('#openStudioLink').href = targetHref;
-  $('#heroMetric').textContent = `15s · ${occasion}`;
-  $('#how2').textContent = `adds a ${t.item}`;
-  $('#how3').textContent = t.key === 'graduation' ? 'flowers bloom' : t.key === 'wedding' ? 'lanterns glow' : 'candles glow';
-  $('#cake').textContent = '';
-  const scene = createScene($('#cake'), { occasion, ...SAMPLES[occasion] });
-  scene.setCandles(12);
-  clearInterval(timer);
-  let i = 0;
-  timer = setInterval(() => { scene.light(i++); if (i >= 12) clearInterval(timer); }, 150);
-}
-$$('#occasions .chip').forEach((c) => c.addEventListener('click', () => show(c.dataset.v)));
-$('#cake').addEventListener('click', () => show(currentOccasion));
-
-$('#customizeToggle').addEventListener('click', () => {
-  const drawer = $('#customizeCard');
-  drawer.hidden = !drawer.hidden;
-  $('#customizeToggle').classList.toggle('active-toggle', !drawer.hidden);
-  if (!drawer.hidden) show(currentOccasion);
+// Toggle between ASR corpus metrics when the eye icon is tapped (like Dribbble balance eye toggle)
+const METRICS = [
+  { label: 'speech-to-text corpus', val: '14 voices · 98%', eye: 'eye' },
+  { label: 'verified word alignments', val: '112 words · 68s', eye: 'eye' },
+  { label: 'speech-to-text corpus', val: '•••• · •••%', eye: 'eyeOff' }
+];
+let metricIdx = 0;
+$('#eyeToggle').addEventListener('click', () => {
+  metricIdx = (metricIdx + 1) % METRICS.length;
+  const m = METRICS[metricIdx];
+  $('#corpusLabel').textContent = m.label;
+  $('#heroMetric').textContent = m.val;
+  $('#eyeToggle').innerHTML = icon[m.eye](16);
 });
 
-show('birthday');
-
-function loadMine() {
-  try { return JSON.parse(localStorage.getItem('vg-mine') || '[]'); } catch { return []; }
-}
-function showMine() {
-  const mine = loadMine();
-  $('#mine').hidden = !mine.length;
-  $('#mineList').replaceChildren(...mine.slice(-6).reverse().map((g) => giftItem(g, forget)));
-}
-function forget(g) {
-  try { localStorage.setItem('vg-mine', JSON.stringify(loadMine().filter((x) => x.slug !== g.slug))); } catch {}
-  showMine();
-}
-
-function showLoggedInHome(u) {
-  $('#greetingName').textContent = u.name;
-  $('#guestAcctCard').hidden = true;
-  $('#userAcctCard').hidden = false;
-  $('#userSqAvatar').textContent = initials(u.name);
-  $('#userCardName').textContent = u.name;
-  $('#userCardEmail').textContent = u.email;
-  const acctEl = $('#account');
-  if (acctEl) acctEl.replaceWith(h('a', { class: 'avatar acct', href: '/account', title: u.email, 'aria-label': 'Your account' }, initials(u.name)));
-}
-
-$('#homeDemoLogin')?.addEventListener('click', async () => {
-  const btn = $('#homeDemoLogin');
-  btn.disabled = true;
-  btn.textContent = 'Signing in…';
-  try {
-    const { user } = await api('/api/account', {
-      method: 'POST',
-      json: { action: 'login', email: 'sari@voicegift.id', password: 'password123' }
-    });
-    toast(`Welcome back, ${user.name}`);
-    showLoggedInHome(user);
-  } catch (e) {
-    toast(e.message);
-    btn.disabled = false;
-    btn.textContent = '1-tap demo account · Sari';
+// Person / Quick Send Data (opens layered Bottom Sheet on tap!)
+const PEOPLE = {
+  dimas: {
+    name: 'Dimas',
+    subtitle: 'birthday voice gift · 13 voices collected',
+    occasion: 'birthday',
+    cake: { flavor: 'strawberry', name: 'Dimas' },
+    candles: 13,
+    recordHref: '/g/dimas-igdw',
+    openHref: '/r/dimas-igdw?k=fodwtdk1iemng',
+    manageHref: '/m/dimas-igdw?k=ffywhsimsfdhs3y'
+  },
+  nadia: {
+    name: 'Nadia, S.Kom.',
+    subtitle: 'graduation bouquet · verified speech captions',
+    occasion: 'graduation',
+    cake: { flavor: 'navy', name: 'Nadia, S.Kom.' },
+    candles: 9,
+    recordHref: '/new?occasion=graduation',
+    openHref: '/new?occasion=graduation',
+    manageHref: '/account'
+  },
+  rina: {
+    name: 'Rina & Bayu',
+    subtitle: 'wedding sky lanterns · 16 khz wav audio',
+    occasion: 'wedding',
+    cake: { flavor: 'gold', name: 'Rina & Bayu' },
+    candles: 11,
+    recordHref: '/new?occasion=wedding',
+    openHref: '/new?occasion=wedding',
+    manageHref: '/account'
+  },
+  budi: {
+    name: 'Budi Santoso',
+    subtitle: 'speech-to-text studio · 15s voice transfer',
+    occasion: 'birthday',
+    cake: { flavor: 'vanilla', name: 'Dimas' },
+    candles: 13,
+    recordHref: '/g/dimas-igdw',
+    openHref: '/r/dimas-igdw?k=fodwtdk1iemng',
+    manageHref: '/m/dimas-igdw?k=ffywhsimsfdhs3y'
   }
+};
+
+function openPersonSheet(key) {
+  const p = PEOPLE[key] || PEOPLE.dimas;
+  const stageBox = h('div', { style: { width: '100%' } });
+  openSheet({
+    title: p.name.toLowerCase(),
+    subtitle: p.subtitle,
+    content: [
+      h('div', { class: 'stage-showcase', style: { background: 'var(--panel)', borderRadius: '22px', padding: '10px', border: '1px solid var(--line)' } }, stageBox),
+      h('div', { class: 'dual-pills' },
+        h('a', { class: 'pill-btn dark', href: p.openHref, style: { background: '#222625' } }, 'open reveal'),
+        h('a', { class: 'pill-btn light', href: p.recordHref }, 'record 15s voice')
+      ),
+      h('a', { class: 'nav-row', href: `/new?occasion=${p.occasion}`, style: { borderRadius: '16px', background: 'var(--panel)', border: '1px solid var(--line)', minHeight: '50px' } },
+        h('span', { class: 'nav-ico', html: icon.sliders(15) }),
+        h('div', { class: 'nav-info' }, h('b', {}, 'customize theme & stickers'), h('small', {}, `${p.occasion} studio`)),
+        h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
+      )
+    ]
+  });
+  const scene = createScene(stageBox, { occasion: p.occasion, recipient: p.name, cake: p.cake });
+  scene.setCandles(p.candles);
+  for (let i = 0; i < p.candles; i++) setTimeout(() => scene.light(i), i * 90);
+}
+
+$$('#quickRail [data-person]').forEach((btn) => {
+  btn.addEventListener('click', () => openPersonSheet(btn.dataset.person));
 });
+
+// History / Speech-to-Text Inspector Data (opens layered ASR Bottom Sheet on tap!)
+const HISTORY_ITEMS = {
+  budi: {
+    speaker: 'Budi',
+    meta: '03/11/2026 · 16 khz wav · id-ID',
+    metric: '+ 14 words · 99% confidence',
+    words: [
+      { w: 'Selamat', t: '0.18s', ok: true },
+      { w: 'ulang', t: '0.52s', ok: true },
+      { w: 'tahun', t: '0.88s', ok: true },
+      { w: 'Dimas,', t: '1.30s', ok: true, fixed: true },
+      { w: 'semoga', t: '1.85s', ok: true },
+      { w: 'panjang', t: '2.30s', ok: true },
+      { w: 'umur', t: '2.75s', ok: true },
+      { w: 'dan', t: '3.10s', ok: true },
+      { w: 'sukses', t: '3.48s', ok: true },
+      { w: 'selalu!', t: '4.05s', ok: true }
+    ],
+    href: '/g/dimas-igdw'
+  },
+  siti: {
+    speaker: 'Siti',
+    meta: '03/11/2026 · phonetic name repair',
+    metric: '1 word repaired · "di mas" → "Dimas"',
+    words: [
+      { w: 'Happy', t: '0.22s', ok: true },
+      { w: 'birthday', t: '0.64s', ok: true },
+      { w: 'di mas', fix: 'Dimas', t: '1.15s', ok: false },
+      { w: 'wish', t: '1.72s', ok: true },
+      { w: 'you', t: '2.04s', ok: true },
+      { w: 'all', t: '2.35s', ok: true },
+      { w: 'the', t: '2.60s', ok: true },
+      { w: 'best!', t: '2.95s', ok: true }
+    ],
+    href: '/g/dimas-igdw'
+  },
+  dimas: {
+    speaker: 'Dimas · Birthday Gift',
+    meta: '13 verified voice transfers · 65s total',
+    metric: '+ 13 voices · ready to unveil',
+    words: [
+      { w: '13', t: 'voices', ok: true },
+      { w: '16kHz', t: 'mono PCM', ok: true },
+      { w: 'VAD', t: 'trimmed', ok: true },
+      { w: '98.4%', t: 'ASR accuracy', ok: true, fixed: true }
+    ],
+    href: '/r/dimas-igdw?k=fodwtdk1iemng'
+  },
+  nadia: {
+    speaker: 'Nadia · Graduation',
+    meta: '02/11/2026 · 16 khz wav · id-ID',
+    metric: '+ 99% speech-to-text accuracy',
+    words: [
+      { w: 'Selamat', t: '0.15s', ok: true },
+      { w: 'wisuda', t: '0.60s', ok: true },
+      { w: 'Nadia', t: '1.12s', ok: true, fixed: true },
+      { w: 'S.Kom.,', t: '1.68s', ok: true },
+      { w: 'bangga', t: '2.20s', ok: true },
+      { w: 'banget!', t: '2.75s', ok: true }
+    ],
+    href: '/g/dimas-igdw'
+  }
+};
+
+function openHistorySheet(key) {
+  const item = HISTORY_ITEMS[key] || HISTORY_ITEMS.budi;
+  const wordRow = h('div', { class: 'token-preview' });
+  item.words.forEach((tok) => {
+    const chip = h('button', {
+      type: 'button',
+      class: `tok ${tok.ok ? (tok.fixed ? 'fixed' : '') : 'suspect'}`,
+      title: `Timestamp: ${tok.t}`,
+      onclick: () => {
+        if (!tok.ok && tok.fix) {
+          tok.w = tok.fix;
+          tok.ok = true;
+          tok.fixed = true;
+          chip.className = 'tok fixed';
+          chip.textContent = `${tok.w} ✓`;
+          toast(`Repaired ASR word → "${tok.w}"`);
+        } else {
+          toast(`Word aligned at ${tok.t}`);
+        }
+      }
+    }, !tok.ok ? `${tok.w} → ${tok.fix}` : `${tok.w} (${tok.t})`);
+    wordRow.append(chip);
+  });
+
+  openSheet({
+    title: `${item.speaker.toLowerCase()} · speech-to-text`,
+    subtitle: item.meta,
+    content: [
+      h('div', { class: 'card stack', style: { gap: '10px', padding: '14px' } },
+        h('div', { class: 'row', style: { justifyContent: 'space-between' } },
+          h('span', { class: 'badge-pill green' }, item.metric),
+          h('span', { class: 'tiny muted' }, 'tap word to inspect / repair')
+        ),
+        wordRow
+      ),
+      h('div', { class: 'dual-pills' },
+        h('a', { class: 'pill-btn dark', href: '/m/dimas-igdw?k=ffywhsimsfdhs3y', style: { background: '#222625' } }, 'asr console'),
+        h('a', { class: 'pill-btn light', href: item.href }, 'open studio')
+      )
+    ]
+  });
+}
+
+$$('#historyGrid [data-history]').forEach((card) => {
+  card.addEventListener('click', () => openHistorySheet(card.dataset.history));
+});
+
+// Top-left '=' Menu & Top-right Bell open clean layered Mobile Sheets
+let currentUser = null;
+function openMenuOrAccountSheet(tab = 'nav') {
+  openSheet({
+    title: currentUser ? `hi, ${currentUser.name.toLowerCase()}` : 'voice gift · menu',
+    subtitle: currentUser ? `${currentUser.email} · verified organizer` : 'sign in or explore speech-to-text studio',
+    content: [
+      h('div', { class: 'nav-list' },
+        h('a', { class: 'nav-row', href: '/account' },
+          h('span', { class: 'nav-ico', html: icon.user(16) }),
+          h('div', { class: 'nav-info' },
+            h('b', {}, currentUser ? 'profile & settings' : 'sign in / create account'),
+            h('small', {}, currentUser ? 'manage gifts, bio & asr preferences' : 'sync gifts & export asr dataset')
+          ),
+          h('span', { class: 'nav-val' }, currentUser ? 'active' : 'guest'),
+          h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
+        ),
+        h('a', { class: 'nav-row', href: '/g/dimas-igdw' },
+          h('span', { class: 'nav-ico', html: icon.mic(16) }),
+          h('div', { class: 'nav-info' },
+            h('b', {}, 'record & speech-to-text studio'),
+            h('small', {}, '16 khz wav + word-level typo repair')
+          ),
+          h('span', { class: 'nav-val' }, '15s'),
+          h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
+        ),
+        h('a', { class: 'nav-row', href: '/m/dimas-igdw?k=ffywhsimsfdhs3y' },
+          h('span', { class: 'nav-ico', html: icon.sliders(16) }),
+          h('div', { class: 'nav-info' },
+            h('b', {}, 'organizer asr dashboard'),
+            h('small', {}, 'manage voices, qr invite & captions')
+          ),
+          h('span', { class: 'nav-val' }, '13 voices'),
+          h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
+        ),
+        h('a', { class: 'nav-row', href: '/r/dimas-igdw?k=fodwtdk1iemng' },
+          h('span', { class: 'nav-ico', html: icon.gift(16) }),
+          h('div', { class: 'nav-info' },
+            h('b', {}, 'recipient surprise reveal'),
+            h('small', {}, 'blow out candles & play synchronized captions')
+          ),
+          h('span', { class: 'nav-val' }, 'demo'),
+          h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
+        )
+      ),
+      !currentUser && h('button', {
+        type: 'button',
+        class: 'btn ghost sm',
+        style: { width: '100%', minHeight: '44px' },
+        onclick: async () => {
+          try {
+            const { user } = await api('/api/account', {
+              method: 'POST',
+              json: { action: 'login', email: 'sari@voicegift.id', password: 'password123' }
+            });
+            currentUser = user;
+            $('#greetingName').textContent = user.name.split(' ')[0];
+            closeSheet();
+            toast(`Signed in as ${user.name}`);
+          } catch (e) {
+            toast(e.message);
+          }
+        }
+      }, '1-tap demo login · Sari (organizer)')
+    ]
+  });
+}
+
+$('#menuToggle').addEventListener('click', () => openMenuOrAccountSheet('nav'));
+$('#bellBtn').addEventListener('click', () => openHistorySheet('siti'));
+$('#recordQuickBtn').addEventListener('click', () => openPersonSheet('dimas'));
+$('#viewAllQuick').addEventListener('click', () => openPersonSheet('dimas'));
+$('#viewAllHistory').addEventListener('click', () => openHistorySheet('budi'));
 
 me().then((u) => {
-  if (u) return showLoggedInHome(u);
-  $('#account').hidden = false;
-  showMine();
+  if (!u) return;
+  currentUser = u;
+  $('#greetingName').textContent = u.name.split(' ')[0];
 });
+
+const initSheet = new URLSearchParams(location.search).get('sheet');
+if (initSheet === 'budi' || initSheet === 'siti') setTimeout(() => openHistorySheet(initSheet), 120);
+else if (initSheet === 'dimas' || initSheet === 'nadia') setTimeout(() => openPersonSheet(initSheet), 120);
+else if (initSheet === 'menu') setTimeout(() => openMenuOrAccountSheet('nav'), 120);
 </script>
 </body>
 </html>

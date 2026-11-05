@@ -1,4 +1,4 @@
-import { $, $$, h, api, icon, showScreen, copyText, addStars, toast, initials } from './common.js';
+import { $, $$, h, api, icon, showScreen, copyText, addStars, toast, initials, openSheet, closeSheet } from './common.js';
 import { BRUSHES } from './stage.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { friendUrl, qrSvg, shareRow, printQrCard } from './share.js';
@@ -9,7 +9,17 @@ $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const params = new URLSearchParams(location.search);
-const state = { occasion: THEMES[params.get('occasion')] ? params.get('occasion') : 'birthday', flavor: '', brush: 0, nameTouched: false, sel: -1, created: null };
+const state = {
+  occasion: THEMES[params.get('occasion')] ? params.get('occasion') : 'birthday',
+  flavor: '',
+  brush: 0,
+  nameTouched: false,
+  sel: -1,
+  created: null,
+  recipientEmail: '',
+  verifyQuestion: '',
+  verifyAnswer: ''
+};
 let t = theme(state.occasion);
 const MAX_STICKERS = 30;
 
@@ -88,6 +98,76 @@ $('#decorToolsToggle')?.addEventListener('click', () => {
 });
 // Logged in: "Your name" starts as the account's name.
 me().then((u) => { if (u && !$('#organizer').value.trim()) $('#organizer').value = u.name; });
+
+function updateDeliverySummary() {
+  if ($('#deliverySummaryVal')) {
+    $('#deliverySummaryVal').textContent = state.recipientEmail
+      ? state.recipientEmail.split('@')[0]
+      : state.verifyQuestion ? 'custom' : 'opsional';
+  }
+  if ($('#deliverySummarySub')) {
+    $('#deliverySummarySub').textContent = state.recipientEmail
+      ? `kirim ke ${state.recipientEmail} + verifikasi tamu`
+      : state.verifyQuestion || 'verifikasi pertanyaan jika penerima belum punya akun';
+  }
+}
+
+$('#openDeliverySheetBtn')?.addEventListener('click', () => {
+  const recName = $('#recipient').value.trim() || 'Dimas';
+  const emailIn = h('input', {
+    class: 'input',
+    type: 'email',
+    value: state.recipientEmail,
+    placeholder: `e.g. ${recName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'dimas'}@voicegift.id`
+  });
+  const qIn = h('input', {
+    class: 'input',
+    value: state.verifyQuestion || `Siapa nama panggilan akrab ${recName}?`,
+    maxlength: 140,
+    placeholder: 'Pertanyaan verifikasi untuk penerima tanpa akun'
+  });
+  const aIn = h('input', {
+    class: 'input',
+    value: state.verifyAnswer || recName.split(/\s+/)[0],
+    maxlength: 80,
+    placeholder: `Jawaban (contoh: ${recName.split(/\s+/)[0]})`
+  });
+
+  const form = h('form', {
+    class: 'stack',
+    style: { gap: '12px' },
+    onsubmit: (ev) => {
+      ev.preventDefault();
+      state.recipientEmail = emailIn.value.trim().toLowerCase();
+      state.verifyQuestion = qIn.value.trim();
+      state.verifyAnswer = aIn.value.trim();
+      updateDeliverySummary();
+      closeSheet();
+      toast('Pengaturan pengiriman & verifikasi disimpan');
+    }
+  },
+    h('div', { class: 'field' },
+      h('label', {}, 'kirim langsung ke akun penerima (email opsional)'),
+      emailIn,
+      h('span', { class: 'tiny muted' }, 'Jika penerima login dengan akun ini, voice gift langsung terbuka tanpa pertanyaan.')
+    ),
+    h('div', { class: 'field' },
+      h('label', {}, 'pertanyaan verifikasi (jika penerima belum punya akun)'),
+      qIn
+    ),
+    h('div', { class: 'field' },
+      h('label', {}, 'jawaban verifikasi'),
+      aIn
+    ),
+    h('button', { type: 'submit', class: 'btn' }, 'simpan pengaturan')
+  );
+
+  openSheet({
+    title: 'pengiriman & verifikasi',
+    subtitle: '1. belum ada akun → jawab pertanyaan · 2. ada akun → langsung buka',
+    content: form
+  });
+});
 
 $('#whoForm').addEventListener('submit', (e) => {
   e.preventDefault();
@@ -251,10 +331,14 @@ $('#createBtn').addEventListener('click', async () => {
   btn.textContent = state.created ? 'Saving…' : 'Creating…';
   err.hidden = true;
   try {
+    const recTrim = $('#recipient').value.trim();
     const body = {
-      recipient: $('#recipient').value.trim(),
+      recipient: recTrim,
       organizer: $('#organizer').value.trim(),
       occasion: state.occasion,
+      recipientEmail: state.recipientEmail,
+      verifyQuestion: state.verifyQuestion || `Siapa nama panggilan akrab ${recTrim}?`,
+      verifyAnswer: state.verifyAnswer || recTrim.split(/\s+/)[0],
       cake: { flavor: state.flavor, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
     };
     if (state.created) {

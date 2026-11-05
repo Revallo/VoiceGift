@@ -1,4 +1,4 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { friendUrl, recipientUrl, qrSvg, shareRow, recipientCard, printQrCard } from './share.js';
 import { me } from './auth.js';
@@ -128,10 +128,117 @@ async function load() {
   $('#printQr').onclick = () => printQrCard(gift);
 
   $('#delivery').textContent = '';
-  $('#delivery').append(recipientCard(gift, openKey));
+  const deliveryRow = h('div', { class: 'nav-list', style: { marginBottom: '4px' } },
+    h('button', {
+      type: 'button',
+      class: 'nav-row',
+      onclick: () => openDeliverySheet(gift, openKey)
+    },
+      h('span', { class: 'nav-ico', html: icon.shield(16) }),
+      h('div', { class: 'nav-info' },
+        h('b', {}, 'send langsung ke akun & verifikasi'),
+        h('small', {}, gift.recipientEmail ? `terkirim ke ${gift.recipientEmail}` : '1. tanpa akun → pertanyaan · 2. ada akun → langsung buka')
+      ),
+      h('span', { class: 'nav-val' }, gift.recipientEmail ? 'terkirim ✓' : 'atur'),
+      h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
+    ),
+    h('button', {
+      type: 'button',
+      class: 'nav-row',
+      onclick: () => openSheet({
+        title: `share link · ${gift.recipient}`,
+        subtitle: 'kirim link ke penerima atau bagikan via whatsapp',
+        content: recipientCard(gift, openKey)
+      })
+    },
+      h('span', { class: 'nav-ico', html: icon.send(16) }),
+      h('div', { class: 'nav-info' },
+        h('b', {}, `share link ke ${gift.recipient}`),
+        h('small', {}, 'whatsapp · qr code · direct reveal link')
+      ),
+      h('span', { class: 'nav-val' }, 'share'),
+      h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
+    )
+  );
+  $('#delivery').append(deliveryRow);
   $('#openReveal').href = recipientUrl(gift, openKey);
   $('#demoCard').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
   showScreen('main');
+}
+
+function openDeliverySheet(gift, openKey) {
+  const emailIn = h('input', {
+    class: 'input',
+    type: 'email',
+    value: gift.recipientEmail || 'dimas@voicegift.id',
+    placeholder: 'e.g. dimas@voicegift.id'
+  });
+  const qIn = h('input', {
+    class: 'input',
+    value: gift.verifyQuestion || `Siapa nama panggilan akrab ${gift.recipient}?`,
+    maxlength: 140,
+    placeholder: 'Pertanyaan verifikasi untuk penerima tanpa akun'
+  });
+  const aIn = h('input', {
+    class: 'input',
+    value: gift.verifyAnswer || gift.recipient.split(/\s+/)[0],
+    maxlength: 80,
+    placeholder: `Jawaban (contoh: ${gift.recipient.split(/\s+/)[0]})`
+  });
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'kirim ke akun & simpan verifikasi');
+
+  const form = h('form', {
+    class: 'stack',
+    style: { gap: '12px' },
+    onsubmit: async (ev) => {
+      ev.preventDefault();
+      saveBtn.disabled = true;
+      try {
+        await api('/api/manage', {
+          method: 'POST',
+          json: {
+            slug,
+            key,
+            action: 'update-delivery',
+            recipientEmail: emailIn.value.trim().toLowerCase(),
+            verifyQuestion: qIn.value.trim(),
+            verifyAnswer: aIn.value.trim()
+          }
+        });
+        closeSheet();
+        toast(`Terkirim ke akun ${emailIn.value.trim() || gift.recipient}!`);
+        await load();
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+  },
+    h('div', { class: 'field' },
+      h('label', {}, 'email akun penerima (langsung masuk ke akunnya)'),
+      emailIn
+    ),
+    h('div', { class: 'field' },
+      h('label', {}, 'pertanyaan verifikasi (jika penerima tidak punya akun)'),
+      qIn
+    ),
+    h('div', { class: 'field' },
+      h('label', {}, 'jawaban verifikasi'),
+      aIn
+    ),
+    saveBtn,
+    h('div', { class: 'dual-pills', style: { marginTop: '4px' } },
+      h('a', { class: 'pill-btn dark', href: `/r/${gift.slug}?verify=1`, style: { background: '#222625', fontSize: '12.5px' } }, 'cek verifikasi tamu'),
+      h('a', { class: 'pill-btn light', href: `/r/${gift.slug}?k=${openKey}`, style: { fontSize: '12.5px' } }, 'buka voice gift')
+    )
+  );
+
+  openSheet({
+    title: 'send ke akun & verifikasi',
+    subtitle: '1. gak ada akun → verifikasi pertanyaan · 2. ada akun → langsung buka',
+    content: form
+  });
 }
 
 // Gone for good: the server deletes the message and its recording.

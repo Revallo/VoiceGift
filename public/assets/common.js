@@ -193,8 +193,57 @@ export const icon = {
   settings: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
   home: (s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   smartphone: (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg>`,
-  monitor: (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2.5"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`
+  monitor: (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2.5"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  eye: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  eyeOff: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`,
+  chevronRight: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>`,
+  send: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`
 };
+
+let activeSheet = null;
+export function closeSheet() {
+  if (!activeSheet) return;
+  const { backdrop, onClose, keyHandler } = activeSheet;
+  activeSheet = null;
+  window.removeEventListener('keydown', keyHandler);
+  backdrop.classList.add('closing');
+  setTimeout(() => backdrop.remove(), 220);
+  if (typeof onClose === 'function') onClose();
+}
+
+export function openSheet({ title = '', subtitle = '', content = null, onClose = null } = {}) {
+  if (activeSheet) {
+    activeSheet.backdrop.remove();
+    window.removeEventListener('keydown', activeSheet.keyHandler);
+    activeSheet = null;
+  }
+  const bodyBox = h('div', { class: 'sheet-body' });
+  if (Array.isArray(content)) bodyBox.append(...content);
+  else if (content instanceof Node) bodyBox.append(content);
+
+  const sheet = h('div', { class: 'bottom-sheet', role: 'dialog', 'aria-modal': 'true' },
+    h('div', { class: 'sheet-handle-wrap', onclick: closeSheet }, h('span', { class: 'sheet-handle' })),
+    (title || subtitle) && h('div', { class: 'sheet-head' },
+      h('div', { class: 'sheet-titles' },
+        title && h('h3', { class: 'sheet-title' }, title),
+        subtitle && h('span', { class: 'sheet-sub' }, subtitle)
+      ),
+      h('button', { type: 'button', class: 'sheet-close', 'aria-label': 'Close sheet', onclick: closeSheet, html: icon.x(14) })
+    ),
+    bodyBox
+  );
+
+  const backdrop = h('div', {
+    class: 'sheet-backdrop',
+    onclick: (ev) => { if (ev.target === backdrop) closeSheet(); }
+  }, sheet);
+
+  const keyHandler = (ev) => { if (ev.key === 'Escape') closeSheet(); };
+  window.addEventListener('keydown', keyHandler);
+  activeSheet = { backdrop, onClose, keyHandler };
+  document.body.append(backdrop);
+  return { close: closeSheet, sheet, bodyBox };
+}
 
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {

@@ -50,6 +50,17 @@
             <label for="organizer">Your name</label>
             <input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required>
           </div>
+          <div class="nav-list">
+            <button type="button" class="nav-row" id="openDeliverySheetBtn">
+              <span class="nav-ico" data-icon="shield"></span>
+              <div class="nav-info">
+                <b>send ke akun &amp; pertanyaan verifikasi</b>
+                <small id="deliverySummarySub">verifikasi otomatis jika penerima belum punya akun</small>
+              </div>
+              <span class="nav-val" id="deliverySummaryVal">opsional</span>
+              <span class="nav-chev" data-icon="chevronRight"></span>
+            </button>
+          </div>
           <p class="small err" id="whoError" hidden></p>
           <button class="btn emerald-track" type="submit" id="nextBtn"><span>Next: customize gift</span></button>
         </form>

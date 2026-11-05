@@ -23,10 +23,10 @@
       <a class="brand" href="/"><span class="logo" data-logo></span>voice gift</a>
     </div>
     <div class="web-col" style="max-width:440px;width:100%;margin:0 auto">
-      <div class="hero-card" style="padding:18px 20px;gap:12px">
+      <div class="hero-card" style="padding:18px 20px;gap:10px">
         <div class="row" style="justify-content:space-between">
           <div class="stack" style="gap:2px">
-            <span style="font-size:.7rem;color:rgba(255,255,255,0.72);text-transform:lowercase">organizer studio · cloud sync</span>
+            <span style="font-size:.7rem;color:rgba(255,255,255,0.72);text-transform:lowercase">speech-to-text studio · cloud sync</span>
             <h1 id="authTitle" style="font-size:1.35rem;margin:0;color:#fff"></h1>
           </div>
           <span class="profile-badge" style="background:rgba(15,15,15,0.32);color:#fff;border-color:rgba(255,255,255,0.2)">16 khz · asr</span>
@@ -39,16 +39,16 @@
     <nav class="app-tabbar" aria-label="Primary navigation">
       <a class="tab-item" href="/"><span data-icon="home"></span><span>home</span></a>
       <a class="tab-item" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
-      <a class="tab-item" href="/m/dimas-igdw?k=ffywhsimsfdhs3y"><span data-icon="sliders"></span><span>asr studio</span></a>
+      <a class="tab-item" href="/g/dimas-igdw"><span data-icon="mic"></span><span>asr studio</span></a>
       <a class="tab-item active" href="/account"><span data-icon="user"></span><span>profile</span></a>
     </nav>
   </section>
 
-  <!-- /account -->
+  <!-- /account (Layered Mobile App Architecture: Minimalist rows that open Bottom Sheets on tap) -->
   <section data-screen="me" hidden>
     <div class="web-grid">
       <div class="web-col">
-        <!-- Purrweb Emerald Profile Hero Card -->
+        <!-- 1. Purrweb Emerald Profile Hero Card -->
         <div class="hero-card">
           <div class="hero-top">
             <div class="hero-greeting" style="flex:1;min-width:0">
@@ -64,129 +64,101 @@
 
           <div class="hero-balance">
             <div class="hero-balance-label">
-              <span id="meBioLabel">total asr corpus</span>
+              <span id="meBioLabel">speech-to-text corpus</span>
               <span>16 khz · verified</span>
             </div>
             <div class="hero-balance-val" id="acctHeroVal">0 voices</div>
           </div>
 
           <div class="dual-pills">
-            <button type="button" class="pill-btn dark" id="scrollSettingsBtn">
-              <span data-icon="settings"></span>
-              <span>settings</span>
+            <button type="button" class="pill-btn dark" id="openProfileSheetBtn">
+              <span data-icon="edit"></span>
+              <span>edit profile</span>
             </button>
             <a class="pill-btn light" href="/new">
               <span data-icon="plus"></span>
-              <span>create a gift</span>
+              <span>new gift</span>
             </a>
           </div>
         </div>
 
+        <!-- Gifts Sent Directly to This Account (Direct Account Delivery) -->
+        <div class="stack" style="gap:10px" id="receivedSection" hidden>
+          <div class="sec-bar">
+            <h2>voice gifts sent to you</h2>
+            <span style="font-size:.72rem;color:#7CE8D8">direct open · no verify</span>
+          </div>
+          <div class="nav-list" id="receivedList"></div>
+        </div>
+
+        <!-- 2. Minimalist Your Gifts Section -->
         <div class="stack" style="gap:10px">
           <div class="sec-bar">
             <h2>your gifts</h2>
-            <a href="/new">+ new gift</a>
+            <a href="/new">+ new</a>
           </div>
           <div class="list" id="gifts"></div>
         </div>
-
-        <div class="stack" style="gap:10px">
-          <div class="sec-bar">
-            <h2>asr corpus metrics</h2>
-            <a href="/api/account?export=1" download="voice-gift-asr-corpus.jsonl">export .jsonl ›</a>
-          </div>
-          <div class="stat-grid" id="acctStats"></div>
-          <a class="btn ghost small" href="/api/account?export=1" download="voice-gift-asr-corpus.jsonl" style="justify-content:space-between;padding:12px 16px">
-            <span>download verified asr training corpus (.jsonl)</span>
-            <span style="color:var(--emerald-light);font-weight:700">16 khz + word alignments ›</span>
-          </a>
-        </div>
       </div>
 
-      <!-- Right Column: Full Profile & Settings Studio -->
-      <div class="web-col" id="settingsPanel">
+      <div class="web-col">
+        <!-- 3. Minimalist Progressive-Disclosure Menu Rows (Tap any row to open its Bottom Sheet) -->
         <div class="stack" style="gap:10px">
           <div class="sec-bar">
-            <h2>profile settings</h2>
-            <span class="profile-badge">account</span>
+            <h2>account &amp; settings</h2>
+            <span style="font-size:.74rem;color:var(--muted)">tap to open</span>
           </div>
-          <form class="card stack" id="profileForm" style="gap:12px">
-            <div class="field">
-              <label for="profNameInput">display name</label>
-              <input class="input" id="profNameInput" name="name" maxlength="60" required placeholder="Your name">
-            </div>
-            <div class="field">
-              <label for="profBioInput">role / bio</label>
-              <input class="input" id="profBioInput" name="bio" maxlength="120" placeholder="e.g. Voice Gift Organizer · Jakarta">
-            </div>
-            <div class="field">
-              <label>verified email</label>
-              <input class="input" id="profEmailReadonly" disabled style="opacity:0.55;cursor:not-allowed">
-            </div>
-            <button type="submit" class="btn small" id="saveProfileBtn">save profile changes</button>
-          </form>
-        </div>
 
-        <div class="stack" style="gap:10px">
-          <div class="sec-bar">
-            <h2>asr &amp; privacy preferences</h2>
-            <span style="font-size:.74rem;color:var(--muted)">auto-saved</span>
-          </div>
-          <div class="settings-group">
-            <div class="toggle-row" style="cursor:default">
-              <div class="t-info">
-                <b>default speech language</b>
-                <span>primary language for automatic transcription</span>
+          <div class="nav-list">
+            <button type="button" class="nav-row" id="rowEditProfile">
+              <span class="nav-ico" data-icon="user"></span>
+              <div class="nav-info">
+                <b>personal profile</b>
+                <small id="rowProfileSub">display name &amp; organizer bio</small>
               </div>
-              <select class="input" id="prefLang" style="width:auto;min-width:154px;min-height:40px;padding:0 12px;border-radius:12px;font-size:13px;background:#0F0F0F">
-                <option value="id-ID">id-ID · Indonesia</option>
-                <option value="en-US">en-US · English</option>
-              </select>
-            </div>
-            <label class="toggle-row">
-              <div class="t-info">
-                <b>highlight low-confidence words</b>
-                <span>flag uncertain asr words in amber for 1-tap repair</span>
-              </div>
-              <span class="switch">
-                <input type="checkbox" id="prefHighlight" checked>
-                <i></i>
-              </span>
-            </label>
-            <label class="toggle-row">
-              <div class="t-info">
-                <b>include verified captions in asr corpus</b>
-                <span>pair 16 khz wav segments with human-corrected text</span>
-              </div>
-              <span class="switch">
-                <input type="checkbox" id="prefCorpus" checked>
-                <i></i>
-              </span>
-            </label>
-          </div>
-        </div>
+              <span class="nav-val" id="rowProfileVal">edit</span>
+              <span class="nav-chev" data-icon="chevronRight"></span>
+            </button>
 
-        <div class="stack" style="gap:10px">
-          <div class="sec-bar">
-            <h2>security &amp; session</h2>
-            <span style="font-size:.74rem;color:var(--emerald-light)">scrypt N=32768</span>
+            <button type="button" class="nav-row" id="rowAsrPrefs">
+              <span class="nav-ico" data-icon="mic"></span>
+              <div class="nav-info">
+                <b>speech-to-text &amp; language</b>
+                <small>auto-highlight low-confidence words</small>
+              </div>
+              <span class="nav-val" id="rowPrefsVal">id-ID</span>
+              <span class="nav-chev" data-icon="chevronRight"></span>
+            </button>
+
+            <button type="button" class="nav-row" id="rowAsrCorpus">
+              <span class="nav-ico" data-icon="download"></span>
+              <div class="nav-info">
+                <b>asr dataset &amp; metrics</b>
+                <small>verified 16 khz wav + word alignments</small>
+              </div>
+              <span class="nav-val" id="rowCorpusVal">.jsonl</span>
+              <span class="nav-chev" data-icon="chevronRight"></span>
+            </button>
+
+            <button type="button" class="nav-row" id="rowSecurity">
+              <span class="nav-ico" data-icon="shield"></span>
+              <div class="nav-info">
+                <b>security &amp; password</b>
+                <small>scrypt N=32768 · active session</small>
+              </div>
+              <span class="nav-val">update</span>
+              <span class="nav-chev" data-icon="chevronRight"></span>
+            </button>
           </div>
-          <form class="card stack" id="passForm" style="gap:12px">
-            <div class="row" style="gap:10px;flex-wrap:wrap">
-              <div class="field" style="flex:1;min-width:140px">
-                <label for="curPassInput">current password</label>
-                <input class="input" id="curPassInput" type="password" autocomplete="current-password" placeholder="Current password" required>
-              </div>
-              <div class="field" style="flex:1;min-width:140px">
-                <label for="newPassInput">new password</label>
-                <input class="input" id="newPassInput" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
-              </div>
+
+          <button type="button" class="nav-row" id="logout" style="background:var(--panel);border:1px solid var(--line);border-radius:20px;min-height:54px;margin-top:4px">
+            <span class="nav-ico" style="background:rgba(255,107,107,0.14);color:var(--coral)" data-icon="lock"></span>
+            <div class="nav-info">
+              <b style="color:var(--coral)">log out</b>
+              <small>end session on this device</small>
             </div>
-            <div class="row" style="justify-content:space-between;gap:10px">
-              <button type="submit" class="btn ghost small" style="flex:1">update password</button>
-              <button type="button" class="btn ghost small" id="logout" style="flex:1;color:var(--coral);border-color:rgba(242,109,91,0.3)">log out</button>
-            </div>
-          </form>
+            <span class="nav-chev" data-icon="chevronRight"></span>
+          </button>
         </div>
       </div>
     </div>
@@ -194,7 +166,7 @@
     <nav class="app-tabbar" aria-label="Primary navigation">
       <a class="tab-item" href="/"><span data-icon="home"></span><span>home</span></a>
       <a class="tab-item" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
-      <a class="tab-item" href="/m/dimas-igdw?k=ffywhsimsfdhs3y"><span data-icon="sliders"></span><span>asr studio</span></a>
+      <a class="tab-item" href="/g/dimas-igdw"><span data-icon="mic"></span><span>asr studio</span></a>
       <a class="tab-item active" href="/account"><span data-icon="user"></span><span>profile</span></a>
     </nav>
   </section>

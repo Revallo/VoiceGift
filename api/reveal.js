@@ -1,4 +1,5 @@
-// GET /api/reveal?slug=…&k=…  → the messages, only with the recipient's key (the link the organizer sends)
+// GET /api/reveal?slug=…&k=…  → the messages, only with the recipient's key (the link the organizer sends).
+// The organizer's own account gets the demo voices only (their preview): real voices are for the recipient.
 import { route, send, query, HttpError } from '../lib/http.js';
 import { loadGift, publicGift, canOpen, checkVerifyAnswer, loadMessages } from '../lib/gifts.js';
 import { currentUser } from '../lib/accounts.js';
@@ -17,6 +18,7 @@ export default route({
     }
     const messages = (await loadMessages(gift.slug))
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
+      .filter((m) => !preview || m.demo)
       .map((m) => {
         const text = m.finalText || m.asrText;
         return {

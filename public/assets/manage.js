@@ -87,7 +87,8 @@ async function load() {
       : m.edited
         ? `${m.fixes || 1} fixed`
         : m.sent ? 'sent' : 'draft';
-    const playBtn = h('button', {
+    // Only demo voices: friends' voices are for the recipient, not even for the organizer.
+    const playBtn = m.demo && h('button', {
       type: 'button',
       class: 'play-mini',
       'aria-label': `Play ${m.sender}'s voice`,
@@ -162,6 +163,7 @@ async function load() {
   );
   $('#delivery').append(deliveryRow);
   $('#openReveal').href = recipientUrl(gift, openKey);
+  $('#openReveal').title = `Your preview only plays demo voices. Your friends’ voices are only for ${name}.`;
   $('#demoCard').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
   showScreen('main');
 }

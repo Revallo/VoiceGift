@@ -19,20 +19,34 @@
   .pick-title { text-align: center; margin: 4px 0 0; }
   .pick-title h1 { font-size: 1.7rem; line-height: 1.15; margin: 0 0 6px; }
   .pick-title p { margin: 0; color: var(--soft); }
-  #scene { min-height: 240px; }
+  #scene { min-height: 220px; }
   .picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .pick {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 14px 6px 12px; border-radius: 20px; cursor: pointer;
+    padding: 12px 6px 10px; border-radius: 20px; cursor: pointer;
     background: var(--panel); border: 2px solid var(--line); color: var(--text);
     font: inherit; transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
   }
-  .pick:active { transform: scale(0.97); }
-  .pick .em { font-size: 2rem; line-height: 1; }
+  .pick:active, .kind:active { transform: scale(0.97); }
+  .pick .em { font-size: 1.8rem; line-height: 1; }
   .pick b { font-size: 0.95rem; }
   .pick small { color: var(--muted); font-size: 0.72rem; }
-  .pick.on { border-color: var(--emerald-light); background: var(--panel-hover); box-shadow: 0 8px 24px var(--wash2); }
-  .go { background: var(--emerald-grad); color: #fff; border: 0; }
+  .pick.on, .kind.on { border-color: var(--emerald-light); background: var(--panel-hover); box-shadow: 0 8px 24px var(--wash2); }
+  .strip-label { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 2px -4px; }
+  .strip-label b { font-size: 0.95rem; }
+  .strip-label small { color: var(--muted); font-size: 0.75rem; }
+  /* sideways scroll of the kinds (each with a small live picture) and of the colours */
+  .strip { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 2px 2px 6px; margin: 0 -2px; overscroll-behavior-x: contain; }
+  .strip::-webkit-scrollbar { display: none; }
+  .kind {
+    flex: 0 0 132px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 4px; align-items: stretch;
+    padding: 8px 8px 10px; border-radius: 18px; cursor: pointer; background: var(--panel); border: 2px solid var(--line);
+    color: var(--text); font: inherit; font-weight: 600; font-size: 0.85rem; transition: transform 0.15s ease, border-color 0.2s ease;
+  }
+  .kind .mini { pointer-events: none; border-radius: 12px; overflow: hidden; background: var(--stage-bg); }
+  .colors { gap: 8px; }
+  .colors .swatch { flex: 0 0 auto; scroll-snap-align: start; }
+  .go { background: var(--emerald-grad); color: #fff; border: 0; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
 </style>
 </head>
 <body>
@@ -56,47 +70,105 @@
       <button type="button" class="pick" role="radio" data-v="wedding"><span class="em">🏮</span><b>Lanterns</b><small>wedding</small></button>
     </div>
 
+    <div class="strip-label"><b id="kindsTitle"></b><small>swipe →</small></div>
+    <div class="strip" id="kinds" role="radiogroup"></div>
+
+    <div class="strip-label"><b id="colorsTitle"></b><small id="colorName"></small></div>
+    <div class="strip colors" id="colors" role="radiogroup"></div>
+
     <a class="btn go pulse" id="goBtn" href="/login"></a>
     <p class="small muted center" style="margin:0">Free · no app to install · friends don’t need an account</p>
   </section>
 </main>
 <script type="module">
-import { $, $$, icon, addStars } from '/assets/common.js';
-import { createScene, applyTheme } from '/assets/themes.js';
+import { $, $$, h, icon, addStars } from '/assets/common.js';
+import { THEMES, createScene, applyTheme } from '/assets/themes.js';
 import { me } from '/assets/auth.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 addStars($('#app'), 26, 45);
 
 const PICKS = {
-  birthday: { thing: 'cake', emoji: '🎂', lead: 'Each friend’s voice lights one candle on the cake.', sample: { recipient: 'Dimas', cake: { flavor: 'strawberry', name: 'Dimas' } } },
-  graduation: { thing: 'bouquet', emoji: '💐', lead: 'Each friend’s voice opens one flower in the bouquet.', sample: { recipient: 'Nadia', cake: { flavor: 'strawberry', name: 'Nadia, S.Kom.' } } },
-  wedding: { thing: 'lanterns', emoji: '🏮', lead: 'Each friend’s voice lights one lantern in the sky.', sample: { recipient: 'Rina & Bayu', cake: { flavor: 'vanilla', name: 'Selamat menempuh hidup baru' } } }
+  birthday: { thing: 'cake', emoji: '🎂', kinds: 'Pick a cake', colors: 'Flavor', lead: 'Each friend’s voice lights one candle on the cake.', sample: { recipient: 'Dimas', name: 'Dimas' } },
+  graduation: { thing: 'bouquet', emoji: '💐', kinds: 'Pick a bouquet', colors: 'Wrap', lead: 'Each friend’s voice opens one flower in the bouquet.', sample: { recipient: 'Nadia', name: 'Nadia, S.Kom.' } },
+  wedding: { thing: 'lanterns', emoji: '🏮', kinds: 'Pick the lanterns', colors: 'Light', lead: 'Each friend’s voice lights one lantern in the sky.', sample: { recipient: 'Rina & Bayu', name: 'Selamat menempuh hidup baru' } }
 };
 
+const q = new URLSearchParams(location.search);
+const state = { occasion: PICKS[q.get('occasion')] ? q.get('occasion') : 'birthday', shape: q.get('shape') || 'classic', flavor: q.get('flavor') || '' };
+const gift = (o = {}) => ({
+  occasion: state.occasion,
+  recipient: PICKS[state.occasion].sample.recipient,
+  cake: { flavor: state.flavor, shape: state.shape, name: PICKS[state.occasion].sample.name, ...o }
+});
+
+// The big picture: lights up one item at a time.
 let timer;
+function bigScene() {
+  $('#scene').textContent = '';
+  const scene = createScene($('#scene'), gift());
+  scene.setCandles(12);
+  clearInterval(timer);
+  let i = 0;
+  timer = setInterval(() => { scene.light(i++); if (i >= 12) clearInterval(timer); }, 140);
+}
+
+function updateGo() {
+  const p = PICKS[state.occasion];
+  $('#goBtn').textContent = `Yes, make the ${p.thing} ${p.emoji}`;
+  // logged out: log in first (that page wears the same colours), then straight to "Create gift" with these picks
+  const next = `/new?occasion=${state.occasion}&shape=${state.shape}&flavor=${state.flavor}`;
+  $('#goBtn').href = '/login?next=' + encodeURIComponent(next);
+}
+
+// The kinds (shapes), each with a small live picture, scrolled sideways.
+function renderKinds() {
+  const d = THEMES[state.occasion].decorate;
+  $('#kinds').textContent = '';
+  for (const [key, s] of Object.entries(d.shapes)) {
+    const mini = h('div', { class: 'mini' });
+    const btn = h('button', { type: 'button', class: 'kind' + (key === state.shape ? ' on' : ''), role: 'radio', 'aria-checked': String(key === state.shape), 'data-v': key,
+      onclick: () => { state.shape = key; renderKinds(); bigScene(); updateGo(); } }, mini, h('span', {}, s.label));
+    $('#kinds').append(btn);
+    const sc = createScene(mini, gift({ shape: key }));
+    sc.setCandles(8);
+    sc.lightAll();
+  }
+}
+
+function renderColors() {
+  const d = THEMES[state.occasion].decorate;
+  $('#colors').textContent = '';
+  $('#colorName').textContent = d.swatches[state.flavor].label;
+  for (const [key, f] of Object.entries(d.swatches)) {
+    $('#colors').append(h('button', { type: 'button', class: 'swatch' + (key === state.flavor ? ' on' : ''), role: 'radio', 'aria-checked': String(key === state.flavor), 'aria-label': f.label, title: f.label,
+      onclick: () => { state.flavor = key; renderColors(); renderKinds(); bigScene(); updateGo(); } }, h('i', { style: d.swatch(f) })));
+  }
+}
+
 function show(occasion) {
+  const d = THEMES[occasion].decorate;
+  if (occasion !== state.occasion || !d.shapes[state.shape]) state.shape = 'classic';
+  if (occasion !== state.occasion || !d.swatches[state.flavor]) state.flavor = d.flavor;
+  state.occasion = occasion;
   const p = PICKS[occasion];
-  applyTheme(occasion); // the background takes this occasion's colors
+  applyTheme(occasion); // the background takes this occasion's colours
   $$('.pick').forEach((b) => {
     const on = b.dataset.v === occasion;
     b.classList.toggle('on', on);
     b.setAttribute('aria-checked', String(on));
   });
   $('#pickLead').textContent = p.lead;
-  $('#goBtn').textContent = `Yes, make the ${p.thing} ${p.emoji}`;
-  // logged out: log in first (that page wears the same colors), then straight to "Create gift"
-  $('#goBtn').href = '/login?next=' + encodeURIComponent(`/new?occasion=${occasion}`);
-  $('#scene').textContent = '';
-  const scene = createScene($('#scene'), { occasion, ...p.sample });
-  scene.setCandles(12);
-  clearInterval(timer);
-  let i = 0;
-  timer = setInterval(() => { scene.light(i++); if (i >= 12) clearInterval(timer); }, 160);
+  $('#kindsTitle').textContent = p.kinds;
+  $('#colorsTitle').textContent = p.colors;
+  $('#kinds').scrollLeft = $('#colors').scrollLeft = 0;
+  renderKinds();
+  renderColors();
+  bigScene();
+  updateGo();
 }
 $$('.pick').forEach((b) => b.addEventListener('click', () => show(b.dataset.v)));
-const start = new URLSearchParams(location.search).get('occasion');
-show(PICKS[start] ? start : 'birthday');
+show(state.occasion);
 
 me().then((user) => {
   if (!user) return;

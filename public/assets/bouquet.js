@@ -48,15 +48,69 @@ export function flowerSpots(n) {
 
 const poly = (pts) => `polygon(${pts.map(([x, y]) => `${x}px ${y}px`).join(', ')})`;
 
+// The kinds of bouquet (gift.cake.shape). The flowers sit in the same place in all of them.
+export const SHAPES = {
+  classic: { label: 'Paper cone' },
+  box: { label: 'Flower box' },
+  basket: { label: 'Basket' },
+  tied: { label: 'Hand-tied' }
+};
+
+const full = { left: '0', top: '0', width: `${W}px`, height: `${H}px` };
+
+// The bow: two loops + two tails around (x, y), plus the gold knot.
+function bow(P, x, y) {
+  P({ left: `${x - 59}px`, top: `${y - 8}px`, width: '56px', height: '32px', borderRadius: '50%', transform: 'rotate(18deg)' }, 'bow');
+  P({ left: `${x + 3}px`, top: `${y - 8}px`, width: '56px', height: '32px', borderRadius: '50%', transform: 'rotate(-18deg)' }, 'bow');
+  P({ left: `${x - 11}px`, top: `${y + 14}px`, width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(16deg)', transformOrigin: '50% 0' }, 'bow');
+  P({ left: `${x + 1}px`, top: `${y + 14}px`, width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(-16deg)', transformOrigin: '50% 0' }, 'bow');
+  P({ left: `${x - 10}px`, top: `${y}px`, width: '20px', height: '20px', borderRadius: '50%', background: '#D9A93A', boxShadow: 'inset -3px -3px 0 rgba(0,0,0,0.15)' });
+}
+
+// Builds a shape: B() = behind the flowers, F() = in front. Second argument = the wrap colour it takes.
+// Returns where the name goes.
+function buildShape(shape, B, F) {
+  if (shape === 'box') {
+    B({ left: '56px', top: '136px', width: '278px', height: '60px', borderRadius: '50%', boxShadow: 'inset 0 10px 18px rgba(0,0,0,0.35)' }, 'back');
+    F({ left: '58px', top: '168px', width: '274px', height: '180px', borderRadius: '0 0 137px 137px / 0 0 30px 30px' }, 'front');
+    F({ left: '195px', top: '168px', width: '137px', height: '180px', borderRadius: '0 0 137px 0 / 0 0 30px 0' }, 'front2');
+    F({ left: '52px', top: '156px', width: '286px', height: '28px', borderRadius: '50%', boxShadow: 'inset 0 -4px 0 rgba(0,0,0,0.12)' }, 'back2');
+    F({ left: '58px', top: '292px', width: '274px', height: '18px' }, 'bow');
+    bow(F, 195, 290);
+    return { top: 214 };
+  }
+  if (shape === 'basket') {
+    B({ left: '62px', top: '0px', width: '266px', height: '330px', boxSizing: 'border-box', border: '12px solid', borderBottom: '0', borderRadius: '50% 50% 0 0 / 46% 46% 0 0', background: 'transparent' }, 'handle');
+    F({ ...full, clipPath: poly([[46, 174], [344, 174], [300, 352], [90, 352]]) }, 'weave');
+    F({ left: '40px', top: '160px', width: '310px', height: '24px', borderRadius: '12px', boxShadow: 'inset 0 -4px 0 rgba(0,0,0,0.15)' }, 'back');
+    bow(F, 300, 176);
+    return { top: 218 };
+  }
+  if (shape === 'tied') {
+    // the stems start just below the lowest flowers, so they never cover one
+    F({ ...full, clipPath: poly([[146, 184], [244, 184], [214, 292], [210, 362], [180, 362], [176, 292]]), background: 'repeating-linear-gradient(96deg, #4F8455 0 7px, #3F6E46 7px 10px)' });
+    F({ left: '166px', top: '262px', width: '58px', height: '26px', borderRadius: '8px' }, 'bow');
+    bow(F, 195, 262);
+    F({ left: '232px', top: '284px', width: '140px', height: '52px', borderRadius: '10px', transform: 'rotate(-7deg)', boxShadow: '0 4px 10px rgba(0,0,0,0.25)' }, 'front');
+    return { top: 300, left: 232, width: 140, size: 18, rotate: -7 };
+  }
+  // classic: the paper cone
+  B({ ...full, clipPath: poly([[72, 26], [318, 26], [372, 92], [262, 362], [128, 362], [18, 92]]) }, 'back');
+  B({ ...full, clipPath: poly([[84, 40], [306, 40], [354, 94], [254, 348], [136, 348], [36, 94]]) }, 'back2');
+  F({ ...full, clipPath: poly([[52, 168], [338, 168], [252, 356], [138, 356]]) }, 'front');
+  F({ ...full, clipPath: poly([[195, 168], [338, 168], [252, 356], [195, 356]]) }, 'front2');
+  F({ left: '52px', top: '166px', width: '286px', height: '4px', background: 'rgba(0,0,0,0.08)' });
+  bow(F, 195, 276);
+  return { top: 196 };
+}
+
 export function createBouquet(host, opts = {}) {
   const { wrap, stage, glow, body, layer, toStage, size } = createStage(host, W, H, 'bouquet');
   glow.style.top = '-130px';
-  const full = { left: '0', top: '0', width: `${W}px`, height: `${H}px` };
   const P = (parent, style) => { const d = div('p', style); parent.append(d); return d; };
 
-  // back paper
-  const back = P(body, { ...full, clipPath: poly([[72, 26], [318, 26], [372, 92], [262, 362], [128, 362], [18, 92]]) });
-  const back2 = P(body, { ...full, clipPath: poly([[84, 40], [306, 40], [354, 94], [254, 348], [136, 348], [36, 94]]) });
+  const backEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
+  body.append(backEl);
   // greenery and baby's breath inside the wrap, so the bouquet looks full even with a few flowers
   const rndIn = seeded(9);
   for (const [x, y, r] of [[118, 112, -42], [156, 86, -18], [195, 78, 0], [234, 86, 18], [272, 112, 42], [100, 150, -64], [290, 150, 64], [146, 140, -26], [244, 140, 26], [195, 128, 0]]) {
@@ -82,19 +136,25 @@ export function createBouquet(host, opts = {}) {
   // front cone, in front of the flowers (clicks pass through to them)
   const front = div('', { position: 'absolute', inset: '0', pointerEvents: 'none' });
   stage.append(front);
-  const coneL = P(front, { ...full, clipPath: poly([[52, 168], [338, 168], [252, 356], [138, 356]]) });
-  const coneR = P(front, { ...full, clipPath: poly([[195, 168], [338, 168], [252, 356], [195, 356]]) });
-  P(front, { left: '52px', top: '166px', width: '286px', height: '4px', background: 'rgba(0,0,0,0.08)' });
-  const nameEl = P(front, { left: '62px', top: '196px', width: '266px', textAlign: 'center', fontFamily: 'var(--serif)', fontStyle: 'italic', fontWeight: '600', lineHeight: '1.1', whiteSpace: 'nowrap', overflow: 'hidden' });
+  const frontEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces in front of the flowers
+  front.append(frontEl);
+  const nameEl = div('p', { textAlign: 'center', fontFamily: 'var(--serif)', fontStyle: 'italic', fontWeight: '600', lineHeight: '1.1', whiteSpace: 'nowrap', overflow: 'hidden' });
   const drawing = createDrawing(front, W, H);
-  // bow
-  const bowParts = [
-    P(front, { left: '136px', top: '268px', width: '56px', height: '32px', borderRadius: '50%', transform: 'rotate(18deg)' }),
-    P(front, { left: '198px', top: '268px', width: '56px', height: '32px', borderRadius: '50%', transform: 'rotate(-18deg)' }),
-    P(front, { left: '184px', top: '290px', width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(16deg)', transformOrigin: '50% 0' }),
-    P(front, { left: '196px', top: '290px', width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(-16deg)', transformOrigin: '50% 0' })
-  ];
-  P(front, { left: '185px', top: '276px', width: '20px', height: '20px', borderRadius: '50%', background: '#D9A93A', boxShadow: 'inset -3px -3px 0 rgba(0,0,0,0.15)' });
+
+  let parts = {};
+  let flavor = opts.flavor;
+  let nameSize = null;
+  function setShape(shape) {
+    backEl.textContent = frontEl.textContent = '';
+    parts = {};
+    const add = (parent) => (style, role) => { const d = div('p', style); parent.append(d); if (role) (parts[role] ||= []).push(d); return d; };
+    const n = buildShape(SHAPES[shape] ? shape : 'classic', add(backEl), add(frontEl));
+    nameSize = n.size || null;
+    Object.assign(nameEl.style, { left: `${n.left ?? 62}px`, top: `${n.top}px`, width: `${n.width ?? 266}px`, transform: n.rotate ? `rotate(${n.rotate}deg)` : '' });
+    frontEl.append(nameEl);
+    api.setFlavor(flavor);
+    api.setName(nameEl.textContent);
+  }
 
   const flowers = [];
   const st = itemStates(flowers, glow);
@@ -105,17 +165,18 @@ export function createBouquet(host, opts = {}) {
     drawArea: { left: 60, top: 170, width: 270, height: 186 },
     setDots: drawing.setDots, getDots: drawing.getDots, addDot: drawing.addDot,
     setFlavor(f) {
+      flavor = f;
       const c = WRAPS[f] || WRAPS.strawberry;
-      back.style.background = c.back;
-      back2.style.background = c.back2;
-      coneL.style.background = c.front;
-      coneR.style.background = c.front2;
+      const paint = (role, bg) => (parts[role] || []).forEach((d) => (d.style.background = bg));
+      for (const role of ['back', 'back2', 'front', 'front2', 'bow']) paint(role, c[role]);
+      (parts.handle || []).forEach((d) => (d.style.borderColor = c.back));
+      paint('weave', `repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 16px), repeating-linear-gradient(90deg, ${c.front} 0 14px, ${c.front2} 14px 22px)`);
       nameEl.style.color = c.text;
-      bowParts.forEach((d) => (d.style.background = c.bow));
     },
+    setShape,
     setName(t) {
       nameEl.textContent = t || '';
-      nameEl.style.fontSize = (t || '').length > 14 ? '24px' : '30px';
+      nameEl.style.fontSize = nameSize ? `${nameSize}px` : (t || '').length > 14 ? '24px' : '30px';
     },
     // Lay out `n` flowers (+ closed buds up to `spots`). Returns the flower elements in message order.
     setCandles(n, { spots = n, colors, onTap } = {}) {
@@ -152,8 +213,8 @@ export function createBouquet(host, opts = {}) {
     reset() { api.lightAll(); }
   };
 
-  api.setFlavor(opts.flavor);
-  api.setName(opts.name);
+  nameEl.textContent = opts.name || '';
+  setShape(opts.shape);
   api.setDots(opts.dots);
   stickers.set(opts.stickers);
   return api;

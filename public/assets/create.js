@@ -12,6 +12,7 @@ const params = new URLSearchParams(location.search);
 const state = {
   occasion: THEMES[params.get('occasion')] ? params.get('occasion') : 'birthday',
   flavor: '',
+  shape: params.get('shape') || 'classic', // picked on the first page, or in the decorate step
   brush: 0,
   nameTouched: false,
   sel: -1,
@@ -49,12 +50,13 @@ function renderWhoPreview() {
   whoScene = createScene(host, {
     occasion: state.occasion,
     recipient: rec,
-    cake: { flavor: state.flavor || t.decorate.flavor, name: t.decorate.name(rec) }
+    cake: { flavor: state.flavor || t.decorate.flavor, shape: state.shape, name: t.decorate.name(rec) }
   });
   whoScene.setCandles(8);
   whoScene.lightAll();
 }
 
+let firstOccasion = true;
 function setOccasion(key) {
   state.occasion = key;
   t = applyTheme(key);
@@ -65,7 +67,11 @@ function setOccasion(key) {
   const nbSpan = nb.querySelector('span');
   if (nbSpan) nbSpan.textContent = t.decorate.next;
   else nb.textContent = t.decorate.next;
-  state.flavor = t.decorate.flavor;
+  // the first time, take the flavor picked on the first page (?flavor=), if this scene has it
+  const asked = firstOccasion && params.get('flavor');
+  firstOccasion = false;
+  state.flavor = asked && t.decorate.swatches[asked] ? asked : t.decorate.flavor;
+  if (!t.decorate.shapes[state.shape]) state.shape = 'classic';
   state.nameTouched = false;
   updateWhoPill();
   renderWhoPreview();
@@ -189,6 +195,7 @@ function buildDecorate() {
   $('#decorTitle').textContent = d.title;
   $('#decorLead').textContent = d.lead;
   $('#swatchLabel').textContent = d.swatchLabel;
+  $('#shapeLabel').textContent = d.shapeLabel;
   $('#nameLabel').textContent = d.nameLabel;
   $('#drawRow').hidden = !d.draw;
   const name = $('#cakeName');
@@ -199,7 +206,7 @@ function buildDecorate() {
 
   const host = $('#decorCake');
   host.textContent = '';
-  scene = createScene(host, { occasion: state.occasion, recipient: $('#recipient').value.trim(), cake: { flavor: state.flavor, name: name.value } });
+  scene = createScene(host, { occasion: state.occasion, recipient: $('#recipient').value.trim(), cake: { flavor: state.flavor, shape: state.shape, name: name.value } });
   scene.setCandles(0, { spots: 12 });
   scene.lightAll();
   if (d.draw && scene.drawArea) {
@@ -226,8 +233,18 @@ function buildDecorate() {
   state.sel = -1;
   scene.stage.classList.add('editing');
   scene.stickers.onRender = wireStickers;
+  renderShapes();
   renderSwatches();
   renderStickerTray();
+}
+
+// The kind of cake / bouquet / lanterns. Changing it keeps the drawing and the stickers.
+function renderShapes() {
+  const box = $('#shapes');
+  box.textContent = '';
+  for (const [key, s] of Object.entries(t.decorate.shapes)) {
+    box.append(h('button', { type: 'button', class: 'chip' + (key === state.shape ? ' on' : ''), 'data-v': key, onclick: () => { state.shape = key; scene.setShape(key); renderShapes(); renderWhoPreview(); } }, s.label));
+  }
 }
 
 function renderSwatches() {
@@ -334,7 +351,7 @@ $('#createBtn').addEventListener('click', async () => {
       occasion: state.occasion,
       recipientEmail: state.recipientEmail,
       verifyPin: state.verifyPin || '1234',
-      cake: { flavor: state.flavor, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
+      cake: { flavor: state.flavor, shape: state.shape, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
     };
     if (state.created) {
       await api('/api/gifts', { method: 'PATCH', json: { ...body, slug: state.created.slug, key: state.created.manageKey } });
@@ -416,6 +433,7 @@ if (editSlug && editKey) {
     updateWhoPill();
     if (gift.cake) {
       if (gift.cake.flavor) { state.flavor = gift.cake.flavor; scene.setFlavor(gift.cake.flavor); renderSwatches(); }
+      if (gift.cake.shape) { state.shape = gift.cake.shape; scene.setShape(gift.cake.shape); renderShapes(); renderWhoPreview(); }
       if (gift.cake.name) { state.nameTouched = true; $('#cakeName').value = gift.cake.name; scene.setName(gift.cake.name); }
       if (Array.isArray(gift.cake.dots)) scene.setDots(gift.cake.dots);
       if (Array.isArray(gift.cake.stickers)) scene.stickers.set(gift.cake.stickers);

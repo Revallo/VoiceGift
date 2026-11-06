@@ -57,8 +57,7 @@ export default route({
       gift: {
         ...publicGift(gift),
         recipientEmail: gift.recipientEmail || '',
-        verifyQuestion: gift.verifyQuestion || '',
-        verifyAnswer: gift.verifyAnswer || ''
+        verifyPin: gift.verifyPin || '1234'
       },
       openKey: gift.openKey,
       messages
@@ -71,8 +70,8 @@ export default route({
     if (b.action === 'add-demo') await addDemo(gift);
     else if (b.action === 'update-delivery') {
       gift.recipientEmail = cleanText(b.recipientEmail || '', 120).toLowerCase();
-      gift.verifyQuestion = cleanText(b.verifyQuestion || '', 140);
-      gift.verifyAnswer = cleanText(b.verifyAnswer || '', 80);
+      const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 6);
+      gift.verifyPin = rawPin.length >= 4 ? rawPin : '1234';
       gift.updatedAt = new Date().toISOString();
       await saveGift(gift);
       if (gift.recipientEmail) await sendGiftToEmail(gift.recipientEmail, gift.slug);

@@ -1937,6 +1937,43 @@ body[data-viewport="desktop"] .bottom-sheet {
 @keyframes vg-fadein { from { opacity: 0.92; } to { opacity: 1; } }
 @keyframes vg-sheet-up { from { transform: translateY(24px); } to { transform: translateY(0); } }
 
+/* ---------- 4-Digit PIN Verification Pad ---------- */
+.pin-box-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin: 4px 0 2px;
+}
+.pin-digit {
+  width: 100%;
+  height: 60px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: #121515;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, transform 0.12s ease;
+}
+.pin-digit::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 20px;
+}
+.pin-digit:focus {
+  border-color: #389B8E;
+  background: rgba(38, 106, 97, 0.18);
+  box-shadow: 0 0 0 3px rgba(56, 155, 142, 0.24);
+  transform: translateY(-1px);
+}
+.pin-digit.filled {
+  border-color: rgba(124, 232, 216, 0.45);
+  background: rgba(38, 106, 97, 0.14);
+}
+
 /* Printable QR card */
 .printcard { display: none; }
 @media print {

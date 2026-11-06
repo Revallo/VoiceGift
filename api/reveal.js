@@ -1,20 +1,21 @@
 // GET /api/reveal?slug=…&k=…  → the messages, only with the recipient's key (the link the organizer sends).
 // The organizer's own account gets the demo voices only (their preview): real voices are for the recipient.
 import { route, send, query, HttpError } from '../lib/http.js';
-import { loadGift, publicGift, canOpen, checkVerifyAnswer, loadMessages } from '../lib/gifts.js';
+import { loadGift, publicGift, canOpen, checkVerifyPin, loadMessages } from '../lib/gifts.js';
 import { currentUser } from '../lib/accounts.js';
 import { evenWords } from '../lib/asr.js';
 
 export default route({
   async GET(req, res) {
-    const { slug, k, answer } = query(req);
+    const { slug, k, pin, answer } = query(req);
+    const candidatePin = pin ?? answer;
     const gift = await loadGift(slug);
     const user = await currentUser(req);
-    if (answer !== undefined && answer !== '' && !checkVerifyAnswer(gift, answer)) {
-      throw new HttpError(403, 'Jawaban verifikasi belum tepat. Silakan coba lagi.');
+    if (candidatePin !== undefined && candidatePin !== '' && !checkVerifyPin(gift, candidatePin)) {
+      throw new HttpError(403, 'Kode PIN verifikasi salah. Silakan coba lagi.');
     }
-    if (!canOpen(gift, k, { user, answer })) {
-      throw new HttpError(403, `This link isn’t complete. Ask ${gift.organizer} for the link to the gift.`);
+    if (!canOpen(gift, k, { user, pin: candidatePin })) {
+      throw new HttpError(403, `This link isn’t complete. Ask ${gift.organizer} for the link or PIN to the gift.`);
     }
     const messages = (await loadMessages(gift.slug))
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
@@ -33,7 +34,7 @@ export default route({
       messages,
       loggedIn: Boolean(user),
       userEmail: user?.email || null,
-      verifiedByAnswer: Boolean(answer && checkVerifyAnswer(gift, answer))
+      verifiedByPin: Boolean(candidatePin && checkVerifyPin(gift, candidatePin))
     });
   }
 });

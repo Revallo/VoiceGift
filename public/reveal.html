@@ -48,18 +48,26 @@
           </div>
         </div>
 
-        <form class="card stack" id="verifyForm" style="gap:14px" novalidate>
-          <div class="stack" style="gap:4px">
-            <span class="tiny muted" style="text-transform:lowercase;font-weight:600;color:#7CE8D8">1 · belum login akun · jawab pertanyaan verifikasi</span>
-            <b id="verifyQuestionText" style="font-size:15.5px;color:#fff;line-height:1.4">Siapa nama panggilan akrab penerima kado ini?</b>
+        <form class="card stack" id="verifyForm" style="gap:16px" novalidate>
+          <div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px">
+            <div class="stack" style="gap:4px">
+              <span class="tiny muted" style="text-transform:lowercase;font-weight:600;color:#7CE8D8">1 · belum login akun · masukkan kode pin</span>
+              <b id="verifyPinTitle" style="font-size:15.5px;color:#fff;line-height:1.4">Masukkan PIN verifikasi untuk membuka voice gift</b>
+            </div>
+            <span class="badge-pill green" id="demoPinHint" style="flex-shrink:0">PIN: 1234</span>
           </div>
-          <div class="field">
-            <label for="verifyAnswerInput">jawaban kamu</label>
-            <input class="input" id="verifyAnswerInput" autocomplete="off" placeholder="Tulis jawaban verifikasi..." required>
+
+          <div class="pin-box-row" id="pinBoxRow" role="group" aria-label="4-digit PIN code">
+            <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-pin-idx="0" autocomplete="one-time-code" placeholder="•" aria-label="Digit 1">
+            <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-pin-idx="1" placeholder="•" aria-label="Digit 2">
+            <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-pin-idx="2" placeholder="•" aria-label="Digit 3">
+            <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-pin-idx="3" placeholder="•" aria-label="Digit 4">
           </div>
-          <p class="small err" id="verifyError" hidden style="margin:0"></p>
+          <input type="hidden" id="verifyPinInput" value="">
+
+          <p class="small err" id="verifyError" hidden style="margin:0;text-align:center"></p>
           <button type="submit" class="btn emerald-track" id="verifySubmitBtn">
-            <span>verifikasi &amp; buka voice gift</span>
+            <span>verifikasi pin &amp; buka voice gift</span>
           </button>
         </form>
 
@@ -73,7 +81,7 @@
               <span class="nav-ico" id="verUserIco"></span>
               <div class="nav-info">
                 <b>masuk dengan akun penerima</b>
-                <small>otomatis buka voice gift tanpa pertanyaan</small>
+                <small>otomatis buka voice gift tanpa kode pin</small>
               </div>
               <span class="nav-val">login</span>
               <span class="nav-chev" id="verChevIco"></span>

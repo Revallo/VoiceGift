@@ -12,7 +12,7 @@ export default route({
     const own = q.token && q.token === msg.token;
     const isOrganizer = q.k && q.k === gift.manageKey;
     const user = (!own && !isOrganizer) ? await currentUser(req) : null;
-    if (!own && !isOrganizer && !canOpen(gift, q.k, { user, answer: q.answer })) throw new HttpError(403, 'Not allowed');
+    if (!own && !isOrganizer && !canOpen(gift, q.k, { user, pin: q.pin || q.answer })) throw new HttpError(403, 'Not allowed');
     const buf = await loadAudio(msg);
     if (!buf) throw new HttpError(404, 'Recording not found');
 

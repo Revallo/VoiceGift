@@ -29,9 +29,9 @@ function readGift(b) {
   if (!organizer) throw new HttpError(400, 'Please enter your name.');
   const occasion = OCCASIONS.includes(b.occasion) ? b.occasion : 'birthday';
   const recipientEmail = cleanText(b.recipientEmail || '', 120).toLowerCase();
-  const verifyQuestion = cleanText(b.verifyQuestion || '', 140);
-  const verifyAnswer = cleanText(b.verifyAnswer || '', 80);
-  return { recipient, organizer, occasion, recipientEmail, verifyQuestion, verifyAnswer, cake: cleanCake(b.cake) };
+  const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 6);
+  const verifyPin = rawPin.length >= 4 ? rawPin : '1234';
+  return { recipient, organizer, occasion, recipientEmail, verifyPin, cake: cleanCake(b.cake) };
 }
 
 export default route({

@@ -17,8 +17,7 @@ const state = {
   sel: -1,
   created: null,
   recipientEmail: '',
-  verifyQuestion: '',
-  verifyAnswer: ''
+  verifyPin: '1234'
 };
 let t = theme(state.occasion);
 const MAX_STICKERS = 30;
@@ -103,12 +102,12 @@ function updateDeliverySummary() {
   if ($('#deliverySummaryVal')) {
     $('#deliverySummaryVal').textContent = state.recipientEmail
       ? state.recipientEmail.split('@')[0]
-      : state.verifyQuestion ? 'custom' : 'opsional';
+      : `PIN ${state.verifyPin || '1234'}`;
   }
   if ($('#deliverySummarySub')) {
     $('#deliverySummarySub').textContent = state.recipientEmail
-      ? `kirim ke ${state.recipientEmail} + verifikasi tamu`
-      : state.verifyQuestion || 'verifikasi pertanyaan jika penerima belum punya akun';
+      ? `kirim ke ${state.recipientEmail} · PIN tamu: ${state.verifyPin || '1234'}`
+      : `PIN: ${state.verifyPin || '1234'} · verifikasi jika penerima belum punya akun`;
   }
 }
 
@@ -120,17 +119,14 @@ $('#openDeliverySheetBtn')?.addEventListener('click', () => {
     value: state.recipientEmail,
     placeholder: `e.g. ${recName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'dimas'}@voicegift.id`
   });
-  const qIn = h('input', {
+  const pinIn = h('input', {
     class: 'input',
-    value: state.verifyQuestion || `Siapa nama panggilan akrab ${recName}?`,
-    maxlength: 140,
-    placeholder: 'Pertanyaan verifikasi untuk penerima tanpa akun'
-  });
-  const aIn = h('input', {
-    class: 'input',
-    value: state.verifyAnswer || recName.split(/\s+/)[0],
-    maxlength: 80,
-    placeholder: `Jawaban (contoh: ${recName.split(/\s+/)[0]})`
+    type: 'text',
+    inputmode: 'numeric',
+    pattern: '[0-9]*',
+    value: state.verifyPin || '1234',
+    maxlength: 6,
+    placeholder: '4 digit PIN (contoh: 1234)'
   });
 
   const form = h('form', {
@@ -139,32 +135,28 @@ $('#openDeliverySheetBtn')?.addEventListener('click', () => {
     onsubmit: (ev) => {
       ev.preventDefault();
       state.recipientEmail = emailIn.value.trim().toLowerCase();
-      state.verifyQuestion = qIn.value.trim();
-      state.verifyAnswer = aIn.value.trim();
+      const cleanPin = pinIn.value.replace(/\D/g, '').slice(0, 6);
+      state.verifyPin = cleanPin.length >= 4 ? cleanPin : '1234';
       updateDeliverySummary();
       closeSheet();
-      toast('Pengaturan pengiriman & verifikasi disimpan');
+      toast('Pengaturan pengiriman & PIN disimpan');
     }
   },
     h('div', { class: 'field' },
       h('label', {}, 'kirim langsung ke akun penerima (email opsional)'),
       emailIn,
-      h('span', { class: 'tiny muted' }, 'Jika penerima login dengan akun ini, voice gift langsung terbuka tanpa pertanyaan.')
+      h('span', { class: 'tiny muted' }, 'Jika penerima login dengan akun ini, voice gift langsung terbuka tanpa PIN.')
     ),
     h('div', { class: 'field' },
-      h('label', {}, 'pertanyaan verifikasi (jika penerima belum punya akun)'),
-      qIn
-    ),
-    h('div', { class: 'field' },
-      h('label', {}, 'jawaban verifikasi'),
-      aIn
+      h('label', {}, 'kode PIN verifikasi (4 digit, jika penerima belum punya akun)'),
+      pinIn
     ),
     h('button', { type: 'submit', class: 'btn' }, 'simpan pengaturan')
   );
 
   openSheet({
-    title: 'pengiriman & verifikasi',
-    subtitle: '1. belum ada akun → jawab pertanyaan · 2. ada akun → langsung buka',
+    title: 'pengiriman & kode PIN',
+    subtitle: '1. belum ada akun → masukkan PIN · 2. ada akun → langsung buka',
     content: form
   });
 });
@@ -337,8 +329,7 @@ $('#createBtn').addEventListener('click', async () => {
       organizer: $('#organizer').value.trim(),
       occasion: state.occasion,
       recipientEmail: state.recipientEmail,
-      verifyQuestion: state.verifyQuestion || `Siapa nama panggilan akrab ${recTrim}?`,
-      verifyAnswer: state.verifyAnswer || recTrim.split(/\s+/)[0],
+      verifyPin: state.verifyPin || '1234',
       cake: { flavor: state.flavor, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
     };
     if (state.created) {

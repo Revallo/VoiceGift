@@ -48,12 +48,12 @@ function btn(label, opts = {}) {
 }
 
 // ---------- load & 2-path recipient verification workflow ----------
-// 1. Gak ada akun -> verifikasi dari pertanyaan -> buka voice gift
+// 1. Gak ada akun -> masukkan kode PIN -> buka voice gift
 // 2. Ada akun -> langsung buka voice gift
-async function unlockAndShow(answer = '') {
+async function unlockAndShow(pin = '') {
   const q = new URLSearchParams({ slug });
   if (openKey) q.set('k', openKey);
-  if (answer) q.set('answer', answer);
+  if (pin) q.set('pin', pin);
   const data = await api(`/api/reveal?${q.toString()}`);
   gift = data.gift;
   preview = data.preview;
@@ -63,7 +63,7 @@ async function unlockAndShow(answer = '') {
   if ($('#revealAccessBadge')) {
     $('#revealAccessBadge').textContent = data.loggedIn
       ? `✓ ${data.userEmail?.split('@')[0] || 'account'}`
-      : data.verifiedByAnswer ? '✓ verified' : 'keepsake';
+      : data.verifiedByPin ? '✓ pin verified' : 'keepsake';
   }
   if (!scene) scene = createScene($('#cake'), gift);
   showScreen('scene');
@@ -71,6 +71,49 @@ async function unlockAndShow(answer = '') {
   if (!messages.length) return showEmpty();
   showReady();
 }
+
+const pinBoxes = Array.from(document.querySelectorAll('.pin-digit'));
+function syncPinInput() {
+  const code = pinBoxes.map((b) => b.value.replace(/\D/g, '')).join('');
+  if ($('#verifyPinInput')) $('#verifyPinInput').value = code;
+  pinBoxes.forEach((b) => b.classList.toggle('filled', Boolean(b.value)));
+  return code;
+}
+
+pinBoxes.forEach((box, idx) => {
+  box.addEventListener('input', () => {
+    const clean = box.value.replace(/\D/g, '').slice(-1);
+    box.value = clean;
+    const code = syncPinInput();
+    if (clean && idx < pinBoxes.length - 1) {
+      pinBoxes[idx + 1].focus();
+    } else if (code.length === pinBoxes.length) {
+      $('#verifyForm')?.requestSubmit();
+    }
+  });
+  box.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Backspace' && !box.value && idx > 0) {
+      pinBoxes[idx - 1].value = '';
+      syncPinInput();
+      pinBoxes[idx - 1].focus();
+    }
+  });
+  box.addEventListener('paste', (ev) => {
+    const pasted = (ev.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, pinBoxes.length);
+    if (!pasted) return;
+    ev.preventDefault();
+    pasted.split('').forEach((ch, i) => { if (pinBoxes[i]) pinBoxes[i].value = ch; });
+    const code = syncPinInput();
+    if (code.length === pinBoxes.length) $('#verifyForm')?.requestSubmit();
+  });
+});
+
+$('#demoPinHint')?.addEventListener('click', () => {
+  '1234'.split('').forEach((ch, i) => { if (pinBoxes[i]) pinBoxes[i].value = ch; });
+  syncPinInput();
+  $('#verifyForm')?.requestSubmit();
+});
+if ($('#demoPinHint')) $('#demoPinHint').style.cursor = 'pointer';
 
 async function load() {
   const user = await me();
@@ -95,7 +138,7 @@ async function load() {
     }
   }
 
-  // Path 1: Gak ada akun -> tampilkan pertanyaan verifikasi dulu sebelum buka voice gift!
+  // Path 1: Gak ada akun -> masukkan kode PIN dulu sebelum buka voice gift!
   let pub;
   try {
     pub = await api(`/api/gift?slug=${encodeURIComponent(slug)}`);
@@ -106,34 +149,32 @@ async function load() {
   gift = pub.gift;
   t = applyTheme(gift.occasion);
   first = t.callName(gift.recipient);
-  document.title = `Verify voice gift for ${first}`;
+  document.title = `Verify PIN for ${first}`;
   if ($('#verifyOrganizer')) $('#verifyOrganizer').textContent = `${gift.organizer} sent a gift`;
   if ($('#verifyCountBadge')) $('#verifyCountBadge').textContent = `${pub.count || 0} secret voices`;
   if ($('#verifyHeroTitle')) $('#verifyHeroTitle').textContent = `For ${first}`;
-  if ($('#verifyQuestionText')) {
-    $('#verifyQuestionText').textContent = gift.verifyQuestion || `Siapa nama panggilan akrab penerima voice gift ini?`;
-  }
-  if ($('#verifyAnswerInput')) {
-    $('#verifyAnswerInput').placeholder = `Jawaban verifikasi (contoh: ${first})`;
+  if ($('#verifyPinTitle')) {
+    $('#verifyPinTitle').textContent = `Masukkan 4 digit PIN dari ${gift.organizer} untuk membuka voice gift`;
   }
   showScreen('verify');
+  setTimeout(() => pinBoxes[0]?.focus(), 80);
 }
 
 $('#verifyForm')?.addEventListener('submit', async (ev) => {
   ev.preventDefault();
-  const ans = ($('#verifyAnswerInput')?.value || '').trim();
+  const pin = (syncPinInput() || $('#verifyPinInput')?.value || '').trim();
   const errEl = $('#verifyError');
-  if (!ans) {
-    if (errEl) { errEl.textContent = 'Silakan isi jawaban verifikasi terlebih dahulu.'; errEl.hidden = false; }
+  if (pin.length < 4) {
+    if (errEl) { errEl.textContent = 'Masukkan 4 digit kode PIN terlebih dahulu.'; errEl.hidden = false; }
     return;
   }
   if (errEl) errEl.hidden = true;
   const btn = $('#verifySubmitBtn');
   if (btn) btn.disabled = true;
   try {
-    verifiedAnswer = ans;
-    await unlockAndShow(ans);
-    toast('Verifikasi berhasil! Membuka voice gift…');
+    verifiedAnswer = pin;
+    await unlockAndShow(pin);
+    toast('PIN terverifikasi! Membuka voice gift…');
   } catch (e) {
     verifiedAnswer = '';
     if (errEl) { errEl.textContent = e.message; errEl.hidden = false; }
@@ -167,7 +208,7 @@ $('#verifyLoginSheetBtn')?.addEventListener('click', () => {
 
   openSheet({
     title: 'masuk akun penerima',
-    subtitle: 'punya akun? langsung buka voice gift tanpa pertanyaan verifikasi',
+    subtitle: 'punya akun? langsung buka voice gift tanpa kode pin',
     content: [
       demoDimasBtn,
       authForm({
@@ -229,7 +270,7 @@ async function runLimited(jobs, n) {
 function loadBuffer(i) {
   if (!bufferJobs[i]) {
     const q = new URLSearchParams({ slug, id: messages[i].id, k: openKey });
-    if (verifiedAnswer) q.set('answer', verifiedAnswer);
+    if (verifiedAnswer) q.set('pin', verifiedAnswer);
     bufferJobs[i] = fetch(`/api/audio?${q.toString()}`)
       .then((r) => { if (!r.ok) throw new Error('audio ' + r.status); return r.arrayBuffer(); })
       .then((ab) => new Promise((res, rej) => ac.decodeAudioData(ab, res, rej)))

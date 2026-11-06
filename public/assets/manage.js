@@ -137,10 +137,10 @@ async function load() {
     },
       h('span', { class: 'nav-ico', html: icon.shield(16) }),
       h('div', { class: 'nav-info' },
-        h('b', {}, 'send langsung ke akun & verifikasi'),
-        h('small', {}, gift.recipientEmail ? `terkirim ke ${gift.recipientEmail}` : '1. tanpa akun → pertanyaan · 2. ada akun → langsung buka')
+        h('b', {}, 'send langsung ke akun & kode PIN'),
+        h('small', {}, gift.recipientEmail ? `terkirim ke ${gift.recipientEmail} · PIN: ${gift.verifyPin || '1234'}` : `PIN: ${gift.verifyPin || '1234'} · 1. tanpa akun → PIN · 2. ada akun → langsung buka`)
       ),
-      h('span', { class: 'nav-val' }, gift.recipientEmail ? 'terkirim ✓' : 'atur'),
+      h('span', { class: 'nav-val' }, `PIN ${gift.verifyPin || '1234'}`),
       h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
     ),
     h('button', {
@@ -175,19 +175,16 @@ function openDeliverySheet(gift, openKey) {
     value: gift.recipientEmail || 'dimas@voicegift.id',
     placeholder: 'e.g. dimas@voicegift.id'
   });
-  const qIn = h('input', {
+  const pinIn = h('input', {
     class: 'input',
-    value: gift.verifyQuestion || `Siapa nama panggilan akrab ${gift.recipient}?`,
-    maxlength: 140,
-    placeholder: 'Pertanyaan verifikasi untuk penerima tanpa akun'
+    type: 'text',
+    inputmode: 'numeric',
+    pattern: '[0-9]*',
+    value: gift.verifyPin || '1234',
+    maxlength: 6,
+    placeholder: '4 digit PIN (contoh: 1234)'
   });
-  const aIn = h('input', {
-    class: 'input',
-    value: gift.verifyAnswer || gift.recipient.split(/\s+/)[0],
-    maxlength: 80,
-    placeholder: `Jawaban (contoh: ${gift.recipient.split(/\s+/)[0]})`
-  });
-  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'kirim ke akun & simpan verifikasi');
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'kirim ke akun & simpan PIN');
 
   const form = h('form', {
     class: 'stack',
@@ -196,6 +193,7 @@ function openDeliverySheet(gift, openKey) {
       ev.preventDefault();
       saveBtn.disabled = true;
       try {
+        const cleanPin = pinIn.value.replace(/\D/g, '').slice(0, 6);
         await api('/api/manage', {
           method: 'POST',
           json: {
@@ -203,12 +201,11 @@ function openDeliverySheet(gift, openKey) {
             key,
             action: 'update-delivery',
             recipientEmail: emailIn.value.trim().toLowerCase(),
-            verifyQuestion: qIn.value.trim(),
-            verifyAnswer: aIn.value.trim()
+            verifyPin: cleanPin.length >= 4 ? cleanPin : '1234'
           }
         });
         closeSheet();
-        toast(`Terkirim ke akun ${emailIn.value.trim() || gift.recipient}!`);
+        toast(`Terkirim ke akun ${emailIn.value.trim() || gift.recipient} · PIN disimpan!`);
         await load();
       } catch (e) {
         toast(e.message);
@@ -218,27 +215,23 @@ function openDeliverySheet(gift, openKey) {
     }
   },
     h('div', { class: 'field' },
-      h('label', {}, 'email akun penerima (langsung masuk ke akunnya)'),
+      h('label', {}, 'email akun penerima (langsung masuk ke akunnya tanpa PIN)'),
       emailIn
     ),
     h('div', { class: 'field' },
-      h('label', {}, 'pertanyaan verifikasi (jika penerima tidak punya akun)'),
-      qIn
-    ),
-    h('div', { class: 'field' },
-      h('label', {}, 'jawaban verifikasi'),
-      aIn
+      h('label', {}, 'kode PIN verifikasi (4 digit, jika penerima tidak punya akun)'),
+      pinIn
     ),
     saveBtn,
     h('div', { class: 'dual-pills', style: { marginTop: '4px' } },
-      h('a', { class: 'pill-btn dark', href: `/r/${gift.slug}?verify=1`, style: { background: '#222625', fontSize: '12.5px' } }, 'cek verifikasi tamu'),
+      h('a', { class: 'pill-btn dark', href: `/r/${gift.slug}?verify=1`, style: { background: '#222625', fontSize: '12.5px' } }, 'cek layar PIN tamu'),
       h('a', { class: 'pill-btn light', href: `/r/${gift.slug}?k=${openKey}`, style: { fontSize: '12.5px' } }, 'buka voice gift')
     )
   );
 
   openSheet({
-    title: 'send ke akun & verifikasi',
-    subtitle: '1. gak ada akun → verifikasi pertanyaan · 2. ada akun → langsung buka',
+    title: 'send ke akun & kode PIN',
+    subtitle: '1. gak ada akun → masukkan PIN · 2. ada akun → langsung buka',
     content: form
   });
 }

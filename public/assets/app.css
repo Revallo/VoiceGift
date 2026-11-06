@@ -25,6 +25,8 @@
   --face-text: #FFFFFF;
   --sep: rgba(255, 255, 255, 0.2);
   --stage-bg: #1A0F22;
+  --wash: rgba(255, 122, 89, 0.34);
+  --wash2: rgba(232, 69, 122, 0.22);
   --serif: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -35,6 +37,8 @@ body[data-theme="graduation"] {
   --emerald-light: #9D90FF;
   --emerald-grad: linear-gradient(135deg, #4FC3F7 0%, #6C5CFF 50%, #9B4DDB 100%);
   --stage-bg: #15122A;
+  --wash: rgba(79, 195, 247, 0.28);
+  --wash2: rgba(108, 92, 255, 0.3);
 }
 
 body[data-theme="wedding"] {
@@ -42,6 +46,8 @@ body[data-theme="wedding"] {
   --emerald-light: #F5A6BC;
   --emerald-grad: linear-gradient(135deg, #FFD9A0 0%, #F5A6BC 45%, #D9668C 100%);
   --stage-bg: #1E1220;
+  --wash: rgba(255, 217, 160, 0.26);
+  --wash2: rgba(245, 166, 188, 0.26);
 }
 
 * { box-sizing: border-box; }
@@ -60,7 +66,12 @@ body {
   justify-content: flex-start;
   align-items: center;
   gap: 14px;
-  background: radial-gradient(circle at 50% 0%, rgba(232, 69, 122, 0.18) 0%, rgba(18, 10, 24, 1) 65%);
+  background:
+    radial-gradient(circle at 15% 0%, var(--wash) 0%, transparent 48%),
+    radial-gradient(circle at 90% 12%, var(--wash2) 0%, transparent 52%),
+    var(--bg-outer);
+  background-attachment: fixed;
+  transition: background 0.4s ease;
 }
 [hidden] { display: none !important; }
 a { color: var(--text); text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: opacity 0.15s ease; }
@@ -158,7 +169,10 @@ button { font-family: inherit; }
   width: 100%;
   max-width: 420px;
   min-height: calc(100dvh - 80px);
-  background: var(--bg);
+  background:
+    radial-gradient(120% 60% at 10% 0%, var(--wash) 0%, transparent 60%),
+    radial-gradient(90% 50% at 100% 8%, var(--wash2) 0%, transparent 60%),
+    var(--bg);
   overflow-x: hidden;
   overflow-x: clip;
   contain: paint;

@@ -1095,6 +1095,13 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
 .lantern.mine .l-body { outline: 2px solid var(--emerald-light); outline-offset: 5px; }
 .lantern.out { animation: vg-float 6s cubic-bezier(0.45, 0, 0.7, 1) both; }
 .lantern.out .l-line { opacity: 0; }
+/* Lantern shapes: the outline is a clip-path, so the glow moves to a drop-shadow on the lantern itself */
+.stage.lanterns[data-shape="sky"] .l-body { border-radius: 4px 4px 10px 10px; clip-path: polygon(6% 0, 94% 0, 76% 100%, 24% 100%); }
+.stage.lanterns[data-shape="star"] .l-body { border-radius: 0; clip-path: polygon(50% 0, 63% 34%, 100% 36%, 71% 58%, 81% 96%, 50% 75%, 19% 96%, 29% 58%, 0 36%, 37% 34%); }
+.stage.lanterns[data-shape="heart"] .l-body { border-radius: 0; clip-path: polygon(50% 24%, 62% 6%, 80% 0, 96% 10%, 100% 30%, 92% 52%, 50% 100%, 8% 52%, 0 30%, 4% 10%, 20% 0, 38% 6%); }
+.stage.lanterns:is([data-shape="sky"], [data-shape="star"], [data-shape="heart"]) .l-body::before,
+.stage.lanterns:is([data-shape="sky"], [data-shape="star"], [data-shape="heart"]) .l-body::after { display: none; }
+.stage.lanterns:is([data-shape="sky"], [data-shape="star"], [data-shape="heart"]) .lantern.lit { filter: drop-shadow(0 0 8px var(--c)) drop-shadow(0 0 18px color-mix(in srgb, var(--c) 45%, transparent)); }
 
 /* ---------- Reveal ---------- */
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 16px; min-height: 74px; }
@@ -2028,3 +2035,6 @@ body[data-viewport="desktop"] .bottom-sheet {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* The kinds of cake / bouquet / lanterns in the decorate step: as wide as their words, scrolled sideways */
+.slider > .chip { flex: 0 0 auto; height: 42px; padding: 0 14px; white-space: nowrap; }

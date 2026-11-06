@@ -54,9 +54,9 @@ async function apiGuest(slug, name, text) {
 }
 
 const CASES = {
-  birthday: { recipient: 'Dimas', swatch: 9, friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
-  graduation: { recipient: 'Nadia', swatch: 6, friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
-  wedding: { recipient: 'Rina & Bayu', swatch: 6, extraGuests: 12, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
+  birthday: { recipient: 'Dimas', swatch: 9, shape: 'tower', friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
+  graduation: { recipient: 'Nadia', swatch: 6, shape: 'basket', friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
+  wedding: { recipient: 'Rina & Bayu', swatch: 6, shape: 'heart', extraGuests: 12, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };
 
 async function runGift(occasion, c) {
@@ -82,6 +82,7 @@ async function runGift(occasion, c) {
   await shot(p, P('01-create-who'));
   await p.click('#nextBtn');
   await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
+  await p.click(`#shapes [data-v="${c.shape}"]`); // the kind of cake / bouquet / lanterns
   await p.click(`#flavors .swatch >> nth=${c.swatch}`);
   const hit = await p.$('.draw-hit');
   if (hit) {
@@ -120,6 +121,8 @@ async function runGift(occasion, c) {
   const manageHref = await p.getAttribute('#manageBtn', 'href');
   const slug = friendLink.split('/g/')[1];
   console.log(occasion, 'slug', slug, 'manage', manageHref);
+  const shape = (await (await fetch(`${BASE}/api/gift?slug=${slug}`)).json()).gift?.cake?.shape;
+  if (shape !== c.shape) errors.push(`${occasion}: saved shape is ${shape}, expected ${c.shape}`);
   await p.context().close();
 
   // friends record

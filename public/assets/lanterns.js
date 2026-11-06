@@ -17,6 +17,13 @@ export const LIGHTS = {
   snow: { label: 'Snow', light: '#FFFFFF' },
   coral: { label: 'Coral', light: '#FF9E80' }
 };
+// The kinds of lantern (gift.cake.shape): only the outline changes, see .stage.lanterns[data-shape] in app.css.
+export const SHAPES = {
+  classic: { label: 'Paper' },
+  sky: { label: 'Sky lantern' },
+  star: { label: 'Stars' },
+  heart: { label: 'Hearts' }
+};
 export const SWATCH = (l) => ({ background: l.light, boxShadow: `0 0 12px ${l.light}` });
 
 const W = 390, H = 330;
@@ -89,6 +96,7 @@ export function createLanterns(host, opts = {}) {
       sky.style.setProperty('--light', lightColor);
       words.style.color = lightColor;
     },
+    setShape(shape) { stage.dataset.shape = SHAPES[shape] ? shape : 'classic'; },
     setName(t) {
       words.textContent = t || '';
       words.style.fontSize = (t || '').length > 22 ? '25px' : '29px';
@@ -134,6 +142,7 @@ export function createLanterns(host, opts = {}) {
   };
 
   api.setFlavor(opts.flavor || 'vanilla');
+  api.setShape(opts.shape);
   api.setName(opts.name);
   api.setNames(opts.names);
   drawStrings(12);

@@ -4,7 +4,7 @@ import { route, send, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { createGift, loadGift, saveGift, OCCASIONS } from '../lib/gifts.js';
 import { sessionUserId, addGift, sendGiftToEmail } from '../lib/accounts.js';
 
-// cake = the decoration of any scene: { flavor, name, dots: [[x, y, colour]], stickers: [[emoji, x, y]] }
+// cake = the decoration of any scene: { flavor, shape, name, dots: [[x, y, colour]], stickers: [[emoji, x, y]] }
 function cleanCake(cake = {}) {
   const flavor = /^[a-z]{2,16}$/.test(cake.flavor) ? cake.flavor : 'strawberry'; // the page falls back if unknown
   const name = cleanText(cake.name, 30); // cake 14, bouquet 18, lantern words 30
@@ -19,7 +19,8 @@ function cleanCake(cake = {}) {
         .map(([e, x, y]) => [cleanText(e, 8), Math.round(+x) || 0, Math.round(+y) || 0])
         .filter((s) => s[0] && inStage(s))
     : [];
-  return { flavor, name, dots, stickers };
+  const shape = /^[a-z]{2,16}$/.test(cake.shape) ? cake.shape : ''; // a key of the scene's SHAPES; '' = the classic one
+  return { flavor, shape, name, dots, stickers };
 }
 
 function readGift(b) {

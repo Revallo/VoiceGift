@@ -25,7 +25,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | first page: pick cake / bouquet / lanterns (live scene, page takes that occasion's colors) → "Yes, make the …" → `/login?next=/new?occasion=…` |
+| `/` | `index.html` | first page: pick cake / bouquet / lanterns, then its kind (sideways strip of live minis) and flavor; page takes that occasion's colors → "Yes, make the …" → `/login?next=/new?occasion=…&shape=…&flavor=…` |
 | `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → (account, if logged out) → friends' link + QR + dashboard |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |
@@ -41,8 +41,10 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - Scenes: `cake.js` (birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
-- `gift.cake {flavor, name, dots, stickers}` is reused by every scene: `flavor` is a key of that scene's
-  palette (cake `FLAVORS`, bouquet `WRAPS`, lantern `LIGHTS`; unknown keys fall back to the default);
+- `gift.cake {flavor, shape, name, dots, stickers}` is reused by every scene: `flavor` is a key of that scene's
+  palette (cake `FLAVORS`, bouquet `WRAPS`, lantern `LIGHTS`; unknown keys fall back to the default); `shape` is a key
+  of that scene's `SHAPES` (cake: classic/drip/tower/sheet, bouquet: classic/box/basket/tied, lanterns:
+  classic/sky/star/heart — CSS `data-shape`), picked on `/` or in the decorate step; `setShape()` rebuilds only the body;
   `name` is the text on the cake / wrap / under the lanterns; `stickers` = `[[emoji, x, y]]` (sets in
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - Step 3 → back → step 2 saves with `PATCH /api/gifts` (manageKey). Each step is a history entry, so the

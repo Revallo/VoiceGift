@@ -38,7 +38,7 @@ function updateWhoPill() {
   const defName = state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas';
   if ($('#whoAvatar')) $('#whoAvatar').textContent = initials(rec || defName);
   if ($('#whoPillName')) $('#whoPillName').textContent = rec ? `For ${rec}` : 'New voice gift';
-  if ($('#whoPillSub')) $('#whoPillSub').textContent = `**** ${state.occasion} transfer`;
+  if ($('#whoPillSub')) $('#whoPillSub').textContent = `a ${state.occasion} surprise from friends`;
 }
 
 function renderWhoPreview() {
@@ -96,7 +96,11 @@ $('#decorToolsToggle')?.addEventListener('click', () => {
   $('#decorToolsToggle').textContent = card.hidden ? 'show tools' : 'customize';
 });
 // Logged in: "Your name" starts as the account's name.
-me().then((u) => { if (u && !$('#organizer').value.trim()) $('#organizer').value = u.name; });
+// Logged out: log in first, then come back here.
+me().then((u) => {
+  if (!u) return location.replace('/login?next=' + encodeURIComponent(location.pathname + location.search));
+  if (!$('#organizer').value.trim()) $('#organizer').value = u.name;
+});
 
 function updateDeliverySummary() {
   if ($('#deliverySummaryVal')) {

@@ -7,8 +7,8 @@ $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const WORDS = {
-  signup: { path: '/signup', doc: 'Create an account', title: 'create your account', lead: 'keep every gift you make in one place, on any phone.' },
-  login: { path: '/login', doc: 'Log in', title: 'welcome back', lead: 'log in to see your gifts and their dashboards.' }
+  signup: { path: '/signup', doc: 'Create an account', title: 'let’s make someone smile 🎂', lead: 'create your account, then gather your friends’ voices into one surprise.' },
+  login: { path: '/login', doc: 'Log in', title: 'hi! ready for a surprise? 🎉', lead: 'log in to make a voice gift: a cake, a bouquet or lanterns full of wishes.' }
 };
 
 let currentUser = null;
@@ -17,13 +17,13 @@ let latestStats = {};
 function showAuth(mode) {
   const words = (m) => {
     const w = WORDS[m];
-    history.replaceState(null, '', w.path);
+    history.replaceState(null, '', w.path + location.search); // keeps ?next=
     document.title = `${w.doc} · Voice Gift`;
     $('#authTitle').textContent = w.title;
     $('#authLead').textContent = w.lead;
   };
   words(mode);
-  $('#authBox').replaceChildren(authForm({ mode, onMode: words, onDone: showAccount }));
+  $('#authBox').replaceChildren(authForm({ mode, onMode: words, onDone: goOn }));
   showScreen('auth');
 }
 
@@ -96,7 +96,7 @@ function openAsrPrefsSheet() {
   const prefs = currentUser.prefs || {};
   const langSel = h('select', {
     class: 'input',
-    style: { width: 'auto', minWidth: '152px', minHeight: '40px', padding: '0 12px', borderRadius: '12px', fontSize: '13px', background: '#0F0F0F' }
+    style: { width: 'auto', minWidth: '152px', minHeight: '40px', padding: '0 12px', borderRadius: '12px', fontSize: '13px', background: '#1B1024' }
   },
     h('option', { value: 'id-ID', selected: (prefs.asrLang || 'id-ID') === 'id-ID' }, 'id-ID · Indonesia'),
     h('option', { value: 'en-US', selected: prefs.asrLang === 'en-US' }, 'en-US · English')
@@ -268,7 +268,7 @@ async function loadGifts() {
             h('b', {}, `for ${rg.recipient}`),
             h('small', {}, `from ${rg.organizer} · ${rg.occasion} · ${rg.count || 0} voices`)
           ),
-          h('span', { class: 'nav-val', style: { color: '#7CE8D8', fontWeight: '600' } }, 'buka langsung'),
+          h('span', { class: 'nav-val', style: { color: '#FFD166', fontWeight: '600' } }, 'buka langsung'),
           h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
         )
       ));
@@ -299,5 +299,12 @@ me().then(async (user) => {
       return showAccount(res.user);
     } catch {}
   }
-  return user ? showAccount(user) : showAuth(location.pathname === '/signup' ? 'signup' : 'login');
+  if (!user) return showAuth(location.pathname === '/signup' ? 'signup' : 'login');
+  return location.pathname === '/account' ? showAccount(user) : goOn();
 });
+
+// The app starts at the login page; once logged in, go to ?next= (same site only) or straight to "Create gift".
+function goOn() {
+  const next = new URLSearchParams(location.search).get('next') || '';
+  location.replace(/^\/(?![/\\])/.test(next) ? next : '/new');
+}

@@ -63,7 +63,18 @@ async function runGift(occasion, c) {
   const P = (n) => `${occasion}-${n}`;
   // create
   const p = await page();
+  // logged out, "/new" sends you to log in first; create an account there, then you're back on "/new"
   await p.goto(`${BASE}/new`);
+  await p.waitForSelector('[data-screen="auth"]:not([hidden])');
+  if (!/^\/login\?next=/.test(new URL(p.url()).pathname + new URL(p.url()).search)) errors.push(`${occasion}: logged-out /new went to ${p.url()}`);
+  await p.click('.auth-tab >> text=create account');
+  await p.fill('#acName', 'Sari');
+  await p.fill('#acEmail', emailFor(occasion));
+  await p.fill('#acPass', PASSWORD);
+  await p.waitForTimeout(400);
+  await shot(p, P('00-signup'));
+  await p.click('#authBox button[type="submit"]');
+  await p.waitForURL(/\/new$/);
   await p.waitForSelector('#recipient');
   await p.click(`#occasions [data-v="${occasion}"]`);
   await p.fill('#recipient', c.recipient);
@@ -95,14 +106,6 @@ async function runGift(occasion, c) {
   await p.waitForTimeout(300);
   await shot(p, P('02-decorate'));
   await p.click('#createBtn');
-  // logged out: a new gift needs an account. Sign up right there; then the gift is created.
-  await p.waitForSelector('[data-screen="account"]:not([hidden])');
-  if ((await p.inputValue('#acName')) !== 'Sari') errors.push(`${occasion}: the account form didn't take the organizer's name`);
-  await p.fill('#acEmail', emailFor(occasion));
-  await p.fill('#acPass', PASSWORD);
-  await p.waitForTimeout(400);
-  await shot(p, P('02b-account'));
-  await p.click('#accountBox button[type="submit"]');
   await p.waitForSelector('[data-screen="share"]:not([hidden])');
   await p.waitForTimeout(400);
   await shot(p, P('03-share'), true);
@@ -232,10 +235,9 @@ async function accountFlow(occasion, recipientLink) {
   if (st !== 401) errors.push(`creating a gift without an account: ${st}`);
 
   const a = await page(phone, /status of (401|409)/); // the wrong password and the taken email
-  await a.goto(`${BASE}/`); // no landing page: "/" goes straight to creating a gift
-  if (new URL(a.url()).pathname !== '/new') errors.push('"/" went to ' + a.url());
-  await a.click('.app-tabbar a[href="/account"]:visible'); // the "profile" tab
+  await a.goto(`${BASE}/`); // the app starts at logging in
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');
+  if (new URL(a.url()).pathname !== '/login') errors.push('"/" went to ' + a.url());
   await a.fill('#acEmail', email);
   await a.fill('#acPass', 'not the password');
   await a.click('#authBox button[type="submit"]');
@@ -244,8 +246,9 @@ async function accountFlow(occasion, recipientLink) {
   await shot(a, 'account-01-login-wrong');
   await a.fill('#acPass', PASSWORD);
   await a.click('#authBox button[type="submit"]');
+  await a.waitForURL(/\/new$/); // logged in → straight to making a gift
+  await a.click('.app-tabbar a[href="/account"]:visible'); // the "profile" tab
   await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
-  if (new URL(a.url()).pathname !== '/account') errors.push('after logging in the address is ' + a.url());
   await a.waitForTimeout(400);
   await shot(a, 'account-02-me', true);
 
@@ -277,20 +280,17 @@ const slugs = {};
 for (const [occasion, c] of Object.entries(CASES)) if (!only || only === occasion) slugs[occasion] = await runGift(occasion, c);
 await accountFlow(...Object.entries(slugs)[0]);
 
-// landing + desktop
+// first screen (log in) + desktop
 const l = await page();
 await l.goto(BASE + '/');
-await l.waitForTimeout(2600);
-await shot(l, 'landing');
-for (const o of ['graduation', 'wedding']) {
-  await l.click(`#occasions [data-v="${o}"]`);
-  await l.waitForTimeout(2600);
-  await shot(l, `landing-${o}`);
-}
+await l.waitForSelector('[data-screen="auth"]:not([hidden])');
+await l.waitForTimeout(600);
+await shot(l, 'login');
 const d = await page({ viewport: { width: 1280, height: 860 }, permissions: ['microphone'] });
 await d.goto(BASE + '/');
-await d.waitForTimeout(2600);
-await shot(d, 'desktop-landing');
+await d.waitForSelector('[data-screen="auth"]:not([hidden])');
+await d.waitForTimeout(600);
+await shot(d, 'desktop-login');
 await d.goto(Object.values(slugs)[0]);
 await d.waitForSelector('text=Open your gift');
 await shot(d, 'desktop-ready');

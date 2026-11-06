@@ -25,7 +25,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | — | no landing page: redirects to `/new` (`redirects` in `vercel.json`, also in `dev.mjs`) |
+| `/` | — | no landing page: redirects to `/login` (`redirects` in `vercel.json`, also in `dev.mjs`); logged in → `/new` |
 | `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → (account, if logged out) → friends' link + QR + dashboard |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |
@@ -59,7 +59,8 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
 - Email + password, **only for organizers**: creating a gift needs one (`POST /api/gifts` → 401 without a session),
   so we know who made each gift and `/account` lists it on any phone. Friends and the recipient never sign up
   ("No sign-up" on the friends' page stays true).
-- `/new` asks at "Create the gift" (after decorating), in place: sign up or log in, then the gift is created.
+- Organizers log in first: `/new` sends a logged-out visitor to `/login?next=/new`; after logging in, `/login` goes to
+  `next` (or `/new`). The in-place account step at "Create the gift" stays as a fallback (e.g. an expired session).
   Browser: `assets/auth.js` (`me()`, the form, the "Your gifts" row). Server: `lib/accounts.js`.
 - A friend who happens to be logged in is linked: the message gets `userId` (also in the export) and the page
   says "Logged in as …". The name on the message is still the one they type.

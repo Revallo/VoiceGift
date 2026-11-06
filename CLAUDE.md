@@ -25,7 +25,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | — | no landing page: redirects to `/login` (`redirects` in `vercel.json`, also in `dev.mjs`); logged in → `/new` |
+| `/` | `index.html` | first page: pick cake / bouquet / lanterns (live scene, page takes that occasion's colors) → "Yes, make the …" → `/login?next=/new?occasion=…` |
 | `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → (account, if logged out) → friends' link + QR + dashboard |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |
@@ -60,7 +60,8 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
   so we know who made each gift and `/account` lists it on any phone. Friends and the recipient never sign up
   ("No sign-up" on the friends' page stays true).
 - Organizers log in first: `/new` sends a logged-out visitor to `/login?next=/new`; after logging in, `/login` goes to
-  `next` (or `/new`). The in-place account step at "Create the gift" stays as a fallback (e.g. an expired session).
+  `next` (or `/new`). The login page is deliberately simple and wears the picked occasion's colors + emoji
+  (`--wash`/`--wash2` per theme in `app.css`). The demo-login button only shows with `?demo=1`. The in-place account step at "Create the gift" stays as a fallback (e.g. an expired session).
   Browser: `assets/auth.js` (`me()`, the form, the "Your gifts" row). Server: `lib/accounts.js`.
 - A friend who happens to be logged in is linked: the message gets `userId` (also in the export) and the page
   says "Logged in as …". The name on the message is still the one they type.

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1A0C19">
+<title>Voice Gift — a surprise made of your friends' voices</title>
+<meta name="description" content="Friends record short voice wishes. They open as one surprise: a cake, a bouquet or lanterns. No app to install.">
+<meta property="og:title" content="Voice Gift">
+<meta property="og:description" content="Friends record short voice wishes. Each voice lights a candle.">
+<meta property="og:image" content="/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+<style>
+  .pick-head { display: flex; align-items: center; justify-content: space-between; }
+  .pick-title { text-align: center; margin: 4px 0 0; }
+  .pick-title h1 { font-size: 1.7rem; line-height: 1.15; margin: 0 0 6px; }
+  .pick-title p { margin: 0; color: var(--soft); }
+  #scene { min-height: 240px; }
+  .picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .pick {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 6px 12px; border-radius: 20px; cursor: pointer;
+    background: var(--panel); border: 2px solid var(--line); color: var(--text);
+    font: inherit; transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+  .pick:active { transform: scale(0.97); }
+  .pick .em { font-size: 2rem; line-height: 1; }
+  .pick b { font-size: 0.95rem; }
+  .pick small { color: var(--muted); font-size: 0.72rem; }
+  .pick.on { border-color: var(--emerald-light); background: var(--panel-hover); box-shadow: 0 8px 24px var(--wash2); }
+  .go { background: var(--emerald-grad); color: #fff; border: 0; }
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <section data-screen="pick">
+    <div class="pick-head">
+      <a class="brand" href="/"><span class="logo" data-logo></span>voice gift</a>
+      <a class="btn ghost sm" id="loginLink" href="/login">Log in</a>
+    </div>
+
+    <div class="pick-title">
+      <h1>What do you want to make?</h1>
+      <p id="pickLead"></p>
+    </div>
+
+    <div id="scene" aria-hidden="true"></div>
+
+    <div class="picks" role="radiogroup" aria-label="What to make">
+      <button type="button" class="pick" role="radio" data-v="birthday"><span class="em">🎂</span><b>Cake</b><small>birthday</small></button>
+      <button type="button" class="pick" role="radio" data-v="graduation"><span class="em">💐</span><b>Bouquet</b><small>graduation</small></button>
+      <button type="button" class="pick" role="radio" data-v="wedding"><span class="em">🏮</span><b>Lanterns</b><small>wedding</small></button>
+    </div>
+
+    <a class="btn go pulse" id="goBtn" href="/login"></a>
+    <p class="small muted center" style="margin:0">Free · no app to install · friends don’t need an account</p>
+  </section>
+</main>
+<script type="module">
+import { $, $$, icon, addStars } from '/assets/common.js';
+import { createScene, applyTheme } from '/assets/themes.js';
+import { me } from '/assets/auth.js';
+
+$$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
+addStars($('#app'), 26, 45);
+
+const PICKS = {
+  birthday: { thing: 'cake', emoji: '🎂', lead: 'Each friend’s voice lights one candle on the cake.', sample: { recipient: 'Dimas', cake: { flavor: 'strawberry', name: 'Dimas' } } },
+  graduation: { thing: 'bouquet', emoji: '💐', lead: 'Each friend’s voice opens one flower in the bouquet.', sample: { recipient: 'Nadia', cake: { flavor: 'strawberry', name: 'Nadia, S.Kom.' } } },
+  wedding: { thing: 'lanterns', emoji: '🏮', lead: 'Each friend’s voice lights one lantern in the sky.', sample: { recipient: 'Rina & Bayu', cake: { flavor: 'vanilla', name: 'Selamat menempuh hidup baru' } } }
+};
+
+let timer;
+function show(occasion) {
+  const p = PICKS[occasion];
+  applyTheme(occasion); // the background takes this occasion's colors
+  $$('.pick').forEach((b) => {
+    const on = b.dataset.v === occasion;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-checked', String(on));
+  });
+  $('#pickLead').textContent = p.lead;
+  $('#goBtn').textContent = `Yes, make the ${p.thing} ${p.emoji}`;
+  // logged out: log in first (that page wears the same colors), then straight to "Create gift"
+  $('#goBtn').href = '/login?next=' + encodeURIComponent(`/new?occasion=${occasion}`);
+  $('#scene').textContent = '';
+  const scene = createScene($('#scene'), { occasion, ...p.sample });
+  scene.setCandles(12);
+  clearInterval(timer);
+  let i = 0;
+  timer = setInterval(() => { scene.light(i++); if (i >= 12) clearInterval(timer); }, 160);
+}
+$$('.pick').forEach((b) => b.addEventListener('click', () => show(b.dataset.v)));
+const start = new URLSearchParams(location.search).get('occasion');
+show(PICKS[start] ? start : 'birthday');
+
+me().then((user) => {
+  if (!user) return;
+  $('#loginLink').textContent = 'My gifts';
+  $('#loginLink').href = '/account';
+});
+</script>
+</body>
+</html>

@@ -101,7 +101,7 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
       h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'password'), show), passIn),
       err,
       submit,
-      demoBtn,
+      /[?&]demo=1/.test(location.search) && demoBtn, // only for demos: /login?demo=1
       h('p', { class: 'small muted center', style: { margin: 0 } }, `${m.ask} `, other));
 
     form.addEventListener('submit', async (e) => {

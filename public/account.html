@@ -17,27 +17,15 @@
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
   <!-- /signup and /login -->
+  <!-- Kept simple: the occasion's emoji + colors (from ?occasion= or the ?next= link), a title, the form. -->
   <section data-screen="auth" hidden>
-    <div class="nav-header">
-      <a class="brand" href="/"><span class="logo" data-logo></span>voice gift</a>
+    <div class="stack center" style="gap:6px;margin-top:28px;max-width:440px;width:100%;margin-left:auto;margin-right:auto">
+      <div id="authEmoji" style="font-size:3.2rem;line-height:1">🎁</div>
+      <h1 id="authTitle" style="font-size:1.5rem;margin:8px 0 0"></h1>
+      <p class="small" id="authLead" style="margin:0 0 6px;color:var(--soft)"></p>
+      <div id="authBox" style="text-align:left"></div>
+      <a class="small muted" href="/" id="authBack" style="margin-top:6px">← choose something else</a>
     </div>
-    <div class="web-col" style="max-width:440px;width:100%;margin:0 auto">
-      <div class="hero-card" style="padding:18px 20px;gap:10px">
-        <div class="row" style="justify-content:space-between">
-          <div class="stack" style="gap:2px">
-            <span style="font-size:.7rem;color:rgba(255,255,255,0.72);text-transform:lowercase">🎈 voice gift</span>
-            <h1 id="authTitle" style="font-size:1.35rem;margin:0;color:#fff"></h1>
-          </div>
-        </div>
-        <p class="small" id="authLead" style="margin:0;color:rgba(255,255,255,0.82)"></p>
-      </div>
-      <div id="authBox"></div>
-    </div>
-
-    <nav class="app-tabbar" aria-label="Primary navigation">
-      <a class="tab-item" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
-      <a class="tab-item active" href="/account"><span data-icon="user"></span><span>profile</span></a>
-    </nav>
   </section>
 
   <!-- /account (Layered Mobile App Architecture: Minimalist rows that open Bottom Sheets on tap) -->

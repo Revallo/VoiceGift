@@ -1,26 +1,40 @@
 // /signup and /login: the form. /account: layered mobile-app profile & settings (progressive disclosure via bottom sheets).
 import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet } from './common.js';
 import { me, logOut, authForm, giftItem } from './auth.js';
+import { applyTheme } from './themes.js';
 
 addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
+// What the person picked on the first page ("/"): from ?occasion= or inside ?next=/new?occasion=…
+const THINGS = { birthday: ['cake', '🎂'], graduation: ['bouquet', '💐'], wedding: ['lanterns', '🏮'] };
+const picked = (() => {
+  const q = new URLSearchParams(location.search);
+  let o = q.get('occasion');
+  try { o = o || new URL(q.get('next') || '/', location.origin).searchParams.get('occasion'); } catch {}
+  return THINGS[o] ? o : null;
+})();
+
 const WORDS = {
-  signup: { path: '/signup', doc: 'Create an account', title: 'let’s make someone smile 🎂', lead: 'create your account, then gather your friends’ voices into one surprise.' },
-  login: { path: '/login', doc: 'Log in', title: 'hi! ready for a surprise? 🎉', lead: 'log in to make a voice gift: a cake, a bouquet or lanterns full of wishes.' }
+  signup: { path: '/signup', doc: 'Create an account', title: 'Create your account', lead: 'Then we’ll start on your gift.' },
+  login: { path: '/login', doc: 'Log in', title: 'Log in', lead: 'Then we’ll start on your gift.' }
 };
 
 let currentUser = null;
 let latestStats = {};
 
 function showAuth(mode) {
+  if (picked) {
+    applyTheme(picked); // same colors as the thing they picked
+    $('#authEmoji').textContent = THINGS[picked][1];
+  }
   const words = (m) => {
     const w = WORDS[m];
     history.replaceState(null, '', w.path + location.search); // keeps ?next=
     document.title = `${w.doc} · Voice Gift`;
     $('#authTitle').textContent = w.title;
-    $('#authLead').textContent = w.lead;
+    $('#authLead').textContent = picked ? `Then we’ll start on your ${THINGS[picked][0]}.` : w.lead;
   };
   words(mode);
   $('#authBox').replaceChildren(authForm({ mode, onMode: words, onDone: goOn }));

@@ -235,9 +235,10 @@ async function accountFlow(occasion, recipientLink) {
   if (st !== 401) errors.push(`creating a gift without an account: ${st}`);
 
   const a = await page(phone, /status of (401|409)/); // the wrong password and the taken email
-  await a.goto(`${BASE}/`); // the app starts at logging in
+  await a.goto(`${BASE}/`); // the first page: pick cake / bouquet / lanterns; "Log in" top right
+  await a.click('#loginLink');
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');
-  if (new URL(a.url()).pathname !== '/login') errors.push('"/" went to ' + a.url());
+  if (new URL(a.url()).pathname !== '/login') errors.push('"Log in" went to ' + a.url());
   await a.fill('#acEmail', email);
   await a.fill('#acPass', 'not the password');
   await a.click('#authBox button[type="submit"]');
@@ -280,17 +281,24 @@ const slugs = {};
 for (const [occasion, c] of Object.entries(CASES)) if (!only || only === occasion) slugs[occasion] = await runGift(occasion, c);
 await accountFlow(...Object.entries(slugs)[0]);
 
-// first screen (log in) + desktop
+// first page: pick what to make → "Yes" → log in (in that occasion's colors) + desktop
 const l = await page();
 await l.goto(BASE + '/');
+for (const o of ['birthday', 'graduation', 'wedding']) {
+  await l.click(`.pick[data-v="${o}"]`);
+  await l.waitForTimeout(2400);
+  await shot(l, `pick-${o}`);
+}
+await l.click('#goBtn');
 await l.waitForSelector('[data-screen="auth"]:not([hidden])');
-await l.waitForTimeout(600);
-await shot(l, 'login');
+if ((await l.evaluate(() => document.body.dataset.theme)) !== 'wedding') errors.push('the login page lost the picked colors');
+if (!/occasion%3Dwedding/.test(l.url())) errors.push('"Yes" went to ' + l.url());
+await l.waitForTimeout(500);
+await shot(l, 'login-wedding');
 const d = await page({ viewport: { width: 1280, height: 860 }, permissions: ['microphone'] });
 await d.goto(BASE + '/');
-await d.waitForSelector('[data-screen="auth"]:not([hidden])');
-await d.waitForTimeout(600);
-await shot(d, 'desktop-login');
+await d.waitForTimeout(2400);
+await shot(d, 'desktop-pick');
 await d.goto(Object.values(slugs)[0]);
 await d.waitForSelector('text=Open your gift');
 await shot(d, 'desktop-ready');

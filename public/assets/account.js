@@ -7,8 +7,8 @@ $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const WORDS = {
-  signup: { path: '/signup', doc: 'Create an account', title: 'create your account', lead: 'keep your gifts, voice messages, and speech-to-text corpus synced.' },
-  login: { path: '/login', doc: 'Log in', title: 'welcome back', lead: 'sign in to manage your gifts, profile, and speech-to-text corpus.' }
+  signup: { path: '/signup', doc: 'Create an account', title: 'create your account', lead: 'keep every gift you make in one place, on any phone.' },
+  login: { path: '/login', doc: 'Log in', title: 'welcome back', lead: 'log in to see your gifts and their dashboards.' }
 };
 
 let currentUser = null;
@@ -34,7 +34,7 @@ function populateUserUI(user) {
   $('#hello').textContent = `hi, ${(user.name || 'organizer').toLowerCase()}`;
   $('#meEmail').textContent = user.email;
   if ($('#meBioLabel')) {
-    $('#meBioLabel').textContent = user.bio ? user.bio.toLowerCase() : 'speech-to-text corpus';
+    $('#meBioLabel').textContent = 'your gifts';
   }
   if ($('#rowProfileSub')) {
     $('#rowProfileSub').textContent = user.bio ? `${user.name} · ${user.bio}` : `${user.name} · ${user.email}`;
@@ -252,7 +252,7 @@ async function loadGifts() {
     const { gifts = [], receivedGifts = [], stats = {} } = await api('/api/account?gifts=1');
     latestStats = stats;
     if ($('#acctHeroVal')) {
-      $('#acctHeroVal').textContent = `${stats.totalRecordings ?? 0} voices · ${Math.round(stats.totalAudioSec || 0)}s`;
+      $('#acctHeroVal').textContent = `${stats.totalRecordings ?? 0} voices`;
     }
     if ($('#rowCorpusVal')) {
       $('#rowCorpusVal').textContent = `${stats.totalRecordings ?? 0} voices · .jsonl`;

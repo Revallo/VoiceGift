@@ -232,8 +232,9 @@ async function accountFlow(occasion, recipientLink) {
   if (st !== 401) errors.push(`creating a gift without an account: ${st}`);
 
   const a = await page(phone, /status of (401|409)/); // the wrong password and the taken email
-  await a.goto(`${BASE}/`);
-  await a.click('#account:not([hidden])'); // "Log in" in the header
+  await a.goto(`${BASE}/`); // no landing page: "/" goes straight to creating a gift
+  if (new URL(a.url()).pathname !== '/new') errors.push('"/" went to ' + a.url());
+  await a.click('.app-tabbar a[href="/account"]:visible'); // the "profile" tab
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');
   await a.fill('#acEmail', email);
   await a.fill('#acPass', 'not the password');
@@ -253,11 +254,8 @@ async function accountFlow(occasion, recipientLink) {
   if ((await a.inputValue('#name')) !== 'Sari') errors.push(`friends' page name for a logged-in organizer: ${await a.inputValue('#name')}`);
   await a.waitForTimeout(400);
   await shot(a, 'account-03-friend-page');
-  await a.goto(`${BASE}/`);
-  await a.waitForSelector('a.acct'); // their initial instead of "Log in"
-  await a.waitForTimeout(400);
-  await shot(a, 'account-04-landing');
-  await a.click('a.acct');
+  await a.goto(`${BASE}/new`);
+  await a.click('.app-tabbar a[href="/account"]:visible');
   await a.waitForSelector('[data-screen="me"]:not([hidden])');
   await a.click('#logout');
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');

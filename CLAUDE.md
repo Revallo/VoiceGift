@@ -25,7 +25,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | landing ("Log in", or the account's initial, in the header) |
+| `/` | — | no landing page: redirects to `/new` (`redirects` in `vercel.json`, also in `dev.mjs`) |
 | `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → (account, if logged out) → friends' link + QR + dashboard |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |

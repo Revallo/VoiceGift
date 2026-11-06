@@ -1,4 +1,4 @@
-// Local development server: serves public/, applies the same rewrites as vercel.json,
+// Local development server: serves public/, applies the same redirects + rewrites as vercel.json,
 // and runs the handlers in api/. Data is stored in .data/ instead of Vercel Blob.
 //   npm run dev  →  http://localhost:3000  (restarts by itself when api/ or lib/ code changes)
 import http from 'node:http';
@@ -27,6 +27,11 @@ const server = http.createServer(async (req, res) => {
       const file = path.join(ROOT, 'api', name + '.js');
       const mod = await import(pathToFileURL(file).href);
       return await mod.default(req, res);
+    }
+    const redirect = (config.redirects || []).find((r) => r.source === url.pathname);
+    if (redirect) {
+      res.writeHead(307, { Location: redirect.destination + url.search });
+      return res.end();
     }
     let p = rewrite(url.pathname);
     if (p.endsWith('/')) p += 'index.html';

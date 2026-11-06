@@ -586,11 +586,11 @@ async function exportKeepsakeVideo(saveBtn) {
   const ctx = cv.getContext('2d');
 
   const drawFrame = (activeIdx, wordText, progressRatio) => {
-    ctx.fillStyle = '#0F0F0F';
+    ctx.fillStyle = '#1B1024';
     ctx.fillRect(0, 0, cv.width, cv.height);
 
-    // Emerald Hero Card at top
-    ctx.fillStyle = '#266A61';
+    // Party hero card at top
+    ctx.fillStyle = '#E8457A';
     ctx.beginPath();
     ctx.roundRect?.(40, 40, cv.width - 80, 140, 28) || ctx.rect(40, 40, cv.width - 80, 140);
     ctx.fill();
@@ -604,7 +604,7 @@ async function exportKeepsakeVideo(saveBtn) {
     ctx.fillText(t.greeting(first), 72, 138);
 
     // Stage well preview card
-    ctx.fillStyle = '#1A1A1A';
+    ctx.fillStyle = '#2A1A35';
     ctx.beginPath();
     ctx.roundRect?.(40, 204, cv.width - 80, 310, 24) || ctx.rect(40, 204, cv.width - 80, 310);
     ctx.fill();
@@ -645,7 +645,7 @@ async function exportKeepsakeVideo(saveBtn) {
     // Progress bar
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.fillRect(56, 820, cv.width - 112, 6);
-    ctx.fillStyle = '#389B8E';
+    ctx.fillStyle = '#FF7FA6';
     ctx.fillRect(56, 820, (cv.width - 112) * Math.min(1, Math.max(0, progressRatio)), 6);
   };
 

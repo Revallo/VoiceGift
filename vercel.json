@@ -5,7 +5,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/new",
+      "destination": "/login",
       "permanent": false
     }
   ],

@@ -5,8 +5,12 @@ import { theme } from './themes.js';
 import qrcode from './vendor/qrcode.js'; // qrcode-generator 2.0.4 (MIT)
 
 const bare = (url) => url.replace(/^https?:\/\//, '');
-export const friendUrl = (gift) => `${location.origin}/g/${gift.slug}`;
-export const recipientUrl = (gift, openKey) => `${location.origin}/r/${gift.slug}?k=${openKey}`;
+// Links we hand out always use the public address, even when this page was opened from a
+// per-deployment or preview address (those ask for a Vercel login). Locally they stay on localhost.
+const PUBLIC_ORIGIN = 'https://voicegift-one.vercel.app';
+const shareOrigin = location.hostname.endsWith('.vercel.app') ? PUBLIC_ORIGIN : location.origin;
+export const friendUrl = (gift) => `${shareOrigin}/g/${gift.slug}`;
+export const recipientUrl = (gift, openKey) => `${shareOrigin}/r/${gift.slug}?k=${openKey}`;
 
 export function qrSvg(url) {
   const qr = qrcode(0, 'M');

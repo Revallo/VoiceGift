@@ -1,6 +1,6 @@
 import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
-import { friendUrl, recipientUrl, qrSvg, shareRow, recipientCard, printQrCard } from './share.js';
+import { friendUrl, recipientUrl, shareRow, linkbox } from './share.js';
 import { me } from './auth.js';
 
 addStars($('#app'), 20, 40);
@@ -31,12 +31,7 @@ function togglePreview(id, btn) {
   previewAudio.play().catch(() => { btn.classList.remove('playing'); btn.innerHTML = icon.play(11); });
 }
 
-// Logged in: "back" goes to the account's list of gifts.
-me().then((u) => {
-  if (!u) return;
-  $('.backbtn').href = '/account';
-  $('.backbtn').setAttribute('aria-label', 'Back to your gifts');
-});
+let current = null; // { gift, openKey }
 
 async function load() {
   let data;
@@ -47,160 +42,89 @@ async function load() {
     return showScreen('error');
   }
   const { gift, openKey, messages } = data;
+  current = { gift, openKey };
   const t = applyTheme(gift.occasion);
   const name = t.callName(gift.recipient);
   const sentMsgs = messages.filter((m) => m.sent);
-  const realEdited = messages.filter((m) => !m.demo && m.edited);
-  const totalSec = Math.round(sentMsgs.reduce((acc, m) => acc + (Number(m.durationSec) || 0), 0));
-  const msgs = `${sentMsgs.length} ${sentMsgs.length === 1 ? 'voice' : 'voices'}`;
+  document.title = `For ${gift.recipient} · Voice Gift`;
   $('#title').textContent = `For ${gift.recipient}`;
-  $('#status').textContent = `${msgs} · ${totalSec}s`;
-  if ($('#asrStatBadge')) $('#asrStatBadge').textContent = `${realEdited.length} asr fixed`;
-  if ($('#voiceCountSub')) $('#voiceCountSub').textContent = `${messages.length} total`;
-  if ($('#editDesignLink')) $('#editDesignLink').href = `/new?edit=${encodeURIComponent(slug)}&k=${encodeURIComponent(key)}`;
+  $('#editDesignLink').href = `/new?edit=${encodeURIComponent(slug)}&k=${encodeURIComponent(key)}`;
 
-  const renderDashScene = () => {
-    $('#cake').textContent = '';
-    scene = createScene($('#cake'), gift);
-    scene.setCandles(sentMsgs.length, { spots: Math.max(12, sentMsgs.length) });
-    scene.lightAll();
-  };
-  renderDashScene();
+  // the gift: one item per voice so far
+  $('#cake').textContent = '';
+  const scene = createScene($('#cake'), gift);
+  scene.setCandles(sentMsgs.length, { spots: Math.max(12, sentMsgs.length) });
+  scene.lightAll();
 
-  const custBtn = $('#customizeDashBtn');
-  if (custBtn) {
-    custBtn.onclick = () => {
-      const dr = $('#cakeDrawer');
-      if (!dr) return;
-      dr.hidden = !dr.hidden;
-      custBtn.classList.toggle('active-toggle', !dr.hidden);
-      if (!dr.hidden) renderDashScene();
-    };
-  }
-
-  const list = $('#list');
-  list.textContent = '';
-  if (!messages.length) list.append(h('div', { class: 'item small muted' }, 'Nobody yet. Share the link below.'));
-  messages.forEach((m, i) => {
-    const fixNote = m.demo
-      ? 'demo'
-      : m.edited
-        ? `${m.fixes || 1} fixed`
-        : m.sent ? 'sent' : 'draft';
-    // Only demo voices: friends' voices are for the recipient, not even for the organizer.
-    const playBtn = m.demo && h('button', {
-      type: 'button',
-      class: 'play-mini',
-      'aria-label': `Play ${m.sender}'s voice`,
-      title: 'Play voice preview',
-      html: icon.play(11),
-      onclick: () => togglePreview(m.id, playBtn)
-    });
-    list.append(h('div', { class: 'item' },
-      h('div', { class: 'bento-top' },
-        h('span', { class: 'avatar', style: { background: colorFor(i), width: '32px', height: '32px', borderRadius: '10px', fontSize: '12px' } }, initials(m.sender)),
-        h('div', { class: 'bento-meta' },
-          h('b', {}, m.sender),
-          h('span', {}, fmtAgo(m.createdAt))
-        ),
-        h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(12), onclick: () => remove(m) })
-      ),
-      h('div', { class: 'bento-val' },
-        h('span', { class: 'tag-plus' }, `+ ${Math.round(m.durationSec)}s`),
-        h('div', { class: 'row', style: { gap: '6px' } },
-          h('span', { class: 'tiny muted', style: { fontWeight: '600' } }, fixNote),
-          playBtn
-        )
-      )
-    ));
-  });
-
+  // 1. invite friends
+  const friends = gift.occasion === 'wedding' ? 'guests' : 'friends';
   const friend = friendUrl(gift);
-  $('#inviteTitle').textContent = gift.occasion === 'wedding' ? 'Invite more guests' : 'Invite more friends';
+  $('#inviteTitle').textContent = `Invite ${friends} to record`;
+  $('#inviteLead').textContent = `Send this link to ${friends}. Each one records a 15-second wish for ${name}. Keep it a secret from ${name}!`;
   $('#friendLink').textContent = friend.replace(/^https?:\/\//, '');
   const b = $('#copyFriend');
   b.innerHTML = icon.copy(14);
   b.append(h('span', {}, 'Copy'));
   b.onclick = () => copyText(friend);
   $('#waBtn').replaceWith(Object.assign(shareRow(t.waFriends(name), friend), { id: 'waBtn' }));
-  $('#qr').innerHTML = qrSvg(friend);
-  $('#printQr').innerHTML = icon.print(14);
-  $('#printQr').append(h('span', {}, 'Print'));
-  $('#printQr').onclick = () => printQrCard(gift);
 
-  $('#delivery').textContent = '';
-  const deliveryRow = h('div', { class: 'nav-list', style: { marginBottom: '4px' } },
-    h('button', {
-      type: 'button',
-      class: 'nav-row',
-      onclick: () => openDeliverySheet(gift, openKey)
-    },
-      h('span', { class: 'nav-ico', html: icon.shield(16) }),
-      h('div', { class: 'nav-info' },
-        h('b', {}, 'kode PIN penerima'),
-        h('small', {}, '4 angka · penerima memasukkannya untuk membuka')
-      ),
-      h('span', { class: 'nav-val' }, gift.verifyPin || '1234'),
-      h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
-    ),
-    h('button', {
-      type: 'button',
-      class: 'nav-row',
-      onclick: () => openSheet({
-        title: `share link · ${gift.recipient}`,
-        subtitle: 'kirim link ke penerima atau bagikan via whatsapp',
-        content: recipientCard(gift, openKey)
-      })
-    },
-      h('span', { class: 'nav-ico', html: icon.send(16) }),
-      h('div', { class: 'nav-info' },
-        h('b', {}, `share link ke ${gift.recipient}`),
-        h('small', {}, 'whatsapp · qr code · direct reveal link')
-      ),
-      h('span', { class: 'nav-val' }, 'share'),
-      h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
-    )
-  );
-  $('#delivery').append(deliveryRow);
-  $('#openReveal').href = recipientUrl(gift, openKey);
+  // 2. who recorded (names only: what they said is for the recipient)
+  $('#whoTitle').textContent = `Who recorded (${sentMsgs.length})`;
+  const list = $('#list');
+  list.textContent = '';
+  if (!messages.length) list.append(h('p', { class: 'small muted', style: { margin: 0 } }, `Nobody yet. Send the link above to your ${friends}.`));
+  messages.forEach((m, i) => {
+    // Only demo voices can be played here: friends' voices are for the recipient, not even for the organizer.
+    const playBtn = m.demo && h('button', { type: 'button', class: 'play-mini', 'aria-label': `Play ${m.sender}'s voice`, html: icon.play(11), onclick: () => togglePreview(m.id, playBtn) });
+    list.append(h('div', { class: 'who-row' },
+      h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
+      h('div', { class: 'grow', style: { minWidth: 0 } },
+        h('b', {}, m.sender),
+        h('div', { class: 'tiny muted' }, `${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)}s${m.demo ? ' · demo' : m.sent ? '' : ' · not sent yet'}`)),
+      playBtn,
+      h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(12), onclick: () => remove(m) })));
+  });
+  $('#addDemo').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
+
+  // 3. send it to the recipient: their link + the PIN
+  const pin = gift.verifyPin || '1234';
+  const url = recipientUrl(gift, openKey);
+  $('#sendTitle').textContent = `Send it to ${name}`;
+  $('#sendLead').textContent = `When everyone has recorded (e.g. at 00:00), send ${name} this link and the PIN.`;
+  $('#pinVal').textContent = pin;
+  $('#recipientBox').replaceChildren(linkbox(url), shareRow(`${t.waRecipient(name)}
+PIN: ${pin}`, url));
+  $('#openReveal').href = url;
+  $('#openReveal').textContent = `Preview what ${name} sees`;
   $('#openReveal').title = `Your preview only plays demo voices. Your friends’ voices are only for ${name}.`;
-  $('#demoCard').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
   showScreen('main');
 }
 
-function openDeliverySheet(gift, openKey) {
-  const pinIn = h('input', { class: 'input pin-input', type: 'text', inputmode: 'numeric', pattern: '[0-9]{4}', maxlength: 4, autocomplete: 'off', value: gift.verifyPin || '1234', placeholder: '1234',
+// Change the PIN: exactly 4 digits.
+$('#pinRow').addEventListener('click', () => {
+  const pinIn = h('input', { class: 'input pin-input', type: 'text', inputmode: 'numeric', pattern: '[0-9]{4}', maxlength: 4, autocomplete: 'off', value: current.gift.verifyPin || '1234', placeholder: '1234',
     oninput: () => { pinIn.value = pinIn.value.replace(/\D/g, '').slice(0, 4); } });
-  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'simpan PIN');
-  const form = h('form', {
-    class: 'stack',
-    style: { gap: '12px' },
-    onsubmit: async (ev) => {
-      ev.preventDefault();
-      const pin = pinIn.value.replace(/\D/g, '');
-      if (pin.length !== 4) return toast('PIN harus 4 angka.');
-      saveBtn.disabled = true;
-      try {
-        await api('/api/manage', { method: 'POST', json: { slug, key, action: 'update-delivery', verifyPin: pin } });
-        closeSheet();
-        toast('PIN disimpan');
-        await load();
-      } catch (e) {
-        toast(e.message);
-      } finally {
-        saveBtn.disabled = false;
-      }
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save PIN');
+  const form = h('form', { class: 'stack', style: { gap: '12px' }, onsubmit: async (ev) => {
+    ev.preventDefault();
+    const pin = pinIn.value.replace(/\D/g, '');
+    if (pin.length !== 4) return toast('The PIN needs 4 digits.');
+    saveBtn.disabled = true;
+    try {
+      await api('/api/manage', { method: 'POST', json: { slug, key, action: 'update-delivery', verifyPin: pin } });
+      closeSheet();
+      toast('PIN saved');
+      await load();
+    } catch (e) {
+      toast(e.message);
+    } finally {
+      saveBtn.disabled = false;
     }
-  },
-    h('div', { class: 'field' }, h('label', {}, 'kode PIN (4 angka)'), pinIn,
-      h('span', { class: 'tiny muted' }, 'Kirim PIN ini ke penerima bersama link-nya.')),
-    saveBtn,
-    h('div', { class: 'dual-pills', style: { marginTop: '4px' } },
-      h('a', { class: 'pill-btn light', href: `/r/${gift.slug}?k=${openKey}`, style: { fontSize: '12.5px' } }, 'cek layar penerima')
-    )
-  );
-  openSheet({ title: 'kode PIN penerima', subtitle: 'penerima memasukkan 4 angka ini untuk membuka kadonya', content: form });
-}
+  } },
+    h('div', { class: 'field' }, h('label', {}, 'PIN (4 digits)'), pinIn), saveBtn);
+  openSheet({ title: 'PIN', subtitle: `${current.gift.recipient} types these 4 digits to open the gift`, content: form });
+  setTimeout(() => pinIn.focus(), 60);
+});
 
 // Gone for good: the server deletes the message and its recording.
 async function remove(m) {
@@ -237,7 +161,7 @@ $('#addDemo').addEventListener('click', async () => {
     toast(e.message);
   } finally {
     b.disabled = false;
-    b.textContent = 'Add 12 demo voices';
+    b.textContent = '+ Add 12 demo voices';
   }
 });
 load();

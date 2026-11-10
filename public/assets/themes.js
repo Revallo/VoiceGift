@@ -6,6 +6,7 @@ import { createLanterns, LIGHTS, SHAPES as LIGHT_SHAPES, SWATCH as LIGHT_SWATCH 
 
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 export const firstName = (r) => String(r || '').trim().split(/\s+/)[0] || '';
+const fullName = (r) => String(r || '').trim().replace(/\s+/g, ' '); // "Kevin Sanjaya" fits on the cake: it shrinks
 
 
 export const THEMES = {
@@ -15,7 +16,7 @@ export const THEMES = {
     people: (n) => count(n, 'person', 'people'),
     item: 'candle', items: 'candles', itemsOn: 'lit',
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
-    decorate: { next: 'Next: customize gift', title: 'Customize birthday gift', lead: 'style, inscription & accents', shapeLabel: 'Cake', shapes: CAKE_SHAPES, swatchLabel: 'Flavor', swatches: FLAVORS, swatch: CAKE_SWATCH, flavor: 'strawberry', nameLabel: 'Title', nameMax: 14, name: (r) => firstName(r).slice(0, 14), draw: true,
+    decorate: { next: 'Next: customize gift', title: 'Customize birthday gift', lead: 'style, inscription & accents', shapeLabel: 'Cake', shapes: CAKE_SHAPES, swatchLabel: 'Flavor', swatches: FLAVORS, swatch: CAKE_SWATCH, flavor: 'strawberry', nameLabel: 'Title', nameMax: 20, name: (r) => fullName(r).slice(0, 20), draw: true,
       stickers: ['✨', '🕯️', '🥂', '🎁', '⭐', '🌙', '🎉', '🎈', '💫', '🌸', '👑', '🎀', '🍓', '🍒', '🧁', '🍫', '🎶', '🤍', '🌟', '🔥', '💎', '🍀', '🦋', '🎂'] },
     inviteTitle: (name) => `Record a message for ${name}’s birthday`,
     tip: (name) => `start by calling ${name}’s name, then say your wish.`,
@@ -35,8 +36,8 @@ export const THEMES = {
     finaleTitle: 'Make a wish…',
     finaleSub: () => 'Then blow into your phone. The candles go out.',
     keepSub: (n) => `${count(n, 'person loves', 'people love')} you.`,
-    waFriends: (name) => `Yuk rekam ucapan 15 detik buat ${name}! Rahasia ya, jangan bilang dia.`,
-    waRecipient: (name) => `${name}! Ada kado suara dari teman-teman buat kamu 🎂 Nyalakan suaranya ya.`
+    waFriends: (name) => `Record a 15-second birthday wish for ${name}! It’s a secret, don’t tell them.`,
+    waRecipient: (name) => `${name}! Your friends made you a voice gift 🎂 Turn your sound on.`
   },
 
   graduation: {
@@ -45,7 +46,7 @@ export const THEMES = {
     people: (n) => count(n, 'person', 'people'),
     item: 'flower', items: 'flowers', itemsOn: 'open',
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Nadia',
-    decorate: { next: 'Next: customize gift', title: 'Customize graduation gift', lead: 'wrap, title & accents', shapeLabel: 'Bouquet', shapes: WRAP_SHAPES, swatchLabel: 'Wrap', swatches: WRAPS, swatch: WRAP_SWATCH, flavor: 'strawberry', nameLabel: 'Title', nameMax: 18, name: (r) => firstName(r).slice(0, 18), namePlaceholder: 'e.g. Nadia, S.Kom.', draw: true,
+    decorate: { next: 'Next: customize gift', title: 'Customize graduation gift', lead: 'wrap, title & accents', shapeLabel: 'Bouquet', shapes: WRAP_SHAPES, swatchLabel: 'Wrap', swatches: WRAPS, swatch: WRAP_SWATCH, flavor: 'strawberry', nameLabel: 'Title', nameMax: 20, name: (r) => fullName(r).slice(0, 20), namePlaceholder: 'e.g. Nadia, S.Kom.', draw: true,
       stickers: ['🎓', '✨', '🏆', '📜', '⭐', '🥂', '💐', '🌷', '🌟', '🎉', '📚', '🥇', '👑', '💫', '🍀', '🚀', '🌸', '🎀', '🤍', '💎', '🦋', '🌙', '🌻', '🎶'] },
     inviteTitle: (name) => `Record a message for ${name}’s graduation`,
     tip: (name) => `start by calling ${name}’s name, then say how proud you are.`,
@@ -67,8 +68,8 @@ export const THEMES = {
     finaleAction: 'Tap to throw',
     finaleHint: 'Just like the real ceremony, all together.',
     keepSub: (n) => `${count(n, 'person is', 'people are')} proud of you.`,
-    waFriends: (name) => `Yuk rekam ucapan 15 detik buat wisudanya ${name}! Rahasia ya, jangan bilang dia.`,
-    waRecipient: (name) => `${name}! Selamat wisuda 🎓 Ada kado suara dari teman-teman buat kamu. Nyalakan suaranya ya.`
+    waFriends: (name) => `Record a 15-second graduation wish for ${name}! It’s a secret, don’t tell them.`,
+    waRecipient: (name) => `Congratulations, ${name}! 🎓 Your friends made you a voice gift. Turn your sound on.`
   },
 
   wedding: {
@@ -77,7 +78,7 @@ export const THEMES = {
     people: (n) => count(n, 'guest', 'guests'),
     item: 'lantern', items: 'lanterns', itemsOn: 'lit',
     recipientLabel: 'The couple', recipientPlaceholder: 'e.g. Rina & Bayu',
-    decorate: { next: 'Next: customize gift', title: 'Customize wedding gift', lead: 'lights, message & accents', shapeLabel: 'Lanterns', shapes: LIGHT_SHAPES, swatchLabel: 'Lights', swatches: LIGHTS, swatch: LIGHT_SWATCH, flavor: 'vanilla', nameLabel: 'Words', nameMax: 30, name: () => 'Selamat menempuh hidup baru', draw: false,
+    decorate: { next: 'Next: customize gift', title: 'Customize wedding gift', lead: 'lights, message & accents', shapeLabel: 'Lanterns', shapes: LIGHT_SHAPES, swatchLabel: 'Lights', swatches: LIGHTS, swatch: LIGHT_SWATCH, flavor: 'vanilla', nameLabel: 'Words', nameMax: 30, name: () => 'Happily ever after', draw: false,
       stickers: ['💍', '✨', '🥂', '🕊️', '🤍', '🕯️', '🌙', '💐', '🌹', '🌸', '⭐', '🦢', '🌷', '🎶', '💌', '🌿', '💫', '🎀', '🦋', '🎊', '💎', '👑', '💕', '🍰'] },
     inviteTitle: (name) => `Leave a voice message for ${name}`,
     tip: (name) => `start with their names (${name}), then say your wish.`,
@@ -99,8 +100,8 @@ export const THEMES = {
     finaleAction: 'Tap to release',
     finaleHint: 'Every guest’s wish goes up with them.',
     keepSub: (n) => `${count(n, 'guest', 'guests')} wished you a happy life together.`,
-    waFriends: (name) => `Yuk tinggalkan ucapan suara 15 detik buat ${name}!`,
-    waRecipient: (name) => `${name}, selamat menempuh hidup baru 💍 Ini ucapan suara dari para tamu. Nyalakan suaranya ya.`
+    waFriends: (name) => `Leave a 15-second voice wish for ${name}!`,
+    waRecipient: (name) => `${name}, congratulations on your wedding 💍 Here are your guests’ voice wishes. Turn your sound on.`
   }
 };
 

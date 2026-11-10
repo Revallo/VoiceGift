@@ -1440,10 +1440,8 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
 .swatch i { width: 24px; height: 24px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15); }
 .swatch.brush i { width: 20px; height: 20px; border-radius: 50%; }
 
-.qr { background: #fff; padding: 6px; border-radius: 14px; width: 74px; height: 74px; flex-shrink: 0; }
-.qr img, .qr svg { width: 100%; height: 100%; display: block; }
 
-.list .play-mini {
+.list .play-mini, .who-list .play-mini {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -1457,9 +1455,9 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
   cursor: pointer;
   transition: background 0.15s ease, transform 0.12s ease;
 }
-.list .play-mini:hover { background: var(--emerald); color: #FFFFFF; transform: scale(1.06); }
-.list .play-mini.playing { background: #FFFFFF; color: #1B1024; }
-.list .del {
+.list .play-mini:hover, .who-list .play-mini:hover { background: var(--emerald); color: #FFFFFF; transform: scale(1.06); }
+.list .play-mini.playing, .who-list .play-mini.playing { background: #FFFFFF; color: #1B1024; }
+.list .del, .who-list .del {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -1473,7 +1471,7 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.list .del:hover { background: var(--coral-soft); color: var(--coral); }
+.list .del:hover, .who-list .del:hover { background: var(--coral-soft); color: var(--coral); }
 
 /* Accounts */
 .err { color: var(--coral); margin: 0; font-weight: 500; }
@@ -2000,20 +1998,6 @@ body[data-viewport="desktop"] .bottom-sheet {
   background: rgba(232, 69, 122, 0.14);
 }
 
-/* Printable QR card */
-.printcard { display: none; }
-@media print {
-  @page { margin: 14mm; }
-  html, body { background: #fff !important; color: #111; display: block; padding: 0; }
-  body > *:not(.printcard) { display: none !important; }
-  .printcard { display: flex; flex-direction: column; align-items: center; gap: 9mm; padding: 14mm; text-align: center; border: 1.5px solid #ddd; border-radius: 8mm; }
-  .printcard .pc-eyebrow { font-size: 11pt; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #E8457A; }
-  .printcard h1 { font-size: 30pt; color: #111; }
-  .printcard .pc-qr { width: 85mm; height: 85mm; }
-  .printcard .pc-qr svg { width: 100%; height: 100%; }
-  .printcard p { margin: 0; font-size: 13pt; color: #333; }
-}
-
 /* ---------- Animations ---------- */
 @keyframes vg-sq-left { 0%, 100% { opacity: 0.25; transform: scale(0.82); } 33% { opacity: 1; transform: scale(1.08); background: #FFD166; } }
 @keyframes vg-sq-mid { 0%, 100% { opacity: 0.25; transform: scale(0.82); } 66% { opacity: 1; transform: scale(1.08); background: #FFD166; } }
@@ -2071,3 +2055,17 @@ body.calm .app { background: #17121C; }
 .seen .caption { font-size: 16.5px; }
 .seen .caption span.suspect { cursor: pointer; text-decoration: underline wavy #FF6B6B; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
 .done-scene { width: min(100%, 300px); margin: 0 auto; }
+
+/* ---------- The organizer's one page (/m/…) ---------- */
+.dash { display: flex; flex-direction: column; gap: 14px; }
+.dash-title { font-size: 16px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-scene { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.dash-scene #cake { width: min(100%, 300px); }
+.step-title { display: inline-flex; align-items: center; gap: 8px; font-size: 15.5px; }
+.step-n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--emerald); color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.who-list { display: flex; flex-direction: column; gap: 2px; }
+.who-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); }
+.who-row:first-child { border-top: 0; }
+.who-row b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who-row .avatar { width: 32px; height: 32px; border-radius: 10px; font-size: 12px; }
+.pin-row { width: 100%; background: var(--panel-subtle); border: 1px solid var(--line); border-radius: 16px; }

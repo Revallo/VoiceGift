@@ -282,7 +282,7 @@ async function loadGifts() {
             h('b', {}, `for ${rg.recipient}`),
             h('small', {}, `from ${rg.organizer} · ${rg.occasion} · ${rg.count || 0} voices`)
           ),
-          h('span', { class: 'nav-val', style: { color: '#FFD166', fontWeight: '600' } }, 'buka langsung'),
+          h('span', { class: 'nav-val', style: { color: '#FFD166', fontWeight: '600' } }, 'open'),
           h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
         )
       ));

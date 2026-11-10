@@ -121,7 +121,7 @@ async function load() {
   if ($('#verifyCountBadge')) $('#verifyCountBadge').textContent = `${pub.count || 0} secret voices`;
   if ($('#verifyHeroTitle')) $('#verifyHeroTitle').textContent = `For ${first}`;
   if ($('#verifyPinTitle')) {
-    $('#verifyPinTitle').textContent = `Masukkan 4 digit PIN dari ${gift.organizer} untuk membuka voice gift`;
+    $('#verifyPinTitle').textContent = `Type the 4-digit PIN that ${gift.organizer} sent you`;
   }
   showScreen('verify');
   setTimeout(() => pinBoxes[0]?.focus(), 80);
@@ -132,7 +132,7 @@ $('#verifyForm')?.addEventListener('submit', async (ev) => {
   const pin = (syncPinInput() || $('#verifyPinInput')?.value || '').trim();
   const errEl = $('#verifyError');
   if (pin.length < 4) {
-    if (errEl) { errEl.textContent = 'Masukkan 4 digit kode PIN terlebih dahulu.'; errEl.hidden = false; }
+    if (errEl) { errEl.textContent = 'Please type all 4 digits of the PIN.'; errEl.hidden = false; }
     return;
   }
   if (errEl) errEl.hidden = true;
@@ -141,7 +141,7 @@ $('#verifyForm')?.addEventListener('submit', async (ev) => {
   try {
     verifiedAnswer = pin;
     await unlockAndShow(pin);
-    toast('PIN terverifikasi! Membuka voice gift…');
+    toast('Opening your gift…');
   } catch (e) {
     verifiedAnswer = '';
     if (errEl) { errEl.textContent = e.message; errEl.hidden = false; }

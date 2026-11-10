@@ -107,18 +107,21 @@ async function runGift(occasion, c) {
   await p.waitForTimeout(300);
   await shot(p, P('02-decorate'));
   await p.click('#createBtn');
-  await p.waitForSelector('[data-screen="share"]:not([hidden])');
+  // "Create" opens the gift's one page: the gift, invite friends, who recorded, send it
+  await p.waitForURL(/\/m\/.+\?k=/);
+  await p.waitForSelector('[data-screen="main"]:not([hidden])');
   await p.waitForTimeout(400);
-  await shot(p, P('03-share'), true);
-  // back from step 3: edit, add a sticker, save
-  await p.click('[data-screen="share"] .backbtn');
+  await shot(p, P('03-dashboard-new'), true);
+  // "Edit design": add a sticker, save, back on the gift's page
+  await p.click('#editDesignLink');
   await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
-  if ((await p.textContent('#createBtn')).trim() !== 'Save changes') errors.push(`${occasion}: no "Save changes" after going back`);
+  if ((await p.textContent('#createBtn')).trim() !== 'Save changes') errors.push(`${occasion}: no "Save changes" when editing`);
   await p.click('#stickerTray .sticker-btn >> nth=2');
   await p.click('#createBtn');
-  await p.waitForSelector('[data-screen="share"]:not([hidden])');
+  await p.waitForURL(/\/m\/.+\?k=/);
+  await p.waitForSelector('[data-screen="main"]:not([hidden])');
   const friendLink = 'http://' + (await p.textContent('#friendLink'));
-  const manageHref = await p.getAttribute('#manageBtn', 'href');
+  const manageHref = new URL(p.url()).pathname + new URL(p.url()).search;
   const slug = friendLink.split('/g/')[1];
   console.log(occasion, 'slug', slug, 'manage', manageHref);
   const shape = (await (await fetch(`${BASE}/api/gift?slug=${slug}`)).json()).gift?.cake?.shape;
@@ -173,8 +176,8 @@ async function runGift(occasion, c) {
   if (noKey.status !== 403 || badKey.status !== 403) errors.push(`dashboard without key: ${noKey.status}/${badKey.status}`);
   const before = c.friends.length + (c.extraGuests || 0);
   await m.click('#addDemo');
-  await m.waitForFunction((n) => document.querySelectorAll('#list .item').length === n, before + 12, { timeout: 30000 });
-  await m.waitForSelector('#demoCard', { state: 'hidden' });
+  await m.waitForFunction((n) => document.querySelectorAll('#list .who-row').length === n, before + 12, { timeout: 30000 });
+  await m.waitForSelector('#addDemo', { state: 'hidden' });
   await shot(m, P('10-dashboard-demo'), true);
   const recipientLink = await m.getAttribute('#openReveal', 'href');
   await m.context().close();
@@ -261,7 +264,7 @@ async function accountFlow(occasion, recipientLink) {
   await a.fill('#acPass', PASSWORD);
   await a.click('#authBox button[type="submit"]');
   await a.waitForURL(/\/new$/); // logged in → straight to making a gift
-  await a.click('.app-tabbar a[href="/account"]:visible'); // the "profile" tab
+  await a.click('[data-screen="who"] a[aria-label="Profile"]'); // the profile button, top right
   await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
   await a.waitForTimeout(400);
   await shot(a, 'account-02-me', true);
@@ -272,7 +275,7 @@ async function accountFlow(occasion, recipientLink) {
   await a.waitForTimeout(400);
   await shot(a, 'account-03-friend-page');
   await a.goto(`${BASE}/new`);
-  await a.click('.app-tabbar a[href="/account"]:visible');
+  await a.click('[data-screen="who"] a[aria-label="Profile"]');
   await a.waitForSelector('[data-screen="me"]:not([hidden])');
   await a.click('#logout');
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');

@@ -1,8 +1,5 @@
-// Sharing pieces used by the create page and the dashboard:
-// the friends' link, a QR code (and a printable QR card), and the recipient's link.
+// Sharing pieces used by the gift's page (/m/…): the friends' link and the recipient's link, with share buttons.
 import { h, icon, copyText, waShare } from './common.js';
-import { theme } from './themes.js';
-import qrcode from './vendor/qrcode.js'; // qrcode-generator 2.0.4 (MIT)
 
 const bare = (url) => url.replace(/^https?:\/\//, '');
 // Links we hand out always use the public address, even when this page was opened from a
@@ -11,13 +8,6 @@ const PUBLIC_ORIGIN = 'https://voicegift-one.vercel.app';
 const shareOrigin = location.hostname.endsWith('.vercel.app') ? PUBLIC_ORIGIN : location.origin;
 export const friendUrl = (gift) => `${shareOrigin}/g/${gift.slug}`;
 export const recipientUrl = (gift, openKey) => `${shareOrigin}/r/${gift.slug}?k=${openKey}`;
-
-export function qrSvg(url) {
-  const qr = qrcode(0, 'M');
-  qr.addData(url);
-  qr.make();
-  return qr.createSvgTag({ cellSize: 3, margin: 0, scalable: true });
-}
 
 export function linkbox(url) {
   const copy = h('button', { type: 'button', html: icon.copy(14), onclick: () => copyText(url) }, h('span', {}, 'Copy'));
@@ -50,30 +40,4 @@ export function shareRow(message, url) {
       h('span', { class: 'share-ico', html: icon.share(20) }), h('span', {}, 'More')));
   }
   return row;
-}
-
-// A card to print and put on the guestbook table: big QR code that opens the recording page.
-export function printQrCard(gift) {
-  const t = theme(gift.occasion);
-  const url = friendUrl(gift);
-  document.querySelector('.printcard')?.remove();
-  document.body.append(h('div', { class: 'printcard' },
-    h('div', { class: 'pc-eyebrow' }, `${t.label} · Voice Gift`),
-    h('h1', {}, t.inviteTitle(t.callName(gift.recipient))),
-    h('div', { class: 'pc-qr', html: qrSvg(url) }),
-    h('p', {}, 'Scan with your phone camera. 15 seconds, no app needed.'),
-    h('p', {}, bare(url))));
-  window.print();
-}
-
-// The recipient's link (dashboard only, so it isn't mixed up with the friends' link).
-// It opens the gift right away, so the surprise starts when you send it.
-export function recipientCard(gift, openKey) {
-  const t = theme(gift.occasion);
-  const name = t.callName(gift.recipient);
-  const url = recipientUrl(gift, openKey);
-  return h('div', { class: 'card stack' },
-    h('div', {}, h('b', {}, `Link for ${name}`), h('div', { class: 'small muted' }, `It opens the gift right away. Send it when everyone has recorded, e.g. at 00:00.`)),
-    shareRow(t.waRecipient(name), url),
-    linkbox(url));
 }

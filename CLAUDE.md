@@ -27,10 +27,10 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | URL | File | Who |
 | --- | --- | --- |
 | `/` | `index.html` | first page: pick cake / bouquet / lanterns, then its kind (sideways strip of live minis) and flavor; page takes that occasion's colors → "Yes, make the …" → `/login?next=/new?occasion=…&shape=…&flavor=…` |
-| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who (the gift is always drawn on top; 4-digit PIN) → decorate → (account, if logged out) → friends' link + QR + dashboard |
+| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who (the gift is always drawn on top; 4-digit PIN) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): name + consent → record → check words (shown as the recipient will see them) → done |
-| `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | organizer dashboard (only with the key): who recorded (not content), recipient link, demo voices |
+| `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content) + demo voices, 3. send it (recipient link + PIN, preview) |
 | `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: 4-digit PIN → items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
@@ -49,10 +49,10 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   classic/sky/star/heart — CSS `data-shape`), picked on `/` or in the decorate step; `setShape()` rebuilds only the body;
   `name` is the text on the cake / wrap / under the lanterns; `stickers` = `[[emoji, x, y]]` (sets in
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
-- Step 3 → back → step 2 saves with `PATCH /api/gifts` (manageKey). Each step is a history entry, so the
-  phone's back gesture works.
+- "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
+  phone's back gesture works. No bottom tab bar: the profile button sits top right.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
-- Step 3 of `/new` stays simple: friends' link, QR, dashboard. The recipient's link is only on the dashboard.
+- All UI text is English. No QR codes.
 
 ## Demo voices
 `public/demo/voices.json` + `public/demo/<occasion>-01..12.wav`: 12 TTS voices per occasion (made once with
@@ -81,7 +81,7 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only with the recipient's key + PIN** (server-side rule)
+- `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only with the recipient's key + PIN** (server-side rule); the organizer's own account gets demo voices only (`preview: true`)
 - `GET /api/audio?slug&id&k=openKey&pin` (or `&token` for your own recording) → WAV with Range support (iOS); the organizer (manage key): demo voices only
 - `POST /api/manage` action `update-delivery` {verifyPin} → change the 4-digit PIN
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey / `add-demo`

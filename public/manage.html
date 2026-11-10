@@ -19,89 +19,50 @@
     <div class="loading"><h1>Hmm.</h1><p class="lead" id="errorText"></p><a class="btn ghost" href="/" style="max-width:240px">Go to Voice Gift</a></div>
   </section>
   <section data-screen="main" hidden>
-    <div class="web-grid">
-      <div class="web-col">
-        <!-- Party hero card Hero Card (#E8457A) -->
-        <div class="hero-card">
-          <div class="hero-top">
-            <a class="hero-greeting backbtn" href="/account" aria-label="Back to your gifts" data-icon="back" style="width:36px;height:36px;border-radius:12px;background:rgba(27,16,36,0.28);border:0;color:#fff"></a>
-            <div class="hero-greeting-text" style="flex:1">
-              <small>organizer dashboard</small>
-              <b id="title">Gift</b>
-            </div>
-            <button type="button" class="hero-bell" id="refresh" title="Refresh" aria-label="Refresh">↻</button>
-          </div>
-
-          <div class="hero-balance">
-            <div class="hero-balance-label">
-              <span>total voices collected</span>
-            </div>
-            <div class="hero-balance-val" id="status">0 voices</div>
-          </div>
-
-          <div class="dual-pills">
-            <button type="button" class="pill-btn dark" id="customizeDashBtn">
-              <span>customize</span>
-            </button>
-            <a class="pill-btn light" id="openReveal" target="_blank" rel="noopener">
-              <span>preview gift</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- Collapsible Customize & Scene Drawer (hidden until "customize" is tapped) -->
-        <div class="customize-drawer" id="cakeDrawer" hidden>
-          <div class="sec-bar">
-            <span class="sec-title">gift design</span>
-            <a class="sec-action" id="editDesignLink" href="/new">edit design →</a>
-          </div>
-          <div class="stage-showcase">
-            <div id="cake" style="width:100%"></div>
-          </div>
-        </div>
-
-        <div id="delivery"></div>
-
-        <!-- 2-Column "history" Bento Grid for Voices -->
-        <div class="stack" style="gap:10px">
-          <div class="sec-bar">
-            <h2>history · voices</h2>
-            <span class="sec-action" id="voiceCountSub"></span>
-          </div>
-          <div class="list" id="list"></div>
-        </div>
-      </div>
-
-      <div class="web-col">
-        <div class="card stack">
-          <div class="sec-bar">
-            <h2 id="inviteTitle">quick send · invite</h2>
-          </div>
-          <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
-          <div id="waBtn"></div>
-          <div class="row">
-            <div class="qr" id="qr"></div>
-            <div class="grow stack" style="gap:6px">
-              <b>qr guest card</b>
-              <button type="button" class="btn ghost sm" id="printQr" style="align-self:flex-start"></button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card subtle row" id="demoCard" style="justify-content:space-between">
-          <b>sample voices</b>
-          <button class="btn ghost sm" id="addDemo">Add 12 demo voices</button>
-        </div>
-
-        <button class="btn ghost sm" id="deleteGift" style="align-self:center;color:var(--coral)">Delete this gift</button>
-      </div>
+    <!-- One page for the organizer: the gift, invite friends, who recorded, send it to the recipient -->
+    <div class="nav-header">
+      <a class="backbtn" href="/account" aria-label="My gifts" data-icon="back"></a>
+      <b class="grow dash-title" id="title">Gift</b>
+      <a class="backbtn" href="/account" aria-label="Profile" data-icon="user"></a>
     </div>
 
-    <nav class="app-tabbar" aria-label="Primary navigation">
-      <a class="tab-item" href="/new"><span data-icon="plus"></span><span>send gift</span></a>
-      <a class="tab-item active" href="/account"><span data-icon="sliders"></span><span>dashboard</span></a>
-      <a class="tab-item" href="/account"><span data-icon="user"></span><span>profile</span></a>
-    </nav>
+    <div class="dash">
+      <div class="dash-scene">
+        <div id="cake"></div>
+        <a class="btn ghost sm" id="editDesignLink" href="/new">✏️ Edit design</a>
+      </div>
+
+      <div class="card stack dash-step">
+        <div><b class="step-title"><span class="step-n">1</span><span id="inviteTitle">Invite friends to record</span></b>
+          <p class="small muted" id="inviteLead" style="margin:4px 0 0"></p></div>
+        <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
+        <div id="waBtn"></div>
+      </div>
+
+      <div class="card stack dash-step">
+        <div class="row" style="justify-content:space-between">
+          <b class="step-title"><span class="step-n">2</span><span id="whoTitle">Who recorded</span></b>
+          <button type="button" class="linkbtn small" id="refresh">↻ Refresh</button>
+        </div>
+        <div class="who-list" id="list"></div>
+        <button class="btn ghost sm" id="addDemo" style="align-self:flex-start">+ Add 12 demo voices</button>
+      </div>
+
+      <div class="card stack dash-step">
+        <div><b class="step-title"><span class="step-n">3</span><span id="sendTitle">Send it</span></b>
+          <p class="small muted" id="sendLead" style="margin:4px 0 0"></p></div>
+        <button type="button" class="nav-row pin-row" id="pinRow">
+          <span class="nav-ico" data-icon="lock"></span>
+          <div class="nav-info"><b>PIN</b><small>They type it to open the gift</small></div>
+          <span class="nav-val" id="pinVal">1234</span>
+          <span class="nav-chev" data-icon="chevronRight"></span>
+        </button>
+        <div id="recipientBox"></div>
+        <a class="btn" id="openReveal" target="_blank" rel="noopener"></a>
+      </div>
+
+      <button class="btn ghost sm" id="deleteGift" style="align-self:center;color:var(--coral)">Delete this gift</button>
+    </div>
   </section>
 </main>
 <script type="module" src="/assets/manage.js"></script>

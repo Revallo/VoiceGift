@@ -1,7 +1,6 @@
-import { $, $$, h, api, icon, showScreen, copyText, addStars, toast, openSheet, closeSheet, swipeButton } from './common.js';
+import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet, swipeButton } from './common.js';
 import { BRUSHES, NAME_FONTS, DEFAULT_FONT } from './stage.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
-import { friendUrl, qrSvg, shareRow, printQrCard } from './share.js';
 import { me, forgetMe, authForm } from './auth.js';
 
 addStars($('#app'), 20, 40);
@@ -80,12 +79,6 @@ $('#recipient').addEventListener('input', () => {
   }
 });
 
-$('#decorToolsToggle')?.addEventListener('click', () => {
-  const card = $('#decorToolsCard');
-  if (!card) return;
-  card.hidden = !card.hidden;
-  $('#decorToolsToggle').textContent = card.hidden ? 'show tools' : 'customize';
-});
 // Logged in: "Your name" starts as the account's name.
 // Logged out: log in first, then come back here.
 me().then((u) => {
@@ -101,17 +94,17 @@ $('#openDeliverySheetBtn').addEventListener('click', () => {
   const form = h('form', { class: 'stack', style: { gap: '12px' }, onsubmit: (ev) => {
     ev.preventDefault();
     const pin = pinIn.value.replace(/\D/g, '');
-    if (pin.length !== 4) { errEl.textContent = 'PIN harus 4 angka.'; errEl.hidden = false; return; }
+    if (pin.length !== 4) { errEl.textContent = 'The PIN needs 4 digits.'; errEl.hidden = false; return; }
     state.verifyPin = pin;
     $('#deliverySummaryVal').textContent = pin;
     closeSheet();
-    toast('PIN disimpan');
+    toast('PIN saved');
   } },
-    h('div', { class: 'field' }, h('label', {}, 'kode PIN (4 angka)'), pinIn,
-      h('span', { class: 'tiny muted' }, 'Kirim PIN ini ke penerima bersama link-nya. Tanpa PIN, kadonya tidak bisa dibuka.')),
+    h('div', { class: 'field' }, h('label', {}, 'PIN (4 digits)'), pinIn,
+      h('span', { class: 'tiny muted' }, 'You send this PIN with their link. Without it, the gift won’t open.')),
     errEl,
-    h('button', { type: 'submit', class: 'btn' }, 'simpan'));
-  openSheet({ title: 'kode PIN penerima', subtitle: 'penerima memasukkan 4 angka ini untuk membuka kadonya', content: form });
+    h('button', { type: 'submit', class: 'btn' }, 'Save'));
+  openSheet({ title: 'PIN for the gift', subtitle: 'they type these 4 digits to open the gift', content: form });
   setTimeout(() => pinIn.focus(), 60);
 });
 
@@ -289,7 +282,7 @@ function wireStickers() {
 $('#cakeName').addEventListener('input', (e) => { state.nameTouched = true; scene.setName(e.target.value); });
 $('#clearDraw').addEventListener('click', () => scene.setDots([]));
 
-// Create the gift, or save the changes when the organizer came back from step 3.
+// Create the gift (then its page opens), or save the changes when editing from the gift's page.
 $('#createBtn').addEventListener('click', async () => {
   if (!state.created && !(await me())) return askAccount(); // a new gift needs an account
   const btn = $('#createBtn');
@@ -309,11 +302,11 @@ $('#createBtn').addEventListener('click', async () => {
     };
     if (state.created) {
       await api('/api/gifts', { method: 'PATCH', json: { ...body, slug: state.created.slug, key: state.created.manageKey } });
-      toast('Saved');
     } else {
       state.created = await api('/api/gifts', { method: 'POST', json: body }); // listed on the account page
     }
-    showShare({ ...body, slug: state.created.slug }, state.created.manageKey);
+    // everything else (invite friends, who recorded, send it) is on the gift's one page
+    return location.replace(`/m/${state.created.slug}?k=${state.created.manageKey}`);
   } catch (e) {
     if (e.status === 401) { forgetMe(); return askAccount(); } // logged out in another tab
     err.textContent = e.message;
@@ -325,7 +318,7 @@ $('#createBtn').addEventListener('click', async () => {
 });
 
 // ---------- account (only when logged out) ----------
-// Create an account or log in, then back to step 2, which creates the gift. So step 3's back still goes to step 2.
+// Create an account or log in, then back to step 2, which creates the gift.
 const ACCOUNT_LEAD = {
   signup: 'Create a free account to keep it. You’ll find its dashboard on any phone you log in on.',
   login: 'Log in and it’s saved to your account.'
@@ -343,39 +336,9 @@ function askAccount() {
   go('account');
 }
 
-// ---------- step 3 ----------
-function showShare(gift, manageKey) {
-  const friend = friendUrl(gift);
-  const name = t.callName(gift.recipient);
-  if ($('#shareHeroTitle')) $('#shareHeroTitle').textContent = `For ${name}`;
-  $('#shareLead').textContent = gift.occasion === 'wedding'
-    ? `share with guests`
-    : `keep secret from ${name}`;
-  $('#friendLink').textContent = friend.replace(/^https?:\/\//, '');
-  const b = $('#copyFriend');
-  b.innerHTML = icon.copy(14);
-  b.append(h('span', {}, 'Copy'));
-  b.onclick = () => copyText(friend);
-  $('#waBtn').replaceWith(Object.assign(shareRow(t.waFriends(name), friend), { id: 'waBtn' }));
-  $('#qr').innerHTML = qrSvg(friend);
-  $('#qrNote').textContent = 'scan to record';
-  $('#printQr').innerHTML = icon.print(14);
-  $('#printQr').append(h('span', {}, 'Print'));
-  $('#printQr').onclick = () => printQrCard(gift);
-  $('#manageBtn').href = `/m/${gift.slug}?k=${manageKey}`;
-  const sp = $('#sharePreview');
-  if (sp) {
-    sp.textContent = '';
-    const s = createScene(sp, gift);
-    s.setCandles(1, { spots: 12 });
-    s.lightAll();
-  }
-  go('share');
-}
-
 setOccasion(state.occasion);
 
-// Support /new?edit=slug&k=key from the Dashboard's "customize" button
+// /new?edit=slug&k=key: "Edit design" on the gift's page
 const editSlug = params.get('edit');
 const editKey = params.get('k');
 if (editSlug && editKey) {

@@ -731,8 +731,9 @@ h3 {
   padding: 6px 18px 6px 6px;
   justify-content: flex-start;
 }
-.btn.emerald-track::before {
-  content: '›››';
+.btn.emerald-track { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.btn.emerald-track .knob {
+  font-style: normal;
   width: 46px;
   height: 46px;
   border-radius: 15px;
@@ -750,7 +751,7 @@ h3 {
   background: var(--panel-hover);
   border-color: var(--emerald-light);
 }
-.btn.emerald-track:hover:not(:disabled)::before {
+.btn.emerald-track:hover:not(:disabled) .knob {
   transform: translateX(4px);
 }
 .btn.emerald-track > span {
@@ -2038,3 +2039,35 @@ body[data-viewport="desktop"] .bottom-sheet {
 
 /* The kinds of cake / bouquet / lanterns in the decorate step: as wide as their words, scrolled sideways */
 .slider > .chip { flex: 0 0 auto; height: 42px; padding: 0 14px; white-space: nowrap; }
+
+/* ---------- Step 1 of /new: the gift is always shown; occasion chips in a display font ---------- */
+.who-scene { width: min(100%, 300px); margin: -6px auto -4px; }
+.chip.occ { gap: 6px; font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 600; font-size: 15.5px; letter-spacing: 0; text-transform: none; }
+.chip.occ span { font-style: normal; font-size: 15px; }
+.chip.font-chip { flex: 0 0 auto; padding: 0 14px; font-size: 17px; text-transform: none; letter-spacing: 0; }
+.pin-input { font-size: 22px; letter-spacing: 0.5em; text-align: center; font-weight: 700; }
+
+/* ---------- The friend's page: calm, one big record button ---------- */
+body.calm { --wash: transparent; --wash2: transparent; background: var(--bg-outer); }
+body.calm .app { background: #17121C; }
+.calm-page { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 440px; margin: 0 auto; padding-top: 8px; }
+.calm-from { margin: 0; font-size: 13px; color: var(--muted); }
+.calm-title { margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: clamp(26px, 7vw, 32px); line-height: 1.15; letter-spacing: -0.01em; }
+.calm-tip { margin: -6px 0 4px; font-size: 14px; line-height: 1.5; color: var(--soft); }
+.mic-big {
+  width: 96px; height: 96px; margin: 10px auto 0; border-radius: 50%; border: 0; cursor: pointer;
+  display: grid; place-items: center; background: #FF5A5F; color: #fff;
+  box-shadow: 0 0 0 8px rgba(255, 90, 95, 0.14); transition: transform 0.14s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mic-big:active { transform: scale(0.95); }
+.private-note { margin: 4px 0 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+
+/* "How Dimas will see it": the same card as on the recipient's page */
+.seen { display: flex; flex-direction: column; gap: 8px; }
+.seen-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: lowercase; }
+.seen .panel .who .avatar { width: 36px; height: 36px; border-radius: 12px; font-size: 13px; flex-shrink: 0; }
+.seen-play { width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; background: #fff; color: #1B1024; flex-shrink: 0; }
+.seen .caption { font-size: 16.5px; }
+.seen .caption span.suspect { cursor: pointer; text-decoration: underline wavy #FF6B6B; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.done-scene { width: min(100%, 300px); margin: 0 auto; }

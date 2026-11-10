@@ -1,8 +1,8 @@
 // GET /api/audio?slug=…&id=…&k=…  or  …&token=…
-// Streams one recording: to the recipient (k = the recipient's key) or to the person who recorded it (token).
+// Streams one recording: to the recipient (k = the recipient's key + pin), to the person who recorded it (token),
+// or, for demo voices only, to the organizer (k = the manage key).
 import { route, send, query, HttpError } from '../lib/http.js';
 import { loadGift, canOpen, findMessage, loadAudio } from '../lib/gifts.js';
-import { currentUser } from '../lib/accounts.js';
 
 export default route({
   async GET(req, res) {
@@ -10,9 +10,8 @@ export default route({
     const gift = await loadGift(q.slug);
     const { msg } = await findMessage(gift.slug, String(q.id || ''));
     const own = q.token && q.token === msg.token;
-    const isOrganizer = q.k && q.k === gift.manageKey;
-    const user = (!own && !isOrganizer) ? await currentUser(req) : null;
-    if (!own && !isOrganizer && !canOpen(gift, q.k, { user, pin: q.pin || q.answer })) throw new HttpError(403, 'Not allowed');
+    const organizerDemo = q.k && q.k === gift.manageKey && msg.demo; // friends' voices are not for the organizer
+    if (!own && !organizerDemo && !canOpen(gift, q.k, { pin: q.pin })) throw new HttpError(403, 'Not allowed');
     const buf = await loadAudio(msg);
     if (!buf) throw new HttpError(404, 'Recording not found');
 

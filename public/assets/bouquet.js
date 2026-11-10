@@ -1,6 +1,6 @@
 // Graduation: the bouquet. Drawn in a fixed 390×370 stage; every voice is a flower that blooms.
 import { colorFor } from './common.js';
-import { div, seeded, createStage, createDrawing, createStickers, itemStates } from './stage.js';
+import { div, seeded, createStage, createDrawing, createStickers, itemStates, nameText } from './stage.js';
 
 // Wrap colours. The keys are the same as the cake flavours so the API stays the same.
 export const WRAPS = {
@@ -138,7 +138,8 @@ export function createBouquet(host, opts = {}) {
   stage.append(front);
   const frontEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces in front of the flowers
   front.append(frontEl);
-  const nameEl = div('p', { textAlign: 'center', fontFamily: 'var(--serif)', fontStyle: 'italic', fontWeight: '600', lineHeight: '1.1', whiteSpace: 'nowrap', overflow: 'hidden' });
+  const nameEl = div('p', { textAlign: 'center', lineHeight: '1.25', whiteSpace: 'nowrap', overflow: 'hidden' });
+  const nameFit = nameText(nameEl, true);
   const drawing = createDrawing(front, W, H);
 
   let parts = {};
@@ -176,8 +177,9 @@ export function createBouquet(host, opts = {}) {
     setShape,
     setName(t) {
       nameEl.textContent = t || '';
-      nameEl.style.fontSize = nameSize ? `${nameSize}px` : (t || '').length > 14 ? '24px' : '30px';
+      nameFit.setSize(nameSize || 30); // shrinks to fit
     },
+    setFont: nameFit.setFont,
     // Lay out `n` flowers (+ closed buds up to `spots`). Returns the flower elements in message order.
     setCandles(n, { spots = n, colors, onTap } = {}) {
       layer.textContent = '';
@@ -214,6 +216,7 @@ export function createBouquet(host, opts = {}) {
   };
 
   nameEl.textContent = opts.name || '';
+  nameFit.setFont(opts.font);
   setShape(opts.shape);
   api.setDots(opts.dots);
   stickers.set(opts.stickers);

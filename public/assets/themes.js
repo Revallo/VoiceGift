@@ -110,7 +110,7 @@ export const theme = (occasion) => THEMES[occasion] || THEMES.birthday;
 export function createScene(host, gift, opts = {}) {
   const t = theme(gift.occasion);
   const cake = gift.cake || {};
-  const o = { ...opts, flavor: cake.flavor || t.decorate.flavor, shape: cake.shape, name: cake.name, dots: cake.dots, stickers: cake.stickers };
+  const o = { ...opts, flavor: cake.flavor || t.decorate.flavor, shape: cake.shape, font: cake.font, name: cake.name, dots: cake.dots, stickers: cake.stickers };
   if (t.key === 'graduation') return createBouquet(host, o);
   if (t.key === 'wedding') return createLanterns(host, { ...o, names: gift.recipient });
   return createCake(host, o);

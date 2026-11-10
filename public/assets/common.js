@@ -56,6 +56,39 @@ export function toast(msg, ms = 2600) {
   toastTimer = setTimeout(() => el.remove(), ms);
 }
 
+// The "›››" buttons: slide the knob to the right (or just tap). Sliding most of the way presses the button.
+export function swipeButton(btn) {
+  if (!btn || btn.querySelector('.knob')) return;
+  const knob = h('i', { class: 'knob', 'aria-hidden': 'true' }, '›››');
+  btn.prepend(knob);
+  let x0 = null, dx = 0, max = 0, skipClick = false;
+  const press = () => { skipClick = false; btn.form ? btn.form.requestSubmit(btn) : btn.click(); };
+  const reset = () => { x0 = null; knob.style.transition = ''; knob.style.transform = ''; };
+  btn.addEventListener('pointerdown', (e) => {
+    if (btn.disabled) return;
+    skipClick = false;
+    x0 = e.clientX;
+    dx = 0;
+    max = btn.clientWidth - knob.offsetWidth - 12;
+    knob.style.transition = 'none';
+    btn.setPointerCapture?.(e.pointerId);
+  });
+  btn.addEventListener('pointermove', (e) => {
+    if (x0 === null) return;
+    dx = Math.max(0, Math.min(max, e.clientX - x0));
+    knob.style.transform = `translateX(${dx}px)`;
+  });
+  btn.addEventListener('pointerup', () => {
+    if (x0 === null) return;
+    if (dx > 8) skipClick = true; // a slide, not a tap: the browser's own click is ignored
+    const far = dx > max * 0.55;
+    reset();
+    if (far) setTimeout(press, 0);
+  });
+  btn.addEventListener('pointercancel', reset);
+  btn.addEventListener('click', (e) => { if (skipClick) { skipClick = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+}
+
 export function showScreen(name) {
   for (const s of $$('[data-screen]')) s.hidden = s.dataset.screen !== name;
   window.scrollTo(0, 0);

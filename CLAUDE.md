@@ -14,6 +14,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 - Vercel: static files in `public/`, serverless functions in `api/` (Node 22, ESM, no framework).
 - Storage: **Vercel Blob, private store**. Locally a `.data/` folder with the same interface (`lib/store.js`).
 - Frontend: plain HTML + ES modules, **no build step, no framework**. Fonts: Fraunces + Plus Jakarta Sans.
+  The `›››` buttons are real sliders (`swipeButton()` in `common.js`); a tap works too.
 - Audio: the browser records **16 kHz mono 16-bit WAV** (`public/assets/recorder.js`) — playable
   everywhere and ready for ASR, so no ffmpeg/conversion anywhere.
 
@@ -26,11 +27,11 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | URL | File | Who |
 | --- | --- | --- |
 | `/` | `index.html` | first page: pick cake / bouquet / lanterns, then its kind (sideways strip of live minis) and flavor; page takes that occasion's colors → "Yes, make the …" → `/login?next=/new?occasion=…&shape=…&flavor=…` |
-| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who → decorate → (account, if logged out) → friends' link + QR + dashboard |
+| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who (the gift is always drawn on top; 4-digit PIN) → decorate → (account, if logged out) → friends' link + QR + dashboard |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
-| `/g/:slug` | `record.html` + `assets/record.js` | friend: name + consent → record → fix caption → done |
+| `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): name + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | organizer dashboard (only with the key): who recorded (not content), recipient link, demo voices |
-| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
+| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: 4-digit PIN → items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
 Grad* = graduation, Wed* = wedding; Decorate = cake editor).
@@ -41,7 +42,8 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - Scenes: `cake.js` (birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
-- `gift.cake {flavor, shape, name, dots, stickers}` is reused by every scene: `flavor` is a key of that scene's
+- `gift.cake {flavor, shape, font, name, dots, stickers}` is reused by every scene: `font` is a key of `NAME_FONTS` in `stage.js`
+  (script/serif/hand/round, loaded from Google Fonts by the stage; cake and bouquet names shrink to fit); `flavor` is a key of that scene's
   palette (cake `FLAVORS`, bouquet `WRAPS`, lantern `LIGHTS`; unknown keys fall back to the default); `shape` is a key
   of that scene's `SHAPES` (cake: classic/drip/tower/sheet, bouquet: classic/box/basket/tied, lanterns:
   classic/sky/star/heart — CSS `data-shape`), picked on `/` or in the decorate step; `setShape()` rebuilds only the body;
@@ -74,13 +76,14 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
 - Not built: password reset and email verification (they need an email service).
 
 ## API (`api/*.js`)
-- `POST /api/gifts` {recipient, organizer, occasion, cake{flavor,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
+- `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
 - `GET /api/account` → {user} or {user: null} (`?gifts=1`: + their gifts with keys); `POST` actions `signup`, `login`, `logout`, `claim`
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug&k=openKey` → messages **only with the recipient's key** (server-side rule); the organizer's own account gets demo voices only (`preview: true`)
-- `GET /api/audio?slug&id&k=openKey` (or `&token` for your own recording) → WAV with Range support (iOS); the organizer (manage key or account): demo voices only
+- `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only with the recipient's key + PIN** (server-side rule)
+- `GET /api/audio?slug&id&k=openKey&pin` (or `&token` for your own recording) → WAV with Range support (iOS); the organizer (manage key): demo voices only
+- `POST /api/manage` action `update-delivery` {verifyPin} → change the 4-digit PIN
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey / `add-demo`
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent… (+ `userId` if the speaker was logged in)
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
@@ -96,7 +99,9 @@ company API (wins over Groq; adapt `fromProvider()` to its response shape). Loca
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.
-- Never return message audio/text without the recipient's key (enforced in `api/`, not just the UI).
+- Never return message audio/text without the recipient's key **and** the gift's 4-digit PIN (`canOpen` in `lib/gifts.js`,
+  enforced in `api/`, not just the UI). Being logged in never opens a gift; the manage key plays demo voices only.
+  The friend's page promises "Only you and <name> can hear this voice": keep that true. No email delivery.
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
 - Consent checkbox on every recording; store `consentVersion`. Accounts only for organizers (email + password):

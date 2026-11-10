@@ -1,14 +1,11 @@
 // The recipient's page: the scene lights up (candles / flowers / lanterns) → listen to each voice
 // → the finale (blow out the candles / throw your cap / release the lanterns) → keepsake.
-import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, openSheet, closeSheet } from './common.js';
+import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, swipeButton } from './common.js';
 import { createScene, applyTheme } from './themes.js';
-import { me, authForm } from './auth.js';
 
 addStars($('#app'), 26, 55);
 if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
 if ($('#verLogo')) $('#verLogo').innerHTML = icon.lock(16);
-if ($('#verUserIco')) $('#verUserIco').innerHTML = icon.user(16);
-if ($('#verChevIco')) $('#verChevIco').innerHTML = icon.chevronRight(16);
 
 const slug = slugFromPath();
 const searchParams = new URLSearchParams(location.search);
@@ -47,9 +44,7 @@ function btn(label, opts = {}) {
   return b;
 }
 
-// ---------- load & 2-path recipient verification workflow ----------
-// 1. Gak ada akun -> masukkan kode PIN -> buka voice gift
-// 2. Ada akun -> langsung buka voice gift
+// ---------- load: the recipient's link (key) + their 4-digit PIN ----------
 async function unlockAndShow(pin = '') {
   const q = new URLSearchParams({ slug });
   if (openKey) q.set('k', openKey);
@@ -60,11 +55,7 @@ async function unlockAndShow(pin = '') {
   t = applyTheme(gift.occasion);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
-  if ($('#revealAccessBadge')) {
-    $('#revealAccessBadge').textContent = data.loggedIn
-      ? `✓ ${data.userEmail?.split('@')[0] || 'account'}`
-      : data.verifiedByPin ? '✓ pin verified' : 'keepsake';
-  }
+  if ($('#revealAccessBadge')) $('#revealAccessBadge').textContent = '✓ PIN';
   if (!scene) scene = createScene($('#cake'), gift);
   showScreen('scene');
   messages = data.messages;
@@ -72,6 +63,7 @@ async function unlockAndShow(pin = '') {
   showReady();
 }
 
+swipeButton($('#verifySubmitBtn'));
 const pinBoxes = Array.from(document.querySelectorAll('.pin-digit'));
 function syncPinInput() {
   const code = pinBoxes.map((b) => b.value.replace(/\D/g, '')).join('');
@@ -108,37 +100,12 @@ pinBoxes.forEach((box, idx) => {
   });
 });
 
-$('#demoPinHint')?.addEventListener('click', () => {
-  '1234'.split('').forEach((ch, i) => { if (pinBoxes[i]) pinBoxes[i].value = ch; });
-  syncPinInput();
-  $('#verifyForm')?.requestSubmit();
-});
-if ($('#demoPinHint')) $('#demoPinHint').style.cursor = 'pointer';
-
 async function load() {
-  const user = await me();
-
-  // Path 2: Ada akun -> langsung buka voice gift!
-  if (user) {
-    try {
-      return await unlockAndShow('');
-    } catch (e) {
-      $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
-      return showScreen('error');
-    }
+  // The recipient's link carries the key; then they type the 4-digit PIN. Without the key: the link isn't complete.
+  if (!openKey) {
+    $('#errorText').textContent = 'This link isn’t complete. Ask the person who sent it for the whole link.';
+    return showScreen('error');
   }
-
-  // Keep automated E2E tests (navigator.webdriver without ?verify=1) compatible with legacy /r/:slug checks
-  if (navigator.webdriver && !searchParams.get('verify')) {
-    try {
-      return await unlockAndShow('');
-    } catch (e) {
-      $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
-      return showScreen('error');
-    }
-  }
-
-  // Path 1: Gak ada akun -> masukkan kode PIN dulu sebelum buka voice gift!
   let pub;
   try {
     pub = await api(`/api/gift?slug=${encodeURIComponent(slug)}`);
@@ -183,53 +150,13 @@ $('#verifyForm')?.addEventListener('submit', async (ev) => {
   }
 });
 
-$('#verifyLoginSheetBtn')?.addEventListener('click', () => {
-  const demoDimasBtn = h('button', {
-    type: 'button',
-    class: 'btn',
-    style: { width: '100%' },
-    onclick: async () => {
-      demoDimasBtn.disabled = true;
-      try {
-        await api('/api/account', {
-          method: 'POST',
-          json: { action: 'login', email: 'dimas@voicegift.id', password: 'password123' }
-        });
-        closeSheet();
-        toast('Login akun penerima berhasil · Langsung membuka gift!');
-        await unlockAndShow('');
-      } catch (e) {
-        toast(e.message);
-      } finally {
-        demoDimasBtn.disabled = false;
-      }
-    }
-  }, `1-tap login akun penerima · ${first || 'Dimas'}`);
-
-  openSheet({
-    title: 'masuk akun penerima',
-    subtitle: 'punya akun? langsung buka voice gift tanpa kode pin',
-    content: [
-      demoDimasBtn,
-      authForm({
-        mode: 'login',
-        onDone: async () => {
-          closeSheet();
-          toast('Login berhasil · Membuka voice gift!');
-          await unlockAndShow('');
-        }
-      })
-    ]
-  });
-});
-
 function showEmpty() {
   phase = 'empty';
   scene.setCandles(0, { spots: 12 });
   if (preview) header('Preview · only you see this', 'Their voices are for ' + first, `Only ${first} can hear what your friends recorded. To see how it works, add demo voices on your dashboard.`);
   else header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
   setPanel(null);
-  setBottom(btn('Check again', { ghost: true, onclick: load }));
+  setBottom(btn('Check again', { ghost: true, onclick: () => unlockAndShow(verifiedAnswer).catch((e) => toast(e.message)) }));
 }
 
 // ---------- it's time ----------

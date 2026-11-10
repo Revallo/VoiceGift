@@ -1,6 +1,6 @@
 // Birthday: the cake. Drawn in a fixed 390×300 stage; every voice is a candle.
 import { colorFor } from './common.js';
-import { div, seeded, createStage, createDrawing, createStickers, itemStates } from './stage.js';
+import { div, seeded, createStage, createDrawing, createStickers, itemStates, nameText } from './stage.js';
 
 export const FLAVORS = {
   strawberry: { label: 'Strawberry', b1: '#F2A9C4', b2: '#FFE3EE', frost: '#FFF0F6', top2: '#FFF7FA', text: '#8E2552' },
@@ -137,14 +137,16 @@ export function createCake(host, opts = {}) {
   body.append(shapeEl);
   let parts = {};
   let flavor = opts.flavor;
-  const nameEl = div('p', { textAlign: 'center', fontFamily: 'var(--serif)', fontStyle: 'italic', fontWeight: '600', lineHeight: '1', whiteSpace: 'nowrap', overflow: 'hidden' });
+  const nameEl = div('p', { textAlign: 'center', lineHeight: '1.25', whiteSpace: 'nowrap', overflow: 'hidden' });
+  const nameFit = nameText(nameEl, true);
 
   function setShape(shape) {
     shapeEl.textContent = '';
     parts = {};
     const P = (style, key) => { const d = div('p', style); shapeEl.append(d); if (key) (parts[key] ||= []).push(d); return d; };
     const n = buildShape(SHAPES[shape] ? shape : 'classic', P);
-    Object.assign(nameEl.style, { left: px(n.left), top: px(n.top), width: px(n.width), fontSize: px(n.size) });
+    Object.assign(nameEl.style, { left: px(n.left), top: px(n.top - Math.round(n.size * 0.12)), width: px(n.width) });
+    nameFit.setSize(n.size);
     shapeEl.append(nameEl);
     api.setFlavor(flavor);
   }
@@ -165,7 +167,8 @@ export function createCake(host, opts = {}) {
       nameEl.style.color = c.text;
     },
     setShape,
-    setName(t) { nameEl.textContent = t || ''; },
+    setName(t) { nameEl.textContent = t || ''; nameFit.refit(); },
+    setFont: nameFit.setFont,
     // Lay out `n` candles (+ empty spots up to `spots`). Returns the candle elements in message order.
     setCandles(n, { spots = n, colors, onTap } = {}) {
       layer.textContent = '';
@@ -208,6 +211,7 @@ export function createCake(host, opts = {}) {
   };
 
   setShape(opts.shape);
+  api.setFont(opts.font);
   api.setName(opts.name);
   api.setDots(opts.dots);
   stickers.set(opts.stickers);

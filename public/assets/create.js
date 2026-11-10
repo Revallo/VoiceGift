@@ -1,5 +1,5 @@
-import { $, $$, h, api, icon, showScreen, copyText, addStars, toast, initials, openSheet, closeSheet } from './common.js';
-import { BRUSHES } from './stage.js';
+import { $, $$, h, api, icon, showScreen, copyText, addStars, toast, openSheet, closeSheet, swipeButton } from './common.js';
+import { BRUSHES, NAME_FONTS, DEFAULT_FONT } from './stage.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { friendUrl, qrSvg, shareRow, printQrCard } from './share.js';
 import { me, forgetMe, authForm } from './auth.js';
@@ -13,11 +13,11 @@ const state = {
   occasion: THEMES[params.get('occasion')] ? params.get('occasion') : 'birthday',
   flavor: '',
   shape: params.get('shape') || 'classic', // picked on the first page, or in the decorate step
+  font: NAME_FONTS[params.get('font')] ? params.get('font') : DEFAULT_FONT, // the letters of the name on the gift
   brush: 0,
   nameTouched: false,
   sel: -1,
   created: null,
-  recipientEmail: '',
   verifyPin: '1234'
 };
 let t = theme(state.occasion);
@@ -33,24 +33,19 @@ window.addEventListener('popstate', (e) => showScreen(e.state?.screen || 'who'))
 $$('[data-back]').forEach((b) => b.addEventListener('click', () => history.back()));
 
 // ---------- step 1 ----------
+swipeButton($('#nextBtn'));
 let whoScene;
-function updateWhoPill() {
-  const rec = $('#recipient').value.trim();
-  const defName = state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas';
-  if ($('#whoAvatar')) $('#whoAvatar').textContent = initials(rec || defName);
-  if ($('#whoPillName')) $('#whoPillName').textContent = rec ? `For ${rec}` : 'New voice gift';
-  if ($('#whoPillSub')) $('#whoPillSub').textContent = `a ${state.occasion} surprise from friends`;
-}
+const sampleName = () => (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
 
+// The gift is always shown at the top, so picking another occasion shows it straight away.
 function renderWhoPreview() {
   const host = $('#whoPreview');
-  if (!host) return;
   host.textContent = '';
-  const rec = $('#recipient').value.trim() || (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
+  const rec = $('#recipient').value.trim() || sampleName();
   whoScene = createScene(host, {
     occasion: state.occasion,
     recipient: rec,
-    cake: { flavor: state.flavor || t.decorate.flavor, shape: state.shape, name: t.decorate.name(rec) }
+    cake: { flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name: t.decorate.name(rec) }
   });
   whoScene.setCandles(8);
   whoScene.lightAll();
@@ -73,26 +68,16 @@ function setOccasion(key) {
   state.flavor = asked && t.decorate.swatches[asked] ? asked : t.decorate.flavor;
   if (!t.decorate.shapes[state.shape]) state.shape = 'classic';
   state.nameTouched = false;
-  updateWhoPill();
   renderWhoPreview();
   buildDecorate();
 }
 $$('#occasions .chip').forEach((c) => c.addEventListener('click', () => { if (c.dataset.v !== state.occasion) setOccasion(c.dataset.v); }));
 $('#recipient').addEventListener('input', () => {
-  updateWhoPill();
-  const rec = $('#recipient').value.trim() || (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
+  const rec = $('#recipient').value.trim() || sampleName();
   if (whoScene) {
     whoScene.setName(t.decorate.name(rec));
     whoScene.setNames?.(rec);
   }
-});
-
-$('#whoPreviewToggle')?.addEventListener('click', () => {
-  const dr = $('#whoPreviewDrawer');
-  if (!dr) return;
-  dr.hidden = !dr.hidden;
-  $('#whoPreviewToggle').textContent = dr.hidden ? 'preview' : 'hide';
-  if (!dr.hidden) renderWhoPreview();
 });
 
 $('#decorToolsToggle')?.addEventListener('click', () => {
@@ -108,67 +93,26 @@ me().then((u) => {
   if (!$('#organizer').value.trim()) $('#organizer').value = u.name;
 });
 
-function updateDeliverySummary() {
-  if ($('#deliverySummaryVal')) {
-    $('#deliverySummaryVal').textContent = state.recipientEmail
-      ? state.recipientEmail.split('@')[0]
-      : `PIN ${state.verifyPin || '1234'}`;
-  }
-  if ($('#deliverySummarySub')) {
-    $('#deliverySummarySub').textContent = state.recipientEmail
-      ? `kirim ke ${state.recipientEmail} · PIN tamu: ${state.verifyPin || '1234'}`
-      : `PIN: ${state.verifyPin || '1234'} · verifikasi jika penerima belum punya akun`;
-  }
-}
-
-$('#openDeliverySheetBtn')?.addEventListener('click', () => {
-  const recName = $('#recipient').value.trim() || 'Dimas';
-  const emailIn = h('input', {
-    class: 'input',
-    type: 'email',
-    value: state.recipientEmail,
-    placeholder: `e.g. ${recName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'dimas'}@voicegift.id`
-  });
-  const pinIn = h('input', {
-    class: 'input',
-    type: 'text',
-    inputmode: 'numeric',
-    pattern: '[0-9]*',
-    value: state.verifyPin || '1234',
-    maxlength: 6,
-    placeholder: '4 digit PIN (contoh: 1234)'
-  });
-
-  const form = h('form', {
-    class: 'stack',
-    style: { gap: '12px' },
-    onsubmit: (ev) => {
-      ev.preventDefault();
-      state.recipientEmail = emailIn.value.trim().toLowerCase();
-      const cleanPin = pinIn.value.replace(/\D/g, '').slice(0, 6);
-      state.verifyPin = cleanPin.length >= 4 ? cleanPin : '1234';
-      updateDeliverySummary();
-      closeSheet();
-      toast('Pengaturan pengiriman & PIN disimpan');
-    }
-  },
-    h('div', { class: 'field' },
-      h('label', {}, 'kirim langsung ke akun penerima (email opsional)'),
-      emailIn,
-      h('span', { class: 'tiny muted' }, 'Jika penerima login dengan akun ini, voice gift langsung terbuka tanpa PIN.')
-    ),
-    h('div', { class: 'field' },
-      h('label', {}, 'kode PIN verifikasi (4 digit, jika penerima belum punya akun)'),
-      pinIn
-    ),
-    h('button', { type: 'submit', class: 'btn' }, 'simpan pengaturan')
-  );
-
-  openSheet({
-    title: 'pengiriman & kode PIN',
-    subtitle: '1. belum ada akun → masukkan PIN · 2. ada akun → langsung buka',
-    content: form
-  });
+// The recipient's PIN: exactly 4 digits.
+$('#openDeliverySheetBtn').addEventListener('click', () => {
+  const pinIn = h('input', { class: 'input pin-input', type: 'text', inputmode: 'numeric', pattern: '[0-9]{4}', maxlength: 4, autocomplete: 'off', value: state.verifyPin, placeholder: '1234',
+    oninput: () => { pinIn.value = pinIn.value.replace(/\D/g, '').slice(0, 4); } });
+  const errEl = h('p', { class: 'small err', hidden: true });
+  const form = h('form', { class: 'stack', style: { gap: '12px' }, onsubmit: (ev) => {
+    ev.preventDefault();
+    const pin = pinIn.value.replace(/\D/g, '');
+    if (pin.length !== 4) { errEl.textContent = 'PIN harus 4 angka.'; errEl.hidden = false; return; }
+    state.verifyPin = pin;
+    $('#deliverySummaryVal').textContent = pin;
+    closeSheet();
+    toast('PIN disimpan');
+  } },
+    h('div', { class: 'field' }, h('label', {}, 'kode PIN (4 angka)'), pinIn,
+      h('span', { class: 'tiny muted' }, 'Kirim PIN ini ke penerima bersama link-nya. Tanpa PIN, kadonya tidak bisa dibuka.')),
+    errEl,
+    h('button', { type: 'submit', class: 'btn' }, 'simpan'));
+  openSheet({ title: 'kode PIN penerima', subtitle: 'penerima memasukkan 4 angka ini untuk membuka kadonya', content: form });
+  setTimeout(() => pinIn.focus(), 60);
 });
 
 $('#whoForm').addEventListener('submit', (e) => {
@@ -206,7 +150,7 @@ function buildDecorate() {
 
   const host = $('#decorCake');
   host.textContent = '';
-  scene = createScene(host, { occasion: state.occasion, recipient: $('#recipient').value.trim(), cake: { flavor: state.flavor, shape: state.shape, name: name.value } });
+  scene = createScene(host, { occasion: state.occasion, recipient: $('#recipient').value.trim(), cake: { flavor: state.flavor, shape: state.shape, font: state.font, name: name.value } });
   scene.setCandles(0, { spots: 12 });
   scene.lightAll();
   if (d.draw && scene.drawArea) {
@@ -234,6 +178,7 @@ function buildDecorate() {
   scene.stage.classList.add('editing');
   scene.stickers.onRender = wireStickers;
   renderShapes();
+  renderFonts();
   renderSwatches();
   renderStickerTray();
 }
@@ -244,6 +189,16 @@ function renderShapes() {
   box.textContent = '';
   for (const [key, s] of Object.entries(t.decorate.shapes)) {
     box.append(h('button', { type: 'button', class: 'chip' + (key === state.shape ? ' on' : ''), 'data-v': key, onclick: () => { state.shape = key; scene.setShape(key); renderShapes(); renderWhoPreview(); } }, s.label));
+  }
+}
+
+// The letters of the name: each choice is written in its own font.
+function renderFonts() {
+  const box = $('#fonts');
+  box.textContent = '';
+  for (const [key, f] of Object.entries(NAME_FONTS)) {
+    box.append(h('button', { type: 'button', class: 'chip font-chip' + (key === state.font ? ' on' : ''), 'data-v': key, style: f.css,
+      onclick: () => { state.font = key; scene.setFont(key); renderFonts(); renderWhoPreview(); } }, f.label));
   }
 }
 
@@ -349,9 +304,8 @@ $('#createBtn').addEventListener('click', async () => {
       recipient: recTrim,
       organizer: $('#organizer').value.trim(),
       occasion: state.occasion,
-      recipientEmail: state.recipientEmail,
-      verifyPin: state.verifyPin || '1234',
-      cake: { flavor: state.flavor, shape: state.shape, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
+      verifyPin: state.verifyPin,
+      cake: { flavor: state.flavor, shape: state.shape, font: state.font, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
     };
     if (state.created) {
       await api('/api/gifts', { method: 'PATCH', json: { ...body, slug: state.created.slug, key: state.created.manageKey } });
@@ -430,10 +384,11 @@ if (editSlug && editKey) {
     setOccasion(gift.occasion);
     $('#recipient').value = gift.recipient || '';
     $('#organizer').value = gift.organizer || '';
-    updateWhoPill();
+    if (/^\d{4}$/.test(gift.verifyPin || '')) { state.verifyPin = gift.verifyPin; $('#deliverySummaryVal').textContent = gift.verifyPin; }
     if (gift.cake) {
       if (gift.cake.flavor) { state.flavor = gift.cake.flavor; scene.setFlavor(gift.cake.flavor); renderSwatches(); }
       if (gift.cake.shape) { state.shape = gift.cake.shape; scene.setShape(gift.cake.shape); renderShapes(); renderWhoPreview(); }
+      if (NAME_FONTS[gift.cake.font]) { state.font = gift.cake.font; scene.setFont(gift.cake.font); renderFonts(); renderWhoPreview(); }
       if (gift.cake.name) { state.nameTouched = true; $('#cakeName').value = gift.cake.name; scene.setName(gift.cake.name); }
       if (Array.isArray(gift.cake.dots)) scene.setDots(gift.cake.dots);
       if (Array.isArray(gift.cake.stickers)) scene.stickers.set(gift.cake.stickers);

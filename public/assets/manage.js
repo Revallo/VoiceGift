@@ -137,10 +137,10 @@ async function load() {
     },
       h('span', { class: 'nav-ico', html: icon.shield(16) }),
       h('div', { class: 'nav-info' },
-        h('b', {}, 'send langsung ke akun & kode PIN'),
-        h('small', {}, gift.recipientEmail ? `terkirim ke ${gift.recipientEmail} · PIN: ${gift.verifyPin || '1234'}` : `PIN: ${gift.verifyPin || '1234'} · 1. tanpa akun → PIN · 2. ada akun → langsung buka`)
+        h('b', {}, 'kode PIN penerima'),
+        h('small', {}, '4 angka · penerima memasukkannya untuk membuka')
       ),
-      h('span', { class: 'nav-val' }, `PIN ${gift.verifyPin || '1234'}`),
+      h('span', { class: 'nav-val' }, gift.verifyPin || '1234'),
       h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
     ),
     h('button', {
@@ -169,43 +169,21 @@ async function load() {
 }
 
 function openDeliverySheet(gift, openKey) {
-  const emailIn = h('input', {
-    class: 'input',
-    type: 'email',
-    value: gift.recipientEmail || 'dimas@voicegift.id',
-    placeholder: 'e.g. dimas@voicegift.id'
-  });
-  const pinIn = h('input', {
-    class: 'input',
-    type: 'text',
-    inputmode: 'numeric',
-    pattern: '[0-9]*',
-    value: gift.verifyPin || '1234',
-    maxlength: 6,
-    placeholder: '4 digit PIN (contoh: 1234)'
-  });
-  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'kirim ke akun & simpan PIN');
-
+  const pinIn = h('input', { class: 'input pin-input', type: 'text', inputmode: 'numeric', pattern: '[0-9]{4}', maxlength: 4, autocomplete: 'off', value: gift.verifyPin || '1234', placeholder: '1234',
+    oninput: () => { pinIn.value = pinIn.value.replace(/\D/g, '').slice(0, 4); } });
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'simpan PIN');
   const form = h('form', {
     class: 'stack',
     style: { gap: '12px' },
     onsubmit: async (ev) => {
       ev.preventDefault();
+      const pin = pinIn.value.replace(/\D/g, '');
+      if (pin.length !== 4) return toast('PIN harus 4 angka.');
       saveBtn.disabled = true;
       try {
-        const cleanPin = pinIn.value.replace(/\D/g, '').slice(0, 6);
-        await api('/api/manage', {
-          method: 'POST',
-          json: {
-            slug,
-            key,
-            action: 'update-delivery',
-            recipientEmail: emailIn.value.trim().toLowerCase(),
-            verifyPin: cleanPin.length >= 4 ? cleanPin : '1234'
-          }
-        });
+        await api('/api/manage', { method: 'POST', json: { slug, key, action: 'update-delivery', verifyPin: pin } });
         closeSheet();
-        toast(`Terkirim ke akun ${emailIn.value.trim() || gift.recipient} · PIN disimpan!`);
+        toast('PIN disimpan');
         await load();
       } catch (e) {
         toast(e.message);
@@ -214,26 +192,14 @@ function openDeliverySheet(gift, openKey) {
       }
     }
   },
-    h('div', { class: 'field' },
-      h('label', {}, 'email akun penerima (langsung masuk ke akunnya tanpa PIN)'),
-      emailIn
-    ),
-    h('div', { class: 'field' },
-      h('label', {}, 'kode PIN verifikasi (4 digit, jika penerima tidak punya akun)'),
-      pinIn
-    ),
+    h('div', { class: 'field' }, h('label', {}, 'kode PIN (4 angka)'), pinIn,
+      h('span', { class: 'tiny muted' }, 'Kirim PIN ini ke penerima bersama link-nya.')),
     saveBtn,
     h('div', { class: 'dual-pills', style: { marginTop: '4px' } },
-      h('a', { class: 'pill-btn dark', href: `/r/${gift.slug}?verify=1`, style: { background: '#222625', fontSize: '12.5px' } }, 'cek layar PIN tamu'),
-      h('a', { class: 'pill-btn light', href: `/r/${gift.slug}?k=${openKey}`, style: { fontSize: '12.5px' } }, 'buka voice gift')
+      h('a', { class: 'pill-btn light', href: `/r/${gift.slug}?k=${openKey}`, style: { fontSize: '12.5px' } }, 'cek layar penerima')
     )
   );
-
-  openSheet({
-    title: 'send ke akun & kode PIN',
-    subtitle: '1. gak ada akun → masukkan PIN · 2. ada akun → langsung buka',
-    content: form
-  });
+  openSheet({ title: 'kode PIN penerima', subtitle: 'penerima memasukkan 4 angka ini untuk membuka kadonya', content: form });
 }
 
 // Gone for good: the server deletes the message and its recording.

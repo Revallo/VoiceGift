@@ -182,6 +182,16 @@ async function runGift(occasion, c) {
   // recipient reveal (the link from the dashboard)
   const r = await page();
   await r.goto(recipientLink);
+  await r.waitForSelector('[data-screen="verify"]:not([hidden])'); // the link + the 4-digit PIN
+  await shot(r, P('10b-pin'));
+  // without the PIN, even with the recipient's key: no voices
+  const k = new URL(recipientLink).searchParams.get('k');
+  for (const u of [`/api/reveal?slug=${slug}&k=${k}`, `/api/reveal?slug=${slug}&k=${k}&pin=0000`, `/api/reveal?slug=${slug}&pin=1234`]) {
+    const st = (await fetch(BASE + u)).status;
+    if (st !== 403) errors.push(`${u}: ${st}, expected 403`);
+  }
+  await r.click('.pin-digit >> nth=0');
+  await r.keyboard.type('1234');
   await r.waitForSelector('text=Open your gift');
   const shown = (await r.$$('.stickers .sticker')).length;
   if (shown !== 3) errors.push(`${occasion}: recipient sees ${shown} stickers, expected 3`);
@@ -224,7 +234,7 @@ async function runGift(occasion, c) {
   await shot(r, P('18-listen-again'));
   await r.context().close();
 
-  const rev = await (await fetch(`${BASE}/api/reveal?slug=${slug}&k=${new URL(recipientLink).searchParams.get('k')}`)).json();
+  const rev = await (await fetch(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=1234`)).json();
   console.log(occasion, 'messages', rev.messages.length, rev.messages.slice(0, 3).map((x) => `${x.sender}: ${x.text} (${x.durationSec}s)`));
   return recipientLink;
 }
@@ -303,6 +313,8 @@ await d.goto(BASE + '/');
 await d.waitForTimeout(2400);
 await shot(d, 'desktop-pick');
 await d.goto(Object.values(slugs)[0]);
+await d.click('.pin-digit >> nth=0');
+await d.keyboard.type('1234');
 await d.waitForSelector('text=Open your gift');
 await shot(d, 'desktop-ready');
 

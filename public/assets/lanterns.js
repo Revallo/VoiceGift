@@ -1,6 +1,6 @@
 // Wedding: lanterns on strings of fairy lights. Drawn in a fixed 390×330 stage; every voice is a lantern.
 import { colorFor } from './common.js';
-import { div, seeded, createStage, createStickers, itemStates } from './stage.js';
+import { div, seeded, createStage, createStickers, itemStates, nameText } from './stage.js';
 
 // Fairy-light colours. The keys are the same as the cake flavours so the API stays the same.
 export const LIGHTS = {
@@ -59,7 +59,8 @@ export function createLanterns(host, opts = {}) {
   Object.assign(sky.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, overflow: 'visible' });
   body.append(sky);
   const lines = div('', { position: 'absolute', left: '0', width: `${W}px`, textAlign: 'center' });
-  const words = div('', { fontFamily: 'var(--serif)', fontStyle: 'italic', fontWeight: '600', lineHeight: '1.15', padding: '0 14px' });
+  const words = div('', { lineHeight: '1.25', padding: '0 14px' });
+  const wordsFont = nameText(words, false);
   const names = div('', { marginTop: '10px', fontSize: '12px', fontWeight: '700', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.62)' });
   lines.append(words, names);
   body.append(lines);
@@ -99,8 +100,9 @@ export function createLanterns(host, opts = {}) {
     setShape(shape) { stage.dataset.shape = SHAPES[shape] ? shape : 'classic'; },
     setName(t) {
       words.textContent = t || '';
-      words.style.fontSize = (t || '').length > 22 ? '25px' : '29px';
+      wordsFont.setSize((t || '').length > 22 ? 25 : 29);
     },
+    setFont: wordsFont.setFont,
     setNames(t) { names.textContent = t || ''; },
     // Lay out `n` lanterns (+ empty hooks up to `spots`). Returns the lantern elements in message order.
     setCandles(n, { spots = n, colors, onTap } = {}) {
@@ -143,6 +145,7 @@ export function createLanterns(host, opts = {}) {
 
   api.setFlavor(opts.flavor || 'vanilla');
   api.setShape(opts.shape);
+  api.setFont(opts.font);
   api.setName(opts.name);
   api.setNames(opts.names);
   drawStrings(12);

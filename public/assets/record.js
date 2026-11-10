@@ -1,9 +1,8 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, copyText, toast, openSheet } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, copyText, toast, initials, colorFor } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { me } from './auth.js';
 
-addStars($('#app'), 22, 45);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
 $('#editBadge').innerHTML = `${icon.edit(12)} <span>edit</span>`;
@@ -43,29 +42,12 @@ async function load() {
   document.title = t.inviteTitle(first);
   $('#invitedBy').textContent = `${gift.organizer} invited you`;
   $('#inviteTitle').textContent = t.inviteTitle(first);
-  $('#startBtn').textContent = '';
-  $('#startBtn').append(h('span', {}, 'Start recording'));
+  const tip = t.tip(first);
+  $('#inviteTip').textContent = tip.charAt(0).toUpperCase() + tip.slice(1);
+  $('#startBtn').innerHTML = icon.mic(34);
+  $$('[data-private]').forEach((p) => (p.textContent = `🔒 Only you and ${first} can hear this voice.`));
   $('#recEyebrow').textContent = `For ${first} · max 15 seconds`;
-  $('#tip').textContent = t.tip(first);
-  const renderInviteScene = () => {
-    $('#inviteCake').textContent = '';
-    const inviteCake = createScene($('#inviteCake'), gift);
-    inviteCake.setCandles(count, { spots: Math.max(12, count + 1) });
-    inviteCake.lightAll();
-  };
-  renderInviteScene();
-  $('#inviteSceneToggle')?.addEventListener('click', () => {
-    const box = h('div', { style: { width: '100%' } });
-    openSheet({
-      title: `for ${first.toLowerCase()}`,
-      subtitle: `${t.countLine(count)} · secret until opened`,
-      content: h('div', { class: 'stage-showcase' }, box)
-    });
-    const sc = createScene(box, gift);
-    sc.setCandles(count, { spots: Math.max(12, count + 1) });
-    sc.lightAll();
-  });
-  $('#countLine').textContent = t.countLine(count);
+  $('#tip').textContent = tip;
   try { $('#name').value = localStorage.getItem('vg-name') || ''; } catch {}
   showScreen('invite');
   // No sign-up here. But a friend who is logged in (an organizer too, say) records as their account: say so.
@@ -169,14 +151,16 @@ async function upload() {
       waveform: Array.isArray(res.waveform) && res.waveform.length ? res.waveform : null
     };
     sentDone = false;
-    $('#capTitle').textContent = `Check your words`;
     $('#captionText').value = sent.asrText;
+    $('#seenLabel').textContent = `How ${first} will see it`;
+    $('#seenAvatar').textContent = initials($('#name').value.trim());
+    $('#seenAvatar').style.background = colorFor(count);
+    $('#seenName').textContent = $('#name').value.trim();
     const note = $('#mockNote');
     note.hidden = true;
     $('#ownDur').textContent = `0:${String(Math.round(recorded.durationSec)).padStart(2, '0')}`;
     $('#againBtn').innerHTML = icon.redo(15);
     $('#againBtn').append(h('span', {}, 'Record again'));
-    $('#secretLine').textContent = `Secret until ${gift.organizer} opens the gift.`;
     setupPlayer();
     refreshTypoStudio();
     showScreen('caption');
@@ -253,7 +237,6 @@ function refreshTypoStudio() {
   const typos = sent.asrTypos || [];
   const studio = $('#typoStudio');
   const pillsBox = $('#typoPills');
-  const tokenBox = $('#tokenPreview');
   const fixAllBtn = $('#fixAllBtn');
   const resetBtn = $('#resetAsrBtn');
 
@@ -289,47 +272,33 @@ function refreshTypoStudio() {
     );
     pillsBox.append(pill);
   }
-  studio.hidden = typos.length === 0 && !cur.trim();
+  studio.hidden = typos.length === 0;
 
-  // Render interactive clickable word tokens
-  tokenBox.textContent = '';
+  // The recipient's view: the words as they will light up. Words the ASR probably got wrong are marked; tap to fix.
   const suspectMap = new Map();
-  const fixedSet = new Set();
-  for (const tp of typos) {
-    for (const w of tp.wrong.toLowerCase().split(/\s+/)) suspectMap.set(w, tp);
-    for (const w of tp.right.toLowerCase().split(/\s+/)) fixedSet.add(w.replace(/[.,!?]+$/g, ''));
-  }
-
-  const words = cur.trim().split(/\s+/).filter(Boolean);
-  words.forEach((word) => {
+  for (const tp of typos) for (const w of tp.wrong.toLowerCase().split(/\s+/)) suspectMap.set(w, tp);
+  const box = $('#seenCaption');
+  box.textContent = '';
+  seenWords = cur.trim().split(/\s+/).filter(Boolean).map((word) => {
     const clean = word.replace(/^[.,!?""''()]+|[.,!?""''()]+$/g, '').toLowerCase();
-    const matchTp = suspectMap.get(clean) && hasPhrase(cur, suspectMap.get(clean).wrong) ? suspectMap.get(clean) : null;
-    const isFixed = !matchTp && fixedSet.has(clean) && !hasPhrase(sent.asrText, word.replace(/[.,!?]+$/g, ''));
-    const tok = h('button', {
-      type: 'button',
-      class: 'tok' + (matchTp ? ' suspect' : isFixed ? ' fixed' : ''),
-      title: matchTp ? `Fix ASR typo: “${matchTp.wrong}” → “${matchTp.right}”` : 'Click to edit in caption box',
+    const tp = suspectMap.get(clean) && hasPhrase(cur, suspectMap.get(clean).wrong) ? suspectMap.get(clean) : null;
+    const span = h('span', tp ? { class: 'suspect', role: 'button', tabindex: '0', title: `Fix: “${tp.wrong}” → “${tp.right}”`,
       onclick: () => {
-        if (matchTp) {
-          $('#captionText').value = replacePhrase($('#captionText').value, matchTp.wrong, matchTp.right);
-          toast(`Fixed: “${matchTp.wrong}” → “${matchTp.right}”`);
-          refreshTypoStudio();
-        } else {
-          const ta = $('#captionText');
-          const idx = ta.value.indexOf(word);
-          ta.focus();
-          if (idx >= 0) ta.setSelectionRange(idx, idx + word.length);
-        }
-      }
-    }, word);
-    tokenBox.append(tok);
+        $('#captionText').value = replacePhrase($('#captionText').value, tp.wrong, tp.right);
+        toast(`Fixed: “${tp.wrong}” → “${tp.right}”`);
+        refreshTypoStudio();
+      } } : {}, word);
+    box.append(span, ' ');
+    return span;
   });
+  paintSeen(-1);
 
   // Update live diff feedback line
   const diffs = computeLiveDiffs(sent.asrText, cur, typos);
   lastCorrections = diffs;
   const diffEl = $('#diffLine');
   diffEl.textContent = '';
+  diffEl.hidden = !diffs.length && !remaining.length;
   if (diffs.length > 0) {
     diffEl.classList.remove('idle');
     const summary = diffs.slice(0, 3).map((d) => `“${d.from}” → “${d.to}”`).join(', ');
@@ -344,7 +313,7 @@ function refreshTypoStudio() {
   } else {
     diffEl.classList.add('idle');
     diffEl.append(
-      h('span', {}, remaining.length ? 'Tap a red word to fix' : 'Words look good')
+      h('span', {}, 'Tap a red word to fix')
     );
   }
 }
@@ -372,42 +341,30 @@ $('#resetAsrBtn').addEventListener('click', () => {
 
 $('#captionText').addEventListener('input', refreshTypoStudio);
 
-// ---------- Waveform Audio Player ----------
-const WAVE_HEIGHTS = [32, 55, 78, 45, 92, 64, 38, 84, 70, 42, 95, 60, 48, 80, 52, 35, 88, 72, 44, 90, 62, 40, 76, 58, 85, 50, 68, 94, 54, 40, 66, 36];
-let audio = null, raf = 0;
+// ---------- Play it the way the recipient will hear it ----------
+// The words light up while the voice plays (spread evenly over the recording, like the reveal page does).
+let audio = null, raf = 0, seenWords = [];
+function paintSeen(k) {
+  seenWords.forEach((w, i) => w.classList.toggle('done', k < 0 || i < k));
+  seenWords.forEach((w, i) => w.classList.toggle('now', i === k));
+}
 
 function setupPlayer() {
   if (audio) { audio.pause(); URL.revokeObjectURL(audio.src); }
   audio = new Audio(URL.createObjectURL(recorded.wav));
   const btn = $('#playOwn');
-  const waveBox = $('#waveBars');
-  waveBox.textContent = '';
-  const heights = sent?.waveform?.length ? sent.waveform : WAVE_HEIGHTS;
-  const wBars = heights.map((pct) => {
-    const b = h('b', { style: { height: `${Math.max(4, Math.round((pct / 100) * 24))}px` } });
-    waveBox.append(b);
-    return b;
-  });
-
-  const paintBars = (ratio) => {
-    const activeCount = Math.round(ratio * wBars.length);
-    wBars.forEach((b, idx) => b.classList.toggle('on', idx < activeCount));
-  };
-
+  const dur = () => audio.duration || recorded.durationSec || 1;
   const paint = () => {
-    const ratio = Math.min(1, Math.max(0, audio.currentTime / (audio.duration || recorded.durationSec || 1)));
-    $('#ownTrack').style.width = `${ratio * 100}%`;
-    paintBars(ratio);
+    const n = seenWords.length;
+    paintSeen(Math.min(n - 1, Math.floor((audio.currentTime / dur()) * n)));
     if (!audio.paused) raf = requestAnimationFrame(paint);
   };
   const setIcon = () => (btn.innerHTML = audio.paused ? icon.play(16) : icon.pause(16));
   setIcon();
-  paintBars(0);
-  btn.onclick = () => { if (audio.paused) { audio.play(); raf = requestAnimationFrame(paint); } else audio.pause(); };
-  $('#playerTrack').onclick = () => btn.click();
+  btn.onclick = () => { if (audio.paused) { audio.currentTime = audio.ended ? 0 : audio.currentTime; audio.play(); raf = requestAnimationFrame(paint); } else audio.pause(); };
   audio.onplay = setIcon;
   audio.onpause = setIcon;
-  audio.onended = () => { setIcon(); $('#ownTrack').style.width = '0'; paintBars(0); };
+  audio.onended = () => { setIcon(); cancelAnimationFrame(raf); paintSeen(-1); };
 }
 
 $('#againBtn').addEventListener('click', async () => {
@@ -444,31 +401,13 @@ $('#sendBtn').addEventListener('click', async () => {
 async function showDone() {
   let n = count + 1;
   try { n = (await api(`/api/gift?slug=${encodeURIComponent(slug)}`)).count; } catch {}
-  $('#doneLead').textContent = `Secret until ${gift.organizer} sends ${first} the gift.`;
+  $('#doneLead').textContent = `It stays a secret until ${gift.organizer} sends ${first} the gift.`;
   $('#doneTitle').textContent = t.doneTitle;
-  const renderDoneScene = () => {
-    $('#doneCake').textContent = '';
-    const c = createScene($('#doneCake'), gift);
-    c.setCandles(n, { spots: Math.max(12, n) });
-    c.lightAll();
-    c.mark(n - 1);
-  };
-  renderDoneScene();
-  const toggleBtn = $('#doneSceneToggle');
-  if (toggleBtn) {
-    toggleBtn.onclick = () => {
-      const box = h('div', { style: { width: '100%' } });
-      openSheet({
-        title: `for ${first.toLowerCase()}`,
-        subtitle: t.doneCount(n),
-        content: h('div', { class: 'stage-showcase' }, box)
-      });
-      const sc = createScene(box, gift);
-      sc.setCandles(n, { spots: Math.max(12, n) });
-      sc.lightAll();
-      sc.mark(n - 1);
-    };
-  }
+  $('#doneCake').textContent = '';
+  const c = createScene($('#doneCake'), gift);
+  c.setCandles(n, { spots: Math.max(12, n) });
+  c.lightAll();
+  c.mark(n - 1);
   $('#doneCount').textContent = t.doneCount(n);
   const card = $('#asrThanksCard');
   if (card) {

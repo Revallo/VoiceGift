@@ -11,10 +11,10 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body>
+<body class="calm">
 <main class="app" id="app">
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
@@ -27,56 +27,24 @@
   </section>
 
   <section data-screen="invite" hidden>
-    <div class="web-grid">
-      <div class="web-col">
-        <!-- Party hero card Hero Card -->
-        <div class="hero-card">
-          <div class="hero-top">
-            <a class="hero-greeting" href="/">
-              <span class="hero-menu-ico" data-logo></span>
-              <span class="hero-greeting-text">
-                <small id="invitedBy">invited you</small>
-                <b>Voice Gift</b>
-              </span>
-            </a>
-            <button type="button" class="badge-pill" id="inviteSceneToggle" style="background:rgba(27,16,36,0.28);color:#fff;border:0;cursor:pointer">scene</button>
-          </div>
+    <div class="calm-page">
+      <p class="calm-from" id="invitedBy"></p>
+      <h1 class="calm-title" id="inviteTitle"></h1>
+      <p class="calm-tip" id="inviteTip"></p>
 
-          <div class="hero-balance">
-            <div class="hero-balance-label">
-              <span>15s wishes</span>
-              <span id="countLine"></span>
-            </div>
-            <div class="hero-balance-val" id="inviteTitle" style="font-size:clamp(24px,5.5vw,32px)"></div>
-          </div>
-        </div>
+      <form class="stack" id="inviteForm" novalidate>
+        <input class="input" id="name" maxlength="40" autocomplete="given-name" placeholder="Your name" aria-label="Your name" required>
+        <p class="small muted wrap" id="signedIn" style="margin:-6px 0 0" hidden></p>
+        <label class="check">
+          <input type="checkbox" id="consent">
+          <span>Save my voice &amp; caption for this gift and ASR training.</span>
+        </label>
+        <p class="small err" id="inviteError" hidden></p>
+        <button class="mic-big" type="submit" id="startBtn" aria-label="Start recording"></button>
+        <p class="center small muted" style="margin:-4px 0 0">Tap to record · up to 15 seconds</p>
+      </form>
 
-        <form class="stack" id="inviteForm" novalidate>
-          <div class="field">
-            <label for="name">your name</label>
-            <input class="input" id="name" maxlength="40" autocomplete="given-name" placeholder="Your name" required>
-            <p class="small muted wrap" id="signedIn" style="margin:0" hidden></p>
-          </div>
-          <label class="check">
-            <input type="checkbox" id="consent">
-            <span>Save my voice &amp; caption for this gift and ASR training.</span>
-          </label>
-          <p class="small err" id="inviteError" hidden></p>
-          <button class="btn emerald-track" type="submit" id="startBtn"></button>
-        </form>
-      </div>
-
-      <div class="web-col">
-        <div class="customize-drawer" id="inviteCakeDrawer" hidden>
-          <div class="sec-bar">
-            <span class="sec-title">gift scene</span>
-            <span class="sec-action">secret until opened</span>
-          </div>
-          <div class="stage-showcase">
-            <div id="inviteCake" style="width:100%"></div>
-          </div>
-        </div>
-      </div>
+      <p class="private-note" data-private></p>
     </div>
   </section>
 
@@ -117,98 +85,68 @@
   </section>
 
   <section data-screen="caption" hidden>
-    <div class="nav-header">
-      <a class="brand" href="/"><span class="logo" data-logo></span>voice gift</a>
-      <div class="step-dots" style="margin-left:auto"><i class="done"></i><i class="done"></i><i class="on"></i></div>
-    </div>
+    <div class="calm-page">
+      <div class="head">
+        <h1 class="calm-title" id="capTitle">Check your words</h1>
+        <p class="calm-tip" style="margin:0">Make the words match exactly what you said.</p>
+      </div>
 
-    <div class="web-grid">
-      <div class="web-col">
-        <div class="head">
-          <h1 id="capTitle"></h1>
-        </div>
-
-        <div class="player">
-          <button type="button" id="playOwn" aria-label="Play your recording"></button>
-          <div class="track" id="playerTrack" title="Click to replay">
-            <i id="ownTrack"></i>
-            <div class="wave-bars" id="waveBars" aria-hidden="true"></div>
+      <!-- what the recipient will see when they open the gift: the voice, with its words lighting up -->
+      <div class="seen">
+        <span class="seen-label" id="seenLabel"></span>
+        <div class="panel">
+          <div class="who">
+            <span class="avatar" id="seenAvatar"></span>
+            <div class="grow" style="min-width:0"><div class="name" id="seenName"></div><div class="meta" id="ownDur"></div></div>
+            <button type="button" class="seen-play" id="playOwn" aria-label="Play your recording"></button>
           </div>
-          <span class="small muted" id="ownDur"></span>
-        </div>
-
-        <div class="typo-studio" id="typoStudio">
-          <div class="typo-head">
-            <span class="typo-title" id="typoTitle"></span>
-            <button type="button" class="fix-all-btn" id="fixAllBtn">fix all</button>
-          </div>
-          <div class="typo-pills" id="typoPills"></div>
-          <div class="token-preview" id="tokenPreview"></div>
+          <div class="caption" id="seenCaption"></div>
         </div>
       </div>
 
-      <div class="web-col">
-        <div class="field">
-          <div class="row" style="justify-content:space-between">
-            <label for="captionText">caption</label>
-            <button type="button" class="linkbtn small" id="resetAsrBtn" hidden>reset</button>
-          </div>
-          <div class="caption-box-wrap">
-            <textarea class="input" id="captionText" maxlength="400" aria-label="Caption"></textarea>
-            <span class="edit-badge" id="editBadge"></span>
-          </div>
+      <div class="typo-studio" id="typoStudio">
+        <div class="typo-head">
+          <span class="typo-title" id="typoTitle"></span>
+          <button type="button" class="fix-all-btn" id="fixAllBtn">fix all</button>
         </div>
-
-        <div class="diff-line idle" id="diffLine"></div>
-
-        <p class="note" id="mockNote" hidden></p>
-        <p class="small err" id="capError" hidden></p>
-        <div class="spacer"></div>
-        <div class="row">
-          <button type="button" class="btn ghost grow" id="againBtn"></button>
-          <button type="button" class="btn grow" id="sendBtn">Send</button>
-        </div>
-        <p class="center tiny muted" id="secretLine" style="margin:0"></p>
+        <div class="typo-pills" id="typoPills"></div>
       </div>
+
+      <div class="field">
+        <div class="row" style="justify-content:space-between">
+          <label for="captionText">your words</label>
+          <button type="button" class="linkbtn small" id="resetAsrBtn" hidden>reset</button>
+        </div>
+        <div class="caption-box-wrap">
+          <textarea class="input" id="captionText" maxlength="400" aria-label="Caption"></textarea>
+          <span class="edit-badge" id="editBadge"></span>
+        </div>
+      </div>
+
+      <div class="diff-line" id="diffLine" hidden></div>
+
+      <p class="note" id="mockNote" hidden></p>
+      <p class="small err" id="capError" hidden></p>
+      <div class="row">
+        <button type="button" class="btn ghost grow" id="againBtn"></button>
+        <button type="button" class="btn grow" id="sendBtn">Send</button>
+      </div>
+      <p class="private-note" data-private></p>
     </div>
   </section>
 
   <section data-screen="done" hidden>
-    <div class="web-grid">
-      <div class="web-col">
-        <!-- Party hero card Hero Card on Done Screen -->
-        <div class="hero-card">
-          <div class="hero-balance">
-            <div class="hero-balance-label">
-              <span>your wish is saved 🎉</span>
-              <span id="doneCount"></span>
-            </div>
-            <div class="hero-balance-val" id="doneTitle" style="font-size:clamp(24px,5.5vw,32px)"></div>
-          </div>
-          <div class="dual-pills">
-            <button type="button" class="pill-btn dark" id="doneSceneToggle">
-              <span>view scene</span>
-            </button>
-            <a class="pill-btn light" href="/new">
-              <span>create a gift</span>
-            </a>
-          </div>
-        </div>
-
-        <div class="diff-line" id="asrThanksCard" hidden>
-          <span class="diff-check" id="doneCheckIco"></span>
-          <span id="asrThanksText"></span>
-        </div>
-        <p class="small muted center" id="doneLead" style="margin:0"></p>
+    <div class="calm-page">
+      <div id="doneCake" class="done-scene"></div>
+      <h1 class="calm-title center" id="doneTitle"></h1>
+      <p class="calm-tip center" id="doneCount" style="margin:0"></p>
+      <div class="diff-line" id="asrThanksCard" hidden>
+        <span class="diff-check" id="doneCheckIco"></span>
+        <span id="asrThanksText"></span>
       </div>
-
-      <div class="web-col">
-        <div class="customize-drawer" id="doneCakeDrawer" hidden>
-          <div class="stage-showcase">
-            <div id="doneCake" style="width:100%"></div>
-          </div>
-        </div>
-      </div>
+      <p class="small muted center" id="doneLead" style="margin:0"></p>
+      <p class="private-note" data-private></p>
+      <a class="btn ghost" href="/" style="margin-top:8px">Make your own voice gift</a>
     </div>
   </section>
 </main>

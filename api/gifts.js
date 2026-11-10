@@ -2,7 +2,7 @@
 // PATCH /api/gifts  {slug, key, recipient, organizer, occasion, cake}    → the organizer edits it (back from step 3)
 import { route, send, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { createGift, loadGift, saveGift, OCCASIONS } from '../lib/gifts.js';
-import { sessionUserId, addGift, sendGiftToEmail } from '../lib/accounts.js';
+import { sessionUserId, addGift } from '../lib/accounts.js';
 
 // cake = the decoration of any scene: { flavor, shape, name, dots: [[x, y, colour]], stickers: [[emoji, x, y]] }
 function cleanCake(cake = {}) {
@@ -20,7 +20,8 @@ function cleanCake(cake = {}) {
         .filter((s) => s[0] && inStage(s))
     : [];
   const shape = /^[a-z]{2,16}$/.test(cake.shape) ? cake.shape : ''; // a key of the scene's SHAPES; '' = the classic one
-  return { flavor, shape, name, dots, stickers };
+  const font = /^[a-z]{2,16}$/.test(cake.font) ? cake.font : ''; // a key of NAME_FONTS (stage.js); '' = the default
+  return { flavor, shape, font, name, dots, stickers };
 }
 
 function readGift(b) {
@@ -29,10 +30,9 @@ function readGift(b) {
   if (!recipient) throw new HttpError(400, 'Please enter who the gift is for.');
   if (!organizer) throw new HttpError(400, 'Please enter your name.');
   const occasion = OCCASIONS.includes(b.occasion) ? b.occasion : 'birthday';
-  const recipientEmail = cleanText(b.recipientEmail || '', 120).toLowerCase();
-  const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 6);
-  const verifyPin = rawPin.length >= 4 ? rawPin : '1234';
-  return { recipient, organizer, occasion, recipientEmail, verifyPin, cake: cleanCake(b.cake) };
+  const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 4);
+  const verifyPin = rawPin.length === 4 ? rawPin : '1234';
+  return { recipient, organizer, occasion, verifyPin, cake: cleanCake(b.cake) };
 }
 
 export default route({
@@ -43,7 +43,6 @@ export default route({
     const input = readGift(await jsonBody(req));
     const gift = await createGift({ ...input, ownerId: userId });
     await addGift(userId, gift.slug);
-    if (gift.recipientEmail) await sendGiftToEmail(gift.recipientEmail, gift.slug);
     send(res, 201, { slug: gift.slug, manageKey: gift.manageKey, openKey: gift.openKey });
   },
 
@@ -54,7 +53,6 @@ export default route({
     const updates = readGift(b);
     Object.assign(gift, updates, { updatedAt: new Date().toISOString() });
     await saveGift(gift);
-    if (gift.recipientEmail) await sendGiftToEmail(gift.recipientEmail, gift.slug);
     send(res, 200, { ok: true });
   }
 });

@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -21,25 +21,20 @@
       <div class="step-dots" style="margin-left:auto"><i class="on"></i><i></i><i></i></div>
     </div>
 
-    <!-- Purrweb Recipient Top Pill Card (from 00:04 "Roger Vetrovs **** 5498") -->
-    <div class="recipient-pill">
-      <span class="sq-avatar" id="whoAvatar">D</span>
-      <div class="rec-info">
-        <b id="whoPillName">New voice gift</b>
-        <span id="whoPillSub">a birthday surprise from friends</span>
-      </div>
-      <button type="button" class="btn ghost sm" id="whoPreviewToggle" style="height:34px;min-height:34px;padding:0 12px">preview</button>
-    </div>
-
     <div class="web-grid">
+      <div class="web-col">
+        <!-- the gift itself, redrawn as soon as you pick another occasion -->
+        <div class="who-scene" id="whoPreview"></div>
+      </div>
+
       <div class="web-col">
         <form id="whoForm" class="stack" novalidate>
           <div class="field">
             <span class="label">occasion</span>
             <div class="chips" id="occasions">
-              <button type="button" class="chip on" data-v="birthday">birthday</button>
-              <button type="button" class="chip" data-v="graduation">graduation</button>
-              <button type="button" class="chip" data-v="wedding">wedding</button>
+              <button type="button" class="chip occ on" data-v="birthday"><span aria-hidden="true">🎂</span>Birthday</button>
+              <button type="button" class="chip occ" data-v="graduation"><span aria-hidden="true">🎓</span>Graduation</button>
+              <button type="button" class="chip occ" data-v="wedding"><span aria-hidden="true">💍</span>Wedding</button>
             </div>
           </div>
           <div class="field">
@@ -54,28 +49,16 @@
             <button type="button" class="nav-row" id="openDeliverySheetBtn">
               <span class="nav-ico" data-icon="shield"></span>
               <div class="nav-info">
-                <b>send ke akun &amp; kode PIN</b>
-                <small id="deliverySummarySub">PIN: 1234 · verifikasi jika penerima belum punya akun</small>
+                <b>kode PIN penerima</b>
+                <small>4 angka · penerima memasukkannya untuk membuka</small>
               </div>
-              <span class="nav-val" id="deliverySummaryVal">PIN 1234</span>
+              <span class="nav-val" id="deliverySummaryVal">1234</span>
               <span class="nav-chev" data-icon="chevronRight"></span>
             </button>
           </div>
           <p class="small err" id="whoError" hidden></p>
           <button class="btn emerald-track" type="submit" id="nextBtn"><span>Next: customize gift</span></button>
         </form>
-      </div>
-
-      <div class="web-col">
-        <div class="customize-drawer" id="whoPreviewDrawer" hidden>
-          <div class="sec-bar">
-            <span class="sec-title">live scene preview</span>
-            <span class="sec-action">15s wishes</span>
-          </div>
-          <div class="stage-showcase">
-            <div id="whoPreview" style="width:100%"></div>
-          </div>
-        </div>
       </div>
     </div>
   </section>
@@ -115,6 +98,10 @@
           <div class="row">
             <label class="label" for="cakeName" style="width:58px;flex-shrink:0" id="nameLabel">Title</label>
             <input class="input" id="cakeName" maxlength="14" style="min-height:44px">
+          </div>
+          <div class="row">
+            <span class="label" style="width:58px;flex-shrink:0">Font</span>
+            <div class="slider" id="fonts"></div>
           </div>
           <div class="row" style="justify-content:space-between" id="drawRow">
             <span class="label" style="width:58px;flex-shrink:0">Sketch</span>

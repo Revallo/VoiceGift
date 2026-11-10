@@ -7,7 +7,7 @@ import path from 'node:path';
 import { route, send, query, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
-import { forgetGift, sendGiftToEmail } from '../lib/accounts.js';
+import { forgetGift } from '../lib/accounts.js';
 
 const DEMO_DIR = path.join(process.cwd(), 'public', 'demo');
 
@@ -56,7 +56,6 @@ export default route({
     send(res, 200, {
       gift: {
         ...publicGift(gift),
-        recipientEmail: gift.recipientEmail || '',
         verifyPin: gift.verifyPin || '1234'
       },
       openKey: gift.openKey,
@@ -69,12 +68,10 @@ export default route({
     const gift = await authed(b.slug, b.key);
     if (b.action === 'add-demo') await addDemo(gift);
     else if (b.action === 'update-delivery') {
-      gift.recipientEmail = cleanText(b.recipientEmail || '', 120).toLowerCase();
-      const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 6);
-      gift.verifyPin = rawPin.length >= 4 ? rawPin : '1234';
+      const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 4);
+      gift.verifyPin = rawPin.length === 4 ? rawPin : '1234';
       gift.updatedAt = new Date().toISOString();
       await saveGift(gift);
-      if (gift.recipientEmail) await sendGiftToEmail(gift.recipientEmail, gift.slug);
     } else if (b.action === 'delete') {
       const { msg, path } = await findMessage(gift.slug, String(b.id || ''));
       await deleteMessage(path, msg);

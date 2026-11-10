@@ -14,7 +14,47 @@ export function seeded(seed) {
   return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
 }
 
+// Fonts for the name on the cake / the wrap / the lantern words (gift.cake.font). Picked in the decorate step.
+export const NAME_FONTS = {
+  script: { label: 'Script', css: { fontFamily: "'Pacifico', cursive", fontStyle: 'normal', fontWeight: '400' } },
+  serif: { label: 'Classic', css: { fontFamily: "'Fraunces', Georgia, serif", fontStyle: 'italic', fontWeight: '600' } },
+  hand: { label: 'Handwritten', css: { fontFamily: "'Caveat', cursive", fontStyle: 'normal', fontWeight: '700' } },
+  round: { label: 'Playful', css: { fontFamily: "'Fredoka', sans-serif", fontStyle: 'normal', fontWeight: '600' } }
+};
+export const DEFAULT_FONT = 'script';
+let fontsLinked = false;
+function linkFonts() {
+  if (fontsLinked) return;
+  fontsLinked = true;
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  l.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Fraunces:ital,wght@0,600;1,600&family=Fredoka:wght@600&family=Pacifico&display=swap';
+  document.head.append(l);
+}
+
+// The name text: its font, and (fit) shrinks the size until one line fits the width.
+export function nameText(el, fit) {
+  let max = 0;
+  const refit = () => {
+    if (!max) return;
+    let s = max;
+    el.style.fontSize = `${s}px`;
+    if (!fit || !el.clientWidth) return;
+    while (el.scrollWidth > el.clientWidth + 1 && s > 12) el.style.fontSize = `${--s}px`;
+  };
+  if (fit) {
+    new ResizeObserver(refit).observe(el); // e.g. when a hidden screen is shown
+    document.fonts?.addEventListener?.('loadingdone', refit);
+  }
+  return {
+    setFont(key) { Object.assign(el.style, (NAME_FONTS[key] || NAME_FONTS[DEFAULT_FONT]).css); refit(); },
+    setSize(px) { max = px; refit(); },
+    refit
+  };
+}
+
 export function createStage(host, W, H, cls = '') {
+  linkFonts();
   const wrap = div('stage-wrap');
   const stage = div(`stage ${cls}`.trim(), { width: `${W}px`, height: `${H}px` });
   wrap.append(stage);

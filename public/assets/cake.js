@@ -1,6 +1,6 @@
 // Birthday: the cake. Drawn in a fixed 390×300 stage; every voice is a candle.
 import { colorFor } from './common.js';
-import { div, seeded, createStage, createDrawing, createStickers, createTopper, itemStates, NAME_FONTS, DEFAULT_FONT } from './stage.js';
+import { div, seeded, createStage, createDrawing, createStickers, itemStates, NAME_FONTS, DEFAULT_FONT } from './stage.js';
 
 export const FLAVORS = {
   strawberry: { label: 'Strawberry', b1: '#F2A9C4', b2: '#FFE3EE', frost: '#FFF0F6', top2: '#FFF7FA', text: '#8E2552' },
@@ -313,32 +313,38 @@ export function createCake(host, opts = {}) {
   let accent = opts.accent, pattern = opts.pattern, nameArea = null;
   const decoEl = div('', { position: 'absolute', inset: '0' });
   const name = curvedName();
-  const setTopper = createTopper(stage, { x: 195, base: 98, size: 66 });
-
-  // The age: thick wax numbers pushed into the cream, standing among the candles.
+  // The topper (age numbers or a sugar figure) is pushed into the cream: frosting rises around its foot,
+  // and it stands among the candles, so nearer candles stay in front of it.
   const AGE_BASE = 100;
   const ageEl = div('age-numbers', { left: `${CX}px`, top: `${AGE_BASE}px` });
   let lipColor = '#FFFFFF';
-  function seatAge() { // candles nearer the front stay in front of the numbers
+  function seatAge() {
     if (!ageEl.childElementCount) return ageEl.remove();
     layer.insertBefore(ageEl, [...layer.children].find((c) => Number(c.dataset.base) > AGE_BASE) || null);
   }
-  function setAge(value) {
-    const digits = [...value];
-    const fs = digits.length > 2 ? 50 : 66;
-    const w = digits.length * fs * 0.62;
+  function setSeat(topper, age) {
     ageEl.replaceChildren();
-    if (digits.length) {
-      ageEl.append(div('age-hole', { width: `${w + 22}px` }));
+    ageEl.classList.toggle('figure', !!topper?.emoji);
+    let w = 0;
+    const inner = div('seat-inner');
+    if (topper?.emoji) {
+      w = 62;
+      const f = div('seat-figure');
+      f.textContent = topper.emoji;
+      inner.append(f);
+    } else if (age) {
+      const digits = [...age];
+      const fs = digits.length > 2 ? 62 : 82;
+      w = digits.length * fs * 0.58;
       for (const ch of digits) {
         const d = div('age-digit', { fontSize: `${fs}px` });
         const face = div('age-face');
         d.textContent = face.textContent = ch;
         d.append(face);
-        ageEl.append(d);
+        inner.append(d);
       }
-      ageEl.append(div('age-lip', { width: `${w + 14}px`, background: lipColor }));
     }
+    if (w) ageEl.append(div('seat-back', { width: `${w + 16}px` }), inner, div('age-lip', { width: `${w * 0.92}px`, background: lipColor }));
     seatAge();
   }
 
@@ -392,7 +398,7 @@ export function createCake(host, opts = {}) {
         decoEl.append(d);
       }
     },
-    setTopper(k, age) { const t = TOPPERS[k]; setTopper(t?.age ? null : t, ''); setAge(t?.age ? String(age || '') : ''); },
+    setTopper(k, age) { const t = TOPPERS[k]; setSeat(t?.emoji ? t : null, t?.age ? String(age || '') : ''); },
     setShape,
     setName: name.setText,
     setFont: name.setFont,

@@ -71,17 +71,17 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
     };
 
     const tabs = h('div', { class: 'auth-tabs' },
-      h('button', { type: 'button', class: 'auth-tab' + (mode === 'login' ? ' on' : ''), onclick: () => switchMode('login') }, 'log in'),
-      h('button', { type: 'button', class: 'auth-tab' + (mode === 'signup' ? ' on' : ''), onclick: () => switchMode('signup') }, 'create account')
+      h('button', { type: 'button', class: 'auth-tab' + (mode === 'login' ? ' on' : ''), onclick: () => switchMode('login') }, 'Log in'),
+      h('button', { type: 'button', class: 'auth-tab' + (mode === 'signup' ? ' on' : ''), onclick: () => switchMode('signup') }, 'Create account')
     );
 
     const other = h('button', { type: 'button', class: 'linkbtn', onclick: () => switchMode(mode === 'signup' ? 'login' : 'signup') }, m.other);
 
     const form = h('form', { class: 'card stack', style: { gap: '14px' }, novalidate: true },
       tabs,
-      nameIn && h('div', { class: 'field' }, h('label', { for: 'acName' }, 'your name'), nameIn),
-      h('div', { class: 'field' }, h('label', { for: 'acEmail' }, 'email address'), emailIn),
-      h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'password'), show), passIn),
+      nameIn && h('div', { class: 'field' }, h('label', { for: 'acName' }, 'Your name'), nameIn),
+      h('div', { class: 'field' }, h('label', { for: 'acEmail' }, 'Email address'), emailIn),
+      h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'Password'), show), passIn),
       err,
       submit,
       h('p', { class: 'small muted center', style: { margin: 0 } }, `${m.ask} `, other));
@@ -129,20 +129,17 @@ export function giftItem(g, onDeleted) {
     }
     onDeleted(g);
   }
-  const sub = [t.label.toLowerCase(), g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
-  const countLabel = typeof g.count === 'number' ? `+ ${g.count} ${g.count === 1 ? 'voice' : 'voices'}` : '+ open';
-  return h('div', { class: 'item' },
-    h('div', { class: 'bento-top' },
-      h('span', { class: 'avatar', style: { background: 'var(--gold)', color: 'var(--ink)', width: '32px', height: '32px', borderRadius: '10px', fontSize: '12px' } }, initials(g.recipient)),
-      h('div', { class: 'bento-meta' },
-        h('b', {}, g.recipient),
-        h('span', {}, sub)
-      ),
-      h('button', { type: 'button', class: 'del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(12), onclick: remove })
+  const sub = [t.label, g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
+  const count = typeof g.count === 'number' ? `${g.count} ${g.count === 1 ? 'voice' : 'voices'}` : '';
+  return h('div', { class: 'gift-item' },
+    h('div', { class: 'gift-item-top' },
+      h('span', { class: 'gift-item-ava' }, t.emoji || initials(g.recipient)),
+      h('div', { class: 'gift-item-meta' }, h('b', {}, g.recipient), h('span', {}, sub)),
+      h('button', { type: 'button', class: 'gift-item-del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(14), onclick: remove })
     ),
-    h('a', { class: 'bento-val', href: `/m/${g.slug}?k=${g.key}`, style: { textDecoration: 'none' } },
-      h('span', { class: 'tag-plus' }, countLabel),
-      h('span', { class: 'tiny muted', style: { fontWeight: '500' } }, g.editedCount ? `${g.editedCount} fixed` : 'dashboard →')
+    h('div', { class: 'gift-item-bottom' },
+      count && h('span', { class: 'gift-item-count' }, count),
+      h('a', { class: 'gift-item-open', href: `/m/${g.slug}?k=${g.key}` }, 'Open dashboard →')
     )
   );
 }

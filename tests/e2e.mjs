@@ -95,14 +95,22 @@ async function runGift(occasion, c) {
   await shot(p, P('01-create-who'));
   await p.click('#nextBtn');
   await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
-  // the kind of cake / bouquet / lanterns: swipe the big gift until it's the right one
+  // the kind of cake / bouquet / lanterns: swiping the big gift changes it, the strip of pictures picks one
+  await p.waitForTimeout(300);
+  const kind0 = await p.getAttribute('#kinds .on', 'data-v');
   const sb0 = await (await p.$('#decorCake')).boundingBox();
-  for (let i = 0; i < 14 && (await p.getAttribute('#shapeName', 'data-v')) !== c.shape; i++) {
-    await p.mouse.move(sb0.x + sb0.width * 0.8, sb0.y + 60);
-    await p.mouse.down();
-    await p.mouse.move(sb0.x + sb0.width * 0.2, sb0.y + 60, { steps: 4 });
-    await p.mouse.up();
-  }
+  await p.mouse.move(sb0.x + sb0.width * 0.8, sb0.y + 60);
+  await p.mouse.down();
+  await p.mouse.move(sb0.x + sb0.width * 0.2, sb0.y + 60, { steps: 4 });
+  await p.mouse.up();
+  if ((await p.getAttribute('#kinds .on', 'data-v')) === kind0) errors.push(`${occasion}: swiping the gift did not change its kind`);
+  const lastKind = await p.$eval('#kinds', (b) => b.lastElementChild.dataset.v);
+  await p.click(`#kinds [data-v="${lastKind}"]`);
+  await p.waitForTimeout(500);
+  const kindsScroll = await p.$eval('#kinds', (b) => b.scrollLeft);
+  if (!kindsScroll) errors.push(`${occasion}: the strip jumped back to the start after picking the last kind`);
+  await p.click(`#kinds [data-v="${c.shape}"]`);
+  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.shape) errors.push(`${occasion}: tapping a kind did not pick it`);
   // a strip picks whatever stops in the middle
   const flavor = await p.$eval(`#flavors > :nth-child(${c.swatch + 1})`, (el) => { el.parentElement.scrollLeft = el.offsetLeft - (el.parentElement.clientWidth - el.offsetWidth) / 2; return el.dataset.v; });
   await p.waitForTimeout(400);
@@ -374,24 +382,18 @@ const slugs = {};
 for (const [occasion, c] of Object.entries(CASES)) if (!only || only === occasion) slugs[occasion] = await runGift(occasion, c);
 await accountFlow(...Object.entries(slugs)[0]);
 
-// the picker: pick what to make → "Yes" → log in (in that occasion's colors) + desktop
+// a gift picked on the home page while logged out → log in (in that occasion's colors) + desktop
 const l = await page();
-await l.goto(BASE + '/start');
-for (const o of ['birthday', 'graduation', 'wedding']) {
-  await l.click(`.pick[data-v="${o}"]`);
-  await l.waitForTimeout(2400);
-  await shot(l, `pick-${o}`);
-}
-await l.click('#goBtn');
+await l.goto(BASE + '/new?occasion=wedding');
 await l.waitForSelector('[data-screen="auth"]:not([hidden])');
 if ((await l.evaluate(() => document.body.dataset.theme)) !== 'wedding') errors.push('the login page lost the picked colors');
-if (!/occasion%3Dwedding/.test(l.url())) errors.push('"Yes" went to ' + l.url());
+if (!/occasion%3Dwedding/.test(l.url())) errors.push('logged-out /new went to ' + l.url());
 await l.waitForTimeout(500);
 await shot(l, 'login-wedding');
 const d = await page({ viewport: { width: 1280, height: 860 }, permissions: ['microphone'] });
 await d.goto(BASE + '/start');
-await d.waitForTimeout(2400);
-await shot(d, 'desktop-pick');
+await d.waitForTimeout(1500);
+await shot(d, 'desktop-login');
 await d.goto(Object.values(slugs)[0]);
 await signUpHere(d, 'Dimas', `desktop.${RUN}@example.com`);
 await d.waitForSelector('[data-screen="verify"]:not([hidden])');

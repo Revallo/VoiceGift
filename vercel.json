@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/start",
-      "destination": "/start.html"
+      "destination": "/create.html"
     },
     {
       "source": "/new",

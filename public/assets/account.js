@@ -45,7 +45,7 @@ function showAuth(mode) {
   };
   words(mode);
   $('#authBack').hidden = !picked;
-  $('#authBack').href = picked ? `/start?occasion=${picked}` : '/';
+  $('#authBack').href = picked ? `/new?occasion=${picked}` : '/';
   $('#authBox').replaceChildren(authForm({ mode, onMode: words, onDone: goOn }));
   showScreen('auth');
 }
@@ -54,16 +54,13 @@ function populateUserUI(user) {
   currentUser = user;
   const initial = (user.name || user.email || 'U').trim()[0].toUpperCase();
   if ($('#acctAvatar')) $('#acctAvatar').textContent = initial;
-  $('#hello').textContent = `hi, ${(user.name || 'organizer').toLowerCase()}`;
+  $('#hello').textContent = `Hi, ${user.name || 'organizer'}`;
   $('#meEmail').textContent = user.email;
-  if ($('#meBioLabel')) {
-    $('#meBioLabel').textContent = 'your gifts';
-  }
   if ($('#rowProfileSub')) {
     $('#rowProfileSub').textContent = user.bio ? `${user.name} · ${user.bio}` : `${user.name} · ${user.email}`;
   }
   if ($('#rowProfileVal')) {
-    $('#rowProfileVal').textContent = (user.name || 'edit').split(' ')[0].toLowerCase();
+    $('#rowProfileVal').textContent = 'Edit';
   }
   const prefs = user.prefs || {};
   if ($('#rowPrefsVal')) {
@@ -77,7 +74,7 @@ function openEditProfileSheet() {
   const nameIn = h('input', { class: 'input', value: currentUser.name || '', maxlength: 60, required: true, placeholder: 'Your name' });
   const bioIn = h('input', { class: 'input', value: currentUser.bio || '', maxlength: 120, placeholder: 'e.g. Voice Gift Organizer · Jakarta' });
   const emailIn = h('input', { class: 'input', value: currentUser.email || '', disabled: true, style: { opacity: '0.55', cursor: 'not-allowed' } });
-  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'save profile changes');
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save profile changes');
 
   const form = h('form', {
     class: 'stack',
@@ -100,15 +97,15 @@ function openEditProfileSheet() {
       }
     }
   },
-    h('div', { class: 'field' }, h('label', {}, 'display name'), nameIn),
-    h('div', { class: 'field' }, h('label', {}, 'role / bio'), bioIn),
-    h('div', { class: 'field' }, h('label', {}, 'verified email'), emailIn),
+    h('div', { class: 'field' }, h('label', {}, 'Display name'), nameIn),
+    h('div', { class: 'field' }, h('label', {}, 'Role / bio'), bioIn),
+    h('div', { class: 'field' }, h('label', {}, 'Verified email'), emailIn),
     saveBtn
   );
 
   openSheet({
-    title: 'personal profile',
-    subtitle: 'update your organizer display name and bio',
+    title: 'Personal profile',
+    subtitle: 'Update your organizer display name and bio',
     content: form
   });
 }
@@ -150,27 +147,27 @@ function openAsrPrefsSheet() {
   chkCorpus.addEventListener('change', save);
 
   openSheet({
-    title: 'speech-to-text settings',
-    subtitle: 'automatic transcription & word-confidence repair',
+    title: 'Speech-to-text settings',
+    subtitle: 'Automatic transcription & word-confidence repair',
     content: h('div', { class: 'settings-group' },
       h('div', { class: 'toggle-row', style: { cursor: 'default' } },
         h('div', { class: 't-info' },
-          h('b', {}, 'default speech language'),
-          h('span', {}, 'primary language for browser + server asr')
+          h('b', {}, 'Default speech language'),
+          h('span', {}, 'Primary language for browser + server ASR')
         ),
         langSel
       ),
       h('label', { class: 'toggle-row' },
         h('div', { class: 't-info' },
-          h('b', {}, 'highlight low-confidence words'),
-          h('span', {}, 'flag uncertain asr words in amber for 1-tap repair')
+          h('b', {}, 'Highlight low-confidence words'),
+          h('span', {}, 'Flag uncertain ASR words in amber for 1-tap repair')
         ),
         h('span', { class: 'switch' }, chkHighlight, h('i'))
       ),
       h('label', { class: 'toggle-row' },
         h('div', { class: 't-info' },
-          h('b', {}, 'include verified captions in corpus'),
-          h('span', {}, 'pair 16 khz wav segments with human-corrected text')
+          h('b', {}, 'Include verified captions in corpus'),
+          h('span', {}, 'Pair 16 kHz WAV segments with human-corrected text')
         ),
         h('span', { class: 'switch' }, chkCorpus, h('i'))
       )
@@ -182,31 +179,31 @@ function openAsrPrefsSheet() {
 function openAsrCorpusSheet() {
   const s = latestStats || {};
   openSheet({
-    title: 'asr dataset & metrics',
-    subtitle: 'verified 16 khz mono wav + word-level alignments',
+    title: 'Asr dataset & metrics',
+    subtitle: 'Verified 16 kHz mono WAV + word-level alignments',
     content: [
       h('div', { class: 'stat-grid' },
         h('div', { class: 'stat-card' },
           h('span', { class: 'stat-val' }, String(s.totalGifts ?? 0)),
-          h('span', { class: 'stat-lbl' }, 'gifts created')
+          h('span', { class: 'stat-lbl' }, 'Gifts created')
         ),
         h('div', { class: 'stat-card' },
           h('span', { class: 'stat-val' }, String(s.totalRecordings ?? 0)),
-          h('span', { class: 'stat-lbl' }, 'real voices collected')
+          h('span', { class: 'stat-lbl' }, 'Real voices collected')
         ),
         h('div', { class: 'stat-card' },
           h('span', { class: 'stat-val' }, String(s.captionsImproved ?? 0)),
-          h('span', { class: 'stat-lbl' }, 'captions corrected')
+          h('span', { class: 'stat-lbl' }, 'Captions corrected')
         ),
         h('div', { class: 'stat-card' },
           h('span', { class: 'stat-val' }, `${s.wordsCorrected ?? 0} · ${Math.round(s.totalAudioSec || 0)}s`),
-          h('span', { class: 'stat-lbl' }, 'asr words fixed · audio')
+          h('span', { class: 'stat-lbl' }, 'Asr words fixed · audio')
         )
       ),
       h('a', {
         class: 'btn',
         href: '/api/account?export=1',
-        download: 'voice-gift-asr-corpus.jsonl'
+        download: 'voice-gift-ASR-corpus.jsonl'
       }, 'download verified corpus (.jsonl)')
     ]
   });
@@ -216,7 +213,7 @@ function openAsrCorpusSheet() {
 function openSecuritySheet() {
   const curIn = h('input', { class: 'input', type: 'password', autocomplete: 'current-password', placeholder: 'Current password', required: true });
   const newIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password', minlength: 8, placeholder: 'At least 8 characters', required: true });
-  const btn = h('button', { type: 'submit', class: 'btn' }, 'update password');
+  const btn = h('button', { type: 'submit', class: 'btn' }, 'Update password');
 
   const form = h('form', {
     class: 'stack',
@@ -238,14 +235,14 @@ function openSecuritySheet() {
       }
     }
   },
-    h('div', { class: 'field' }, h('label', {}, 'current password'), curIn),
-    h('div', { class: 'field' }, h('label', {}, 'new password'), newIn),
+    h('div', { class: 'field' }, h('label', {}, 'Current password'), curIn),
+    h('div', { class: 'field' }, h('label', {}, 'New password'), newIn),
     btn
   );
 
   openSheet({
-    title: 'security & password',
-    subtitle: 'scrypt N=32768 · HttpOnly encrypted session',
+    title: 'Security & password',
+    subtitle: 'Scrypt N=32768 · HttpOnly encrypted session',
     content: form
   });
 }
@@ -264,7 +261,7 @@ function showAccount(user) {
   showScreen('me');
   return loadGifts().then(() => {
     if (keepHash === '#settings') openEditProfileSheet();
-    else if (keepHash === '#asr') openAsrPrefsSheet();
+    else if (keepHash === '#ASR') openAsrPrefsSheet();
   });
 }
 

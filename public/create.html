@@ -17,26 +17,27 @@
   <!-- Step 1 -->
   <section data-screen="who">
     <div class="nav-header">
-      <a class="backbtn" id="whoBack" href="/start" aria-label="Back" data-icon="back"></a>
+      <a class="backbtn small" id="whoBack" href="/" aria-label="Back" data-icon="back"></a>
       <div class="step-dots" style="margin-left:auto"><i class="on"></i><i></i></div>
       <a class="backbtn" href="/account" aria-label="Profile" data-icon="user"></a>
     </div>
 
     <div class="web-grid">
       <div class="web-col">
+        <div class="pick-title">
+          <h1>What do you want to make?</h1>
+          <p id="pickLead"></p>
+        </div>
         <!-- the gift itself, redrawn as soon as you pick another occasion -->
         <div class="who-scene" id="whoPreview"></div>
       </div>
 
       <div class="web-col">
         <form id="whoForm" class="stack" novalidate>
-          <div class="field">
-            <span class="label">occasion</span>
-            <div class="chips" id="occasions">
-              <button type="button" class="chip occ on" data-v="birthday"><span aria-hidden="true">🎂</span>Birthday</button>
-              <button type="button" class="chip occ" data-v="graduation"><span aria-hidden="true">🎓</span>Graduation</button>
-              <button type="button" class="chip occ" data-v="wedding"><span aria-hidden="true">💍</span>Wedding</button>
-            </div>
+          <div class="picks" id="occasions" role="radiogroup" aria-label="What to make">
+            <button type="button" class="pick" role="radio" data-v="birthday"><span class="em">🎂</span><b>Cake</b><small>Birthday</small></button>
+            <button type="button" class="pick" role="radio" data-v="graduation"><span class="em">💐</span><b>Bouquet</b><small>Graduation</small></button>
+            <button type="button" class="pick" role="radio" data-v="wedding"><span class="em">🏮</span><b>Lanterns</b><small>Wedding</small></button>
           </div>
           <div class="field">
             <label for="recipient" id="recipientLabel">Their name</label>
@@ -67,25 +68,20 @@
   <!-- Step 2: Customize Studio -->
   <section data-screen="decorate" hidden>
     <div class="nav-header">
-      <button type="button" class="backbtn" data-back aria-label="Back" data-icon="back"></button>
-      <div class=" grow" style="min-width:0">
-        <b id="decorTitle" style="font-size:15px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></b>
-        <span class="tiny muted" id="decorLead"></span>
-      </div>
-      <div class="step-dots"><i class="done"></i><i class="on"></i></div>
+      <button type="button" class="backbtn small" data-back aria-label="Back" data-icon="back"></button>
+      <div class="step-dots" style="margin-left:auto"><i class="done"></i><i class="on"></i></div>
     </div>
 
     <div class="web-grid">
       <div class="web-col">
         <div class="stage-showcase">
           <div id="decorCake"></div>
-          <div class="shape-nav" aria-live="polite"><button type="button" id="shapePrev" aria-label="Previous kind">‹</button><b id="shapeName"></b><small id="shapeCount"></small><button type="button" id="shapeNext" aria-label="Next kind">›</button></div>
-          <p class="tiny muted center" style="margin:0">Swipe the gift or tap the arrows</p>
         </div>
       </div>
 
       <div class="web-col decor-tools">
         <div class="card stack" id="decorToolsCard" style="gap:14px">
+          <div class="field" style="gap:6px"><span class="label" id="shapeLabel">Cake</span><div class="kinds" id="kinds" role="radiogroup"></div></div>
           <div class="row"><span class="label tool" id="swatchLabel">Style</span><div class="wheel" id="flavors"></div></div>
           <div class="row"><span class="label tool" id="accentLabel">Cream</span><div class="wheel" id="accents"></div></div>
           <div class="row"><span class="label tool" id="patternLabel">Pattern</span><div class="wheel" id="patterns"></div></div>
@@ -105,12 +101,13 @@
           <div class="row" style="justify-content:space-between" id="drawRow">
             <button type="button" class="btn ghost sm" id="sketchToggle">✏️ Draw</button>
             <div class="wheel" id="brushes" hidden></div>
+            <button type="button" class="btn ghost sm" id="undoDraw" hidden disabled>↶ Undo</button>
             <button type="button" class="btn ghost sm" id="clearDraw" hidden>Clear</button>
           </div>
         </div>
         <p class="small err" id="createError" hidden></p>
         <div class="row">
-          <button type="button" class="btn grow" id="createBtn">Create the gift</button>
+          <button type="button" class="btn grow create-btn" id="createBtn">Create the gift</button>
         </div>
       </div>
     </div>

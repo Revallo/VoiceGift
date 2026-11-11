@@ -5,7 +5,7 @@ import { requireLogin } from './auth.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
-$('#editBadge').innerHTML = `${icon.edit(12)} <span>edit</span>`;
+$('#editBadge').innerHTML = `${icon.edit(12)} <span>Edit</span>`;
 
 const slug = slugFromPath();
 let gift, t, count = 0, first = '';
@@ -229,44 +229,11 @@ function refreshTypoStudio() {
   if (!sent) return;
   const cur = $('#captionText').value;
   const typos = sent.asrTypos || [];
-  const studio = $('#typoStudio');
-  const pillsBox = $('#typoPills');
-  const fixAllBtn = $('#fixAllBtn');
-  const resetBtn = $('#resetAsrBtn');
-
-  resetBtn.hidden = cur.trim() === sent.asrText.trim();
-
-  // Render 1-tap typo suggestion pills
-  const remaining = typos.filter((tp) => hasPhrase(cur, tp.wrong));
-  $('#typoTitle').textContent = remaining.length ? `${remaining.length} Flagged` : 'Verified';
-  fixAllBtn.hidden = remaining.length === 0;
-
-  pillsBox.textContent = '';
-  for (const tp of typos) {
-    const isRemaining = hasPhrase(cur, tp.wrong);
-    const isApplied = !isRemaining && hasPhrase(cur, tp.right);
-    const pill = h('button', {
-      type: 'button',
-      class: 'typo-pill' + (isApplied ? ' applied' : ''),
-      title: tp.reason ? `${tp.reason} — click to ${isApplied ? 'undo' : 'fix'}` : 'Click to fix typo',
-      onclick: () => {
-        const val = $('#captionText').value;
-        if (hasPhrase(val, tp.wrong)) {
-          $('#captionText').value = replacePhrase(val, tp.wrong, tp.right);
-          toast(`Fixed: “${tp.wrong}” → “${tp.right}”`);
-        } else if (hasPhrase(val, tp.right)) {
-          $('#captionText').value = replacePhrase(val, tp.right, tp.wrong);
-        }
-        refreshTypoStudio();
-      }
-    },
-      h('span', { class: 'wrong' }, `“${tp.wrong}”`),
-      h('span', { class: 'arrow' }, '→'),
-      h('span', { class: 'right' }, `${isApplied ? '✓ ' : ''}“${tp.right}”`)
-    );
-    pillsBox.append(pill);
-  }
-  studio.hidden = typos.length === 0;
+  $('#resetAsrBtn').hidden = cur.trim() === sent.asrText.trim();
+  // the box grows with the words, so nothing scrolls inside it
+  const ta = $('#captionText');
+  ta.style.height = 'auto';
+  ta.style.height = `${ta.scrollHeight + 2}px`;
 
   // The recipient's view: the words as they will light up. Words the ASR probably got wrong are marked; tap to fix.
   const suspectMap = new Map();
@@ -292,9 +259,8 @@ function refreshTypoStudio() {
   lastCorrections = diffs;
   const diffEl = $('#diffLine');
   diffEl.textContent = '';
-  diffEl.hidden = !diffs.length && !remaining.length;
+  diffEl.hidden = !diffs.length;
   if (diffs.length > 0) {
-    diffEl.classList.remove('idle');
     const summary = diffs.slice(0, 3).map((d) => `“${d.from}” → “${d.to}”`).join(', ');
     const more = diffs.length > 3 ? ` (+${diffs.length - 3})` : '';
     diffEl.append(
@@ -304,28 +270,8 @@ function refreshTypoStudio() {
         h('b', {}, summary + more)
       )
     );
-  } else {
-    diffEl.classList.add('idle');
-    diffEl.append(
-      h('span', {}, 'Tap a red word to fix')
-    );
   }
 }
-
-$('#fixAllBtn').addEventListener('click', () => {
-  if (!sent) return;
-  let val = $('#captionText').value;
-  let countFixed = 0;
-  for (const tp of sent.asrTypos || []) {
-    if (hasPhrase(val, tp.wrong)) {
-      val = replacePhrase(val, tp.wrong, tp.right);
-      countFixed++;
-    }
-  }
-  $('#captionText').value = val;
-  if (countFixed) toast(`Fixed ${countFixed} ASR ${countFixed === 1 ? 'typo' : 'typos'}`);
-  refreshTypoStudio();
-});
 
 $('#resetAsrBtn').addEventListener('click', () => {
   if (!sent) return;

@@ -57,11 +57,17 @@ function renderWhoPreview() {
 // Everything picked in the decorate step, as stored in gift.cake.
 const decor = (name) => ({ flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name, accent: state.accent, pattern: state.pattern, topper: state.topper, age: state.age, backdrop: state.backdrop, music: state.music });
 
+const LEADS = {
+  birthday: 'Each friend’s voice lights one candle on the cake.',
+  graduation: 'Each friend’s voice opens one flower in the bouquet.',
+  wedding: 'Each friend’s voice lights one lantern in the sky.'
+};
 let firstOccasion = true;
 function setOccasion(key) {
   state.occasion = key;
   t = applyTheme(key);
-  $$('#occasions .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === key));
+  $$('#occasions .pick').forEach((c) => { c.classList.toggle('on', c.dataset.v === key); c.setAttribute('aria-checked', String(c.dataset.v === key)); });
+  $('#pickLead').textContent = LEADS[key];
   $('#recipientLabel').textContent = t.recipientLabel;
   $('#recipient').placeholder = t.recipientPlaceholder;
   const nb = $('#nextBtn');
@@ -80,7 +86,7 @@ function setOccasion(key) {
   renderWhoPreview();
   buildDecorate();
 }
-$$('#occasions .chip').forEach((c) => c.addEventListener('click', () => { if (c.dataset.v !== state.occasion) setOccasion(c.dataset.v); }));
+$$('#occasions .pick').forEach((c) => c.addEventListener('click', () => { if (c.dataset.v !== state.occasion) setOccasion(c.dataset.v); }));
 $('#recipient').addEventListener('input', () => {
   const rec = $('#recipient').value.trim() || sampleName();
   if (whoScene) {
@@ -114,7 +120,7 @@ $('#openDeliverySheetBtn').addEventListener('click', () => {
       h('span', { class: 'tiny muted' }, 'You send this PIN with their link. Without it, the gift won’t open.')),
     errEl,
     h('button', { type: 'submit', class: 'btn' }, 'Save'));
-  openSheet({ title: 'PIN for the gift', subtitle: 'they type these 4 digits to open the gift', content: form });
+  openSheet({ title: 'PIN for the gift', subtitle: 'They type these 4 digits to open the gift', content: form });
   setTimeout(() => pinIn.focus(), 60);
 });
 
@@ -134,14 +140,14 @@ $('#whoForm').addEventListener('submit', (e) => {
   scene.setName($('#cakeName').value);
   scene.setNames?.(recipient);
   go('decorate');
+  requestAnimationFrame(renderShapes); // the strip has a width now, so the picked kind can be centred
 });
 
 // ---------- step 2 ----------
 let scene;
 function buildDecorate() {
   const d = t.decorate;
-  $('#decorTitle').textContent = d.title;
-  $('#decorLead').textContent = d.lead;
+  $('#shapeLabel').textContent = d.shapeLabel;
   $('#swatchLabel').textContent = d.swatchLabel;
   $('#accentLabel').textContent = d.accentLabel;
   $('#patternLabel').textContent = d.patternLabel;
@@ -167,6 +173,7 @@ function buildDecorate() {
     let drawing = false;
     hit.addEventListener('pointerdown', (e) => {
       hit.setPointerCapture?.(e.pointerId);
+      remember();
       const p = scene.toStage(e);
       scene.addDot(p.x, p.y, state.brush, false);
       drawing = true;
@@ -182,6 +189,8 @@ function buildDecorate() {
     hit.addEventListener('pointercancel', end);
   }
   state.sel = -1;
+  undoStack.length = 0;
+  $('#undoDraw').disabled = true;
   scene.stage.classList.add('editing');
   scene.stickers.onRender = wireStickers;
   renderShapes();
@@ -231,13 +240,11 @@ function stepShape(dir) {
   const keys = Object.keys(t.decorate.shapes);
   state.shape = keys[(keys.indexOf(state.shape) + dir + keys.length) % keys.length];
   scene.setShape(state.shape);
-  scene.wrap.animate([{ transform: `translateX(${dir * 70}px)`, opacity: 0.25 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
+  scene.wrap.animate([{ transform: `translateX(${Math.sign(dir) * 70}px)`, opacity: 0.25 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
   renderShapes();
   renderWhoPreview();
 }
 let swipeFrom = null;
-$('#shapePrev').addEventListener('click', () => stepShape(-1));
-$('#shapeNext').addEventListener('click', () => stepShape(1));
 $('#decorCake').addEventListener('pointerdown', (e) => {
   swipeFrom = state.sketch || e.target.closest('.sticker') ? null : e.clientX;
   if (swipeFrom !== null) $('#decorCake').setPointerCapture?.(e.pointerId); // the swipe counts even if it ends outside the gift
@@ -302,16 +309,39 @@ $('#musicPlay').addEventListener('click', () => {
 $('#sketchToggle').addEventListener('click', () => {
   state.sketch = !state.sketch;
   $('#sketchToggle').textContent = state.sketch ? '✓ Done' : '✏️ Draw';
-  $('#brushes').hidden = $('#clearDraw').hidden = !state.sketch;
+  $('#brushes').hidden = $('#clearDraw').hidden = $('#undoDraw').hidden = !state.sketch;
   if (state.hit) state.hit.hidden = !state.sketch;
 });
 
-// The kind of cake / bouquet / lanterns. Changing it keeps the drawing and the stickers.
+// The kinds of cake / bouquet / lanterns: a sideways strip of small live pictures. Tapping one (or swiping
+// the big gift) picks it; the strip is never rebuilt on a pick, so it stays where you scrolled it.
+// Changing the kind keeps the drawing and the stickers.
+let kindsFor = '', kindsTimer = 0;
+function buildKinds() {
+  const box = $('#kinds');
+  kindsFor = `${state.occasion}/${state.flavor}`;
+  box.textContent = '';
+  for (const [key, s] of Object.entries(t.decorate.shapes)) {
+    const mini = h('div', { class: 'mini' });
+    box.append(h('button', { type: 'button', class: 'kind', role: 'radio', 'data-v': key, onclick: () => pickShape(key) }, mini, h('span', {}, s.label)));
+    const sc = createScene(mini, { occasion: state.occasion, recipient: '', cake: { flavor: state.flavor, shape: key, name: '' } });
+    sc.setCandles(6);
+    sc.lightAll();
+  }
+}
 function renderShapes() {
+  if (kindsFor !== `${state.occasion}/${state.flavor}`) buildKinds();
+  for (const b of $$('#kinds .kind')) {
+    const on = b.dataset.v === state.shape;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-checked', String(on));
+    if (on) { const box = $('#kinds'); box.scrollTo({ left: b.offsetLeft - (box.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' }); }
+  }
+}
+function pickShape(key) {
+  if (key === state.shape) return;
   const keys = Object.keys(t.decorate.shapes);
-  $('#shapeName').textContent = t.decorate.shapes[state.shape].label;
-  $('#shapeName').dataset.v = state.shape;
-  $('#shapeCount').textContent = `${keys.indexOf(state.shape) + 1} / ${keys.length}`;
+  stepShape(keys.indexOf(key) - keys.indexOf(state.shape));
 }
 
 // The letters of the name: each choice is written in its own font.
@@ -322,7 +352,7 @@ function renderFonts() {
 
 function renderSwatches() {
   const d = t.decorate;
-  wheel($('#flavors'), Object.entries(d.swatches), state.flavor, (k, f) => swatch(f.label, d.swatch(f)), (k) => { state.flavor = k; scene.setFlavor(k); });
+  wheel($('#flavors'), Object.entries(d.swatches), state.flavor, (k, f) => swatch(f.label, d.swatch(f)), (k) => { state.flavor = k; scene.setFlavor(k); clearTimeout(kindsTimer); kindsTimer = setTimeout(renderShapes, 400); });
   wheel($('#brushes'), BRUSHES.map((c, i) => [String(i), c]), String(state.brush), (k, c) => swatch(`Brush color ${Number(k) + 1}`, { background: c }, 'brush'), (k) => { state.brush = Number(k); });
 }
 
@@ -429,7 +459,19 @@ function wireStickers() {
 }
 
 $('#cakeName').addEventListener('input', (e) => { state.nameTouched = true; scene.setName(e.target.value); });
-$('#clearDraw').addEventListener('click', () => scene.setDots([]));
+$('#clearDraw').addEventListener('click', () => { if (scene.getDots().length) { remember(); scene.setDots([]); } });
+
+// Undo: every stroke (and Clear) keeps the drawing as it was before, so it can come back.
+const undoStack = [];
+function remember() {
+  undoStack.push(scene.getDots());
+  if (undoStack.length > 40) undoStack.shift();
+  $('#undoDraw').disabled = false;
+}
+$('#undoDraw').addEventListener('click', () => {
+  if (undoStack.length) scene.setDots(undoStack.pop());
+  $('#undoDraw').disabled = !undoStack.length;
+});
 
 // Create the gift (then its page opens), or save the changes when editing from the gift's page.
 $('#createBtn').addEventListener('click', async () => {

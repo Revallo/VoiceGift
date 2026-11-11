@@ -26,9 +26,8 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/start`, "Open your gift" (paste the link), "My gifts" |
-| `/start` | `start.html` | pick cake / bouquet / lanterns, then its kind (sideways strip of live minis) and flavor; page takes that occasion's colors → "Yes, make the …" → `/new?occasion=…&shape=…&flavor=…` |
-| `/new` | `create.html` + `assets/create.js` | organizer: occasion/who (the gift is always drawn on top; 4-digit PIN) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
+| `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/new`, "Open your gift" (paste the link), "My gifts" |
+| `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: create an account / log in → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content), 3. send it (recipient link + PIN) |
@@ -43,7 +42,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - Scenes: `cake.js` (birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
-- Decorate step: nothing is picked by tapping. Swipe the big gift to change its kind; every strip (`wheel()` in `create.js`) picks whatever stops in the middle; stickers are dragged up onto the gift. The gift stays on screen and only the tools card scrolls; a music plays as soon as it's picked.
+- Decorate step: the kind is picked from a sideways strip of live minis (tap one, or swipe the big gift); the strip is never rebuilt on a pick, so it stays where it was scrolled; every strip (`wheel()` in `create.js`) picks whatever stops in the middle; stickers are dragged up onto the gift. The gift stays on screen and only the tools card scrolls; a music plays as soon as it's picked. Drawing has Undo (each stroke and Clear). On the cake, the age and the figures are pushed into the cream (cut at the bottom, a thin cream rim), among the candles.
 - `gift.cake` also has `accent` (cream / ribbon / string), `pattern`, `topper` + `age`, `backdrop` (`BACKDROPS` in `stage.js`) and `music` (`TUNES` in `music.js`); each scene exports its own `ACCENTS`, `PATTERNS`, `TOPPERS`. On the cake the name is an SVG text along the tier's curve (`curvedName()` in `cake.js`).
 - `gift.cake {flavor, shape, font, name, dots, stickers}` is reused by every scene: `font` is a key of `NAME_FONTS` in `stage.js`
   (script/serif/hand/round, loaded from Google Fonts by the stage; cake and bouquet names shrink to fit); `flavor` is a key of that scene's

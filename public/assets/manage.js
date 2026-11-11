@@ -10,26 +10,6 @@ $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 const slug = slugFromPath();
 const key = new URLSearchParams(location.search).get('k') || '';
 let scene;
-let previewAudio = null, previewBtn = null, previewId = '';
-
-function togglePreview(id, btn) {
-  if (previewAudio && previewId === id && !previewAudio.paused) {
-    previewAudio.pause();
-    return;
-  }
-  if (previewAudio) {
-    previewAudio.pause();
-    if (previewBtn) { previewBtn.classList.remove('playing'); previewBtn.innerHTML = icon.play(11); }
-  }
-  previewId = id;
-  previewBtn = btn;
-  previewAudio = new Audio(`/api/audio?slug=${encodeURIComponent(slug)}&id=${encodeURIComponent(id)}&k=${encodeURIComponent(key)}`);
-  btn.classList.add('playing');
-  btn.innerHTML = icon.pause(11);
-  previewAudio.onpause = () => { btn.classList.remove('playing'); btn.innerHTML = icon.play(11); };
-  previewAudio.onended = () => { btn.classList.remove('playing'); btn.innerHTML = icon.play(11); };
-  previewAudio.play().catch(() => { btn.classList.remove('playing'); btn.innerHTML = icon.play(11); });
-}
 
 let current = null; // { gift, openKey }
 
@@ -74,17 +54,13 @@ async function load() {
   list.textContent = '';
   if (!messages.length) list.append(h('p', { class: 'small muted', style: { margin: 0 } }, `Nobody yet. Send the link above to your ${friends}.`));
   messages.forEach((m, i) => {
-    // Only demo voices can be played here: friends' voices are for the recipient, not even for the organizer.
-    const playBtn = m.demo && h('button', { type: 'button', class: 'play-mini', 'aria-label': `Play ${m.sender}'s voice`, html: icon.play(11), onclick: () => togglePreview(m.id, playBtn) });
     list.append(h('div', { class: 'who-row' },
       h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
       h('div', { class: 'grow', style: { minWidth: 0 } },
         h('b', {}, m.sender),
-        h('div', { class: 'tiny muted' }, `${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)}s${m.demo ? ' · demo' : m.sent ? '' : ' · not sent yet'}`)),
-      playBtn,
+        h('div', { class: 'tiny muted' }, `${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)}s${m.sent ? '' : ' · not sent yet'}`)),
       h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(12), onclick: () => remove(m) })));
   });
-  $('#addDemo').hidden = messages.filter((m) => m.demo).length >= 12; // stays if a run was cut short
 
   // 3. send it to the recipient: their link + the PIN
   const pin = gift.verifyPin || '1234';
@@ -94,9 +70,6 @@ async function load() {
   $('#pinVal').textContent = pin;
   $('#recipientBox').replaceChildren(linkbox(url), shareRow(`${t.waRecipient(name)}
 PIN: ${pin}`, url));
-  $('#openReveal').href = url;
-  $('#openReveal').textContent = `Preview what ${name} sees`;
-  $('#openReveal').title = `Your preview only plays demo voices. Your friends’ voices are only for ${name}.`;
   showScreen('main');
 }
 
@@ -147,21 +120,6 @@ $('#deleteGift').addEventListener('click', async () => {
     location.href = (await me()) ? '/account' : '/';
   } catch (e) {
     toast(e.message);
-  }
-});
-$('#addDemo').addEventListener('click', async () => {
-  const b = $('#addDemo');
-  b.disabled = true;
-  b.textContent = 'Adding 12 voices…';
-  try {
-    await api('/api/manage', { method: 'POST', json: { slug, key, action: 'add-demo' } });
-    toast('12 demo voices added');
-    await load();
-  } catch (e) {
-    toast(e.message);
-  } finally {
-    b.disabled = false;
-    b.textContent = '+ Add 12 demo voices';
   }
 });
 load();

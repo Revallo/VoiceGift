@@ -1,6 +1,6 @@
 // Shared helpers for every page.
 
-export const PALETTE = ['#E3C58E', '#D9959F', '#8FB8A0', '#8FAACB', '#B79BC9', '#D29A78', '#EFE3CC', '#79ADA5', '#C9B26B', '#C58FA8', '#9DB07E', '#A7A3D1'];
+export const PALETTE = ['#FF6B6B', '#F9A01B', '#2EC4B6', '#5B8DEF', '#A66CFF', '#FF7FB0', '#43AA8B', '#F9844A', '#3DA5D9', '#7B61FF', '#EF476F', '#8AC926'];
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -134,55 +134,9 @@ export function waShare(text) {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
+// Wide screens get the two-column layout.
 export function initViewportSwitcher() {
-  if (typeof document === 'undefined' || document.querySelector('.proto-switcher')) return;
-  const urlView = new URLSearchParams(location.search).get('view');
-  let mode = urlView === 'desktop' || urlView === 'mobile'
-    ? urlView
-    : (localStorage.getItem('vg-viewport') || 'mobile');
-
-  const dimBadge = h('span', { class: 'proto-dim' });
-  const btnMobile = h('button', {
-    type: 'button',
-    class: 'proto-btn',
-    'aria-label': 'Switch to Mobile view',
-    onclick: () => apply('mobile')
-  }, h('span', { html: icon.smartphone(14) }), h('span', {}, 'mobile'));
-
-  const btnDesktop = h('button', {
-    type: 'button',
-    class: 'proto-btn',
-    'aria-label': 'Switch to Desktop view',
-    onclick: () => apply('desktop')
-  }, h('span', { html: icon.monitor(14) }), h('span', {}, 'desktop'));
-
-  const bar = h('div', { class: 'proto-switcher', role: 'region', 'aria-label': 'Prototype viewport switcher' },
-    h('div', { class: 'proto-meta' },
-      h('span', { class: 'proto-dot' }),
-      h('span', { class: 'proto-title' }, 'prototype'),
-      dimBadge
-    ),
-    h('div', { class: 'proto-seg' }, btnMobile, btnDesktop)
-  );
-
-  function apply(next) {
-    mode = next === 'desktop' ? 'desktop' : 'mobile';
-    document.body.dataset.viewport = mode;
-    try { localStorage.setItem('vg-viewport', mode); } catch {}
-    btnMobile.classList.toggle('on', mode === 'mobile');
-    btnDesktop.classList.toggle('on', mode === 'desktop');
-    dimBadge.textContent = mode === 'mobile' ? '412px · ios/android' : '960px · web studio';
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 320);
-  }
-
-  const appEl = document.getElementById('app');
-  if (appEl && appEl.parentNode) {
-    appEl.parentNode.insertBefore(bar, appEl);
-  } else {
-    document.body.prepend(bar);
-  }
-  apply(mode);
+  document.body.dataset.viewport = matchMedia('(min-width: 760px)').matches ? 'desktop' : 'mobile';
 }
 
 export function addStars(root, n = 24, maxTop = 70) {

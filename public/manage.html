@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1B1024">
+<meta name="theme-color" content="#FFF6EC">
 <meta name="robots" content="noindex">
 <title>Gift dashboard</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
   <section data-screen="main" hidden>
     <!-- One page for the organizer: the gift, invite friends, who recorded, send it to the recipient -->
     <div class="nav-header">
-      <a class="backbtn" href="/account" aria-label="My gifts" data-icon="back"></a>
+      <a class="backbtn" href="/account" aria-label="Back to my gifts" data-icon="back"></a>
       <b class="grow dash-title" id="title">Gift</b>
       <a class="backbtn" href="/account" aria-label="Profile" data-icon="user"></a>
     </div>
@@ -45,7 +45,6 @@
           <button type="button" class="linkbtn small" id="refresh">↻ Refresh</button>
         </div>
         <div class="who-list" id="list"></div>
-        <button class="btn ghost sm" id="addDemo" style="align-self:flex-start">+ Add 12 demo voices</button>
       </div>
 
       <div class="card stack dash-step">
@@ -58,7 +57,6 @@
           <span class="nav-chev" data-icon="chevronRight"></span>
         </button>
         <div id="recipientBox"></div>
-        <a class="btn" id="openReveal" target="_blank" rel="noopener"></a>
       </div>
 
       <button class="btn ghost sm" id="deleteGift" style="align-self:center;color:var(--coral)">Delete this gift</button>

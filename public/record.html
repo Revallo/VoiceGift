@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1B1024">
+<meta name="theme-color" content="#FFF6EC">
 <title>Record a voice message</title>
 <meta property="og:title" content="Record a voice message">
 <meta property="og:description" content="15 seconds, straight from your browser. It stays a secret until it opens.">
@@ -11,7 +11,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body class="calm">
@@ -28,6 +28,7 @@
 
   <section data-screen="invite" hidden>
     <div class="calm-page">
+      <a class="backbtn" href="/" aria-label="Back to home" data-icon="back"></a>
       <p class="calm-from" id="invitedBy"></p>
       <h1 class="calm-title" id="inviteTitle"></h1>
 
@@ -58,7 +59,7 @@
 
     <div class="spacer"></div>
     <div class="timer" id="timer">0:00</div>
-    <p class="center small muted" style="margin:-4px 0 0">max 0:15 · 16 khz voice</p>
+    <p class="center small muted" style="margin:-4px 0 0">up to 15 seconds</p>
     <div class="meter" id="meter" aria-hidden="true"></div>
     <div class="spacer"></div>
     <button type="button" class="recbtn" id="stopBtn" aria-label="Stop recording"></button>
@@ -66,6 +67,7 @@
   </section>
 
   <section data-screen="mic" hidden>
+    <a class="backbtn" href="/" aria-label="Back to home" data-icon="back"></a>
     <div class="head">
       <div class="eyebrow">microphone</div>
       <h1>Microphone needed</h1>

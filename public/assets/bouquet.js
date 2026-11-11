@@ -1,6 +1,6 @@
 // Graduation: the bouquet. Drawn in a fixed 390×370 stage; every voice is a flower that blooms.
 import { colorFor } from './common.js';
-import { div, seeded, createStage, createDrawing, createStickers, itemStates, nameText } from './stage.js';
+import { div, seeded, createStage, createDrawing, createStickers, createTopper, itemStates, nameText } from './stage.js';
 
 // Wrap colours. The keys are the same as the cake flavours so the API stays the same.
 export const WRAPS = {
@@ -20,6 +20,31 @@ export const WRAPS = {
   coral: { label: 'Coral', back: '#FF6F61', back2: '#FF9488', front: '#FFF0EC', front2: '#F8DCD5', text: '#8E2A20', bow: '#8E2A20' }
 };
 export const SWATCH = (w) => ({ background: w.front, boxShadow: `inset 0 -12px 0 ${w.back}` });
+
+// The ribbon (gift.cake.accent), the flower petals (gift.cake.pattern), what's tucked in on top (gift.cake.topper).
+export const ACCENTS = {
+  auto: { label: 'Same as wrap', color: 'conic-gradient(#FF6B6B, #FFB627, #4ECDC4, #A66CFF, #FF6B6B)' },
+  red: { label: 'Red', color: '#E23D4B' },
+  pink: { label: 'Pink', color: '#FF7FB0' },
+  gold: { label: 'Gold', color: '#E7B32E' },
+  blue: { label: 'Blue', color: '#3C7BEA' },
+  green: { label: 'Green', color: '#35A56B' },
+  white: { label: 'White', color: '#FFFFFF' }
+};
+export const PATTERNS = {
+  round: { label: 'Round petals' },
+  tulip: { label: 'Tulips' },
+  rose: { label: 'Roses' },
+  daisy: { label: 'Daisies' }
+};
+export const TOPPERS = {
+  none: { label: 'None' },
+  card: { label: 'Love note', emoji: '💌' },
+  cap: { label: 'Grad cap', emoji: '🎓' },
+  bear: { label: 'Teddy', emoji: '🧸' },
+  star: { label: 'Star', emoji: '🌟' },
+  medal: { label: 'Medal', emoji: '🥇' }
+};
 
 const W = 390, H = 370;
 
@@ -105,7 +130,7 @@ function buildShape(shape, B, F) {
 }
 
 export function createBouquet(host, opts = {}) {
-  const { wrap, stage, glow, body, layer, toStage, size } = createStage(host, W, H, 'bouquet');
+  const { wrap, stage, glow, body, layer, toStage, size, setBackdrop } = createStage(host, W, H, 'bouquet');
   glow.style.top = '-130px';
   const P = (parent, style) => { const d = div('p', style); parent.append(d); return d; };
 
@@ -144,7 +169,9 @@ export function createBouquet(host, opts = {}) {
 
   let parts = {};
   let flavor = opts.flavor;
+  let accent = opts.accent;
   let nameSize = null;
+  const setTopper = createTopper(front, { x: 195, base: 50, size: 50 });
   function setShape(shape) {
     backEl.textContent = frontEl.textContent = '';
     parts = {};
@@ -162,19 +189,24 @@ export function createBouquet(host, opts = {}) {
   const stickers = createStickers(stage);
 
   const api = {
-    wrap, stage, candles: flowers, toStage, size, stickers, ...st,
+    wrap, stage, candles: flowers, toStage, size, stickers, ...st, setBackdrop,
     drawArea: { left: 60, top: 170, width: 270, height: 186 },
     setDots: drawing.setDots, getDots: drawing.getDots, addDot: drawing.addDot,
     setFlavor(f) {
       flavor = f;
       const c = WRAPS[f] || WRAPS.strawberry;
       const paint = (role, bg) => (parts[role] || []).forEach((d) => (d.style.background = bg));
-      for (const role of ['back', 'back2', 'front', 'front2', 'bow']) paint(role, c[role]);
+      const ribbon = ACCENTS[accent]?.color?.startsWith('#') ? ACCENTS[accent].color : c.bow;
+      for (const role of ['back', 'back2', 'front', 'front2']) paint(role, c[role]);
+      paint('bow', ribbon);
       (parts.handle || []).forEach((d) => (d.style.borderColor = c.back));
       paint('weave', `repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 16px), repeating-linear-gradient(90deg, ${c.front} 0 14px, ${c.front2} 14px 22px)`);
       nameEl.style.color = c.text;
     },
     setShape,
+    setAccent(k) { accent = k; api.setFlavor(flavor); },
+    setPattern(k) { stage.dataset.petal = PATTERNS[k] ? k : 'round'; },
+    setTopper(k) { setTopper(TOPPERS[k]); },
     setName(t) {
       nameEl.textContent = t || '';
       nameFit.setSize(nameSize || 30); // shrinks to fit
@@ -219,6 +251,9 @@ export function createBouquet(host, opts = {}) {
   nameFit.setFont(opts.font);
   setShape(opts.shape);
   api.setDots(opts.dots);
+  api.setPattern(opts.pattern);
+  api.setTopper(opts.topper);
+  setBackdrop(opts.backdrop);
   stickers.set(opts.stickers);
   return api;
 }

@@ -1,6 +1,6 @@
 // Wedding: lanterns on strings of fairy lights. Drawn in a fixed 390×330 stage; every voice is a lantern.
 import { colorFor } from './common.js';
-import { div, seeded, createStage, createStickers, itemStates, nameText } from './stage.js';
+import { div, seeded, createStage, createStickers, createTopper, itemStates, nameText } from './stage.js';
 
 // Fairy-light colours. The keys are the same as the cake flavours so the API stays the same.
 export const LIGHTS = {
@@ -25,6 +25,29 @@ export const SHAPES = {
   heart: { label: 'Hearts' }
 };
 export const SWATCH = (l) => ({ background: l.light, boxShadow: `0 0 12px ${l.light}` });
+
+// The string (gift.cake.accent), the lantern motif (gift.cake.pattern), the mark above the words (gift.cake.topper).
+export const ACCENTS = {
+  auto: { label: 'Soft', color: 'conic-gradient(#FFE6A3, #FFFFFF, #FFE6A3)' },
+  gold: { label: 'Gold', color: '#E7B32E' },
+  white: { label: 'White', color: '#FFFFFF' },
+  rose: { label: 'Rose', color: '#FF9BB8' },
+  leaf: { label: 'Leaf', color: '#6FCF97' }
+};
+export const PATTERNS = {
+  plain: { label: 'Plain' },
+  stripes: { label: 'Stripes' },
+  dots: { label: 'Dots' },
+  band: { label: 'Gold band' }
+};
+export const TOPPERS = {
+  none: { label: 'None' },
+  initials: { label: 'Initials', initials: true },
+  ring: { label: 'Rings', emoji: '💍' },
+  dove: { label: 'Doves', emoji: '🕊️' },
+  heart: { label: 'Heart', emoji: '💖' },
+  swan: { label: 'Swan', emoji: '🦢' }
+};
 
 const W = 390, H = 330;
 const MAX = 36;
@@ -52,7 +75,7 @@ export function lanternSpots(n) {
 }
 
 export function createLanterns(host, opts = {}) {
-  const { wrap, stage, glow, body, layer, toStage, size } = createStage(host, W, H, 'lanterns');
+  const { wrap, stage, glow, body, layer, toStage, size, setBackdrop } = createStage(host, W, H, 'lanterns');
   glow.style.top = '-120px';
   const sky = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   sky.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -66,12 +89,16 @@ export function createLanterns(host, opts = {}) {
   body.append(lines);
 
   let lightColor = LIGHTS.vanilla.light;
+  let topper, coupleNames = opts.names;
+  const placeTopper = createTopper(body, { x: 195, base: 240, size: 28 });
+  const initials = () => String(coupleNames || '').split(/\s*(?:&|and|\+)\s*/i).map((n) => n.trim()[0]?.toUpperCase()).filter(Boolean).join(' & ');
+  const drawTopper = () => { const t = TOPPERS[topper]; placeTopper(t, t?.initials ? initials() : ''); };
   // Strings with small fairy lights. Redrawn when the number of strings changes.
   function drawStrings(total) {
     const rows = strings(total);
     let svg = '';
     for (const base of rows) {
-      svg += `<path d="M -10 ${base} Q 195 ${base + 44} 400 ${base}" fill="none" stroke="rgba(255,235,190,0.28)" stroke-width="1.2"/>`;
+      svg += `<path d="M -10 ${base} Q 195 ${base + 44} 400 ${base}" fill="none" stroke="var(--string, rgba(255,235,190,0.28))" stroke-width="1.4"/>`;
       for (let x = 2; x < W; x += 11) svg += `<circle class="fairy" cx="${x}" cy="${sagY(base, x).toFixed(1)}" r="1.7"/>`;
     }
     sky.innerHTML = svg;
@@ -89,7 +116,7 @@ export function createLanterns(host, opts = {}) {
   };
 
   const api = {
-    wrap, stage, candles: lanterns, toStage, size, stickers, ...st,
+    wrap, stage, candles: lanterns, toStage, size, stickers, ...st, setBackdrop,
     drawArea: null, // no drawing on the lanterns
     setDots() {}, getDots() { return []; }, addDot() {},
     setFlavor(f) {
@@ -98,12 +125,15 @@ export function createLanterns(host, opts = {}) {
       words.style.color = lightColor;
     },
     setShape(shape) { stage.dataset.shape = SHAPES[shape] ? shape : 'classic'; },
+    setAccent(k) { const c = ACCENTS[k]?.color; if (c?.startsWith('#')) sky.style.setProperty('--string', c); else sky.style.removeProperty('--string'); },
+    setPattern(k) { stage.dataset.motif = PATTERNS[k] ? k : 'plain'; },
+    setTopper(k) { topper = k; drawTopper(); },
     setName(t) {
       words.textContent = t || '';
       wordsFont.setSize((t || '').length > 22 ? 25 : 29);
     },
     setFont: wordsFont.setFont,
-    setNames(t) { names.textContent = t || ''; },
+    setNames(t) { names.textContent = t || ''; coupleNames = t; drawTopper(); },
     // Lay out `n` lanterns (+ empty hooks up to `spots`). Returns the lantern elements in message order.
     setCandles(n, { spots = n, colors, onTap } = {}) {
       layer.textContent = '';
@@ -124,7 +154,7 @@ export function createLanterns(host, opts = {}) {
         btn.style.setProperty('--drift', `${p.drift}px`);
         btn.append(
           div('l-line', { height: `${p.len}px` }),
-          div('l-body', { top: `${p.len}px`, left: '6px', width: `${p.w}px`, height: `${p.h}px` }),
+          Object.assign(div('l-body', { top: `${p.len}px`, left: '6px', width: `${p.w}px`, height: `${p.h}px` }), { innerHTML: '<i class="l-motif"></i>' }),
           div('l-tassel', { top: `${p.len + p.h + 2}px` })
         );
         if (onTap && !isSpot) btn.addEventListener('click', () => onTap(p.i));
@@ -150,6 +180,10 @@ export function createLanterns(host, opts = {}) {
   api.setNames(opts.names);
   drawStrings(12);
   st.updateGlow();
+  api.setAccent(opts.accent);
+  api.setPattern(opts.pattern);
+  api.setTopper(opts.topper);
+  setBackdrop(opts.backdrop);
   stickers.set(opts.stickers);
   return api;
 }

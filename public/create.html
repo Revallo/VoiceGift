@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1B1024">
+<meta name="theme-color" content="#FFF6EC">
 <title>Create a voice gift</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -17,7 +17,7 @@
   <!-- Step 1 -->
   <section data-screen="who">
     <div class="nav-header">
-      <a class="backbtn" href="/account" aria-label="My gifts" data-icon="back"></a>
+      <a class="backbtn" id="whoBack" href="/start" aria-label="Back" data-icon="back"></a>
       <div class="step-dots" style="margin-left:auto"><i class="on"></i><i></i></div>
       <a class="backbtn" href="/account" aria-label="Profile" data-icon="user"></a>
     </div>
@@ -79,41 +79,38 @@
       <div class="web-col">
         <div class="stage-showcase">
           <div id="decorCake" style="width:100%"></div>
+          <div class="shape-nav" aria-live="polite"><span aria-hidden="true">‹</span><b id="shapeName"></b><small id="shapeCount"></small><span aria-hidden="true">›</span></div>
+          <p class="tiny muted center" style="margin:0">Swipe the gift to change it</p>
         </div>
       </div>
 
       <div class="web-col">
         <div class="card stack" id="decorToolsCard" style="gap:14px">
+          <div class="row"><span class="label tool" id="swatchLabel">Style</span><div class="wheel" id="flavors"></div></div>
+          <div class="row"><span class="label tool" id="accentLabel">Cream</span><div class="wheel" id="accents"></div></div>
+          <div class="row"><span class="label tool" id="patternLabel">Pattern</span><div class="wheel" id="patterns"></div></div>
+          <div class="row"><span class="label tool" id="topperLabel">Topper</span><div class="wheel" id="toppers"></div></div>
+          <div class="row" id="ageRow" hidden><label class="label tool" for="ageRange">Age</label><input type="range" id="ageRange" min="1" max="100" class="grow"><b id="ageVal" style="width:30px;text-align:right"></b></div>
+          <div class="row"><span class="label tool">Backdrop</span><div class="wheel" id="backdrops"></div></div>
+          <div class="row"><span class="label tool">Music</span><div class="wheel" id="tunes"></div><button type="button" class="seen-play" id="musicPlay" aria-label="Listen to this music"></button></div>
+          <div class="field" style="gap:6px"><span class="label">Stickers · drag one onto the gift</span><div class="slider" id="stickerTray"></div></div>
           <div class="row">
-            <span class="label" style="width:58px;flex-shrink:0" id="shapeLabel">Shape</span>
-            <div class="slider" id="shapes"></div>
+            <label class="label tool" for="cakeName" id="nameLabel">Title</label>
+            <input class="input" id="cakeName" maxlength="14" style="min-height:44px;flex:1;min-width:0">
           </div>
           <div class="row">
-            <span class="label" style="width:58px;flex-shrink:0" id="swatchLabel">Style</span>
-            <div class="slider" id="flavors"></div>
-          </div>
-          <div class="row">
-            <span class="label" style="width:58px;flex-shrink:0">Accents</span>
-            <div class="slider" id="stickerTray"></div>
-          </div>
-          <div class="row">
-            <label class="label" for="cakeName" style="width:58px;flex-shrink:0" id="nameLabel">Title</label>
-            <input class="input" id="cakeName" maxlength="14" style="min-height:44px">
-          </div>
-          <div class="row">
-            <span class="label" style="width:58px;flex-shrink:0">Font</span>
-            <div class="slider" id="fonts"></div>
+            <span class="label tool">Font</span>
+            <div class="wheel" id="fonts"></div>
           </div>
           <div class="row" style="justify-content:space-between" id="drawRow">
-            <span class="label" style="width:58px;flex-shrink:0">Sketch</span>
-            <div class="slider" id="brushes"></div>
-            <button type="button" class="btn ghost sm" id="clearDraw">Clear</button>
+            <button type="button" class="btn ghost sm" id="sketchToggle">✏️ Draw</button>
+            <div class="wheel" id="brushes" hidden></div>
+            <button type="button" class="btn ghost sm" id="clearDraw" hidden>Clear</button>
           </div>
         </div>
         <p class="small err" id="createError" hidden></p>
         <div class="spacer"></div>
         <div class="row">
-          <button type="button" class="btn ghost" data-back style="width:auto;padding:0 18px">Back</button>
           <button type="button" class="btn grow" id="createBtn">Create the gift</button>
         </div>
       </div>

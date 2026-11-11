@@ -1,5 +1,6 @@
 import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet, swipeButton } from './common.js';
-import { BRUSHES, NAME_FONTS, DEFAULT_FONT } from './stage.js';
+import { BRUSHES, NAME_FONTS, DEFAULT_FONT, BACKDROPS } from './stage.js';
+import { TUNES, playTune } from './music.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { me, forgetMe, authForm } from './auth.js';
 
@@ -17,8 +18,11 @@ const state = {
   nameTouched: false,
   sel: -1,
   created: null,
-  verifyPin: '1234'
+  verifyPin: String(1000 + Math.floor(Math.random() * 9000)), // the organizer can change it
+  accent: '', pattern: '', topper: 'none', age: 21, backdrop: 'party', music: 'none',
+  sketch: false
 };
+$('#deliverySummaryVal').textContent = state.verifyPin;
 let t = theme(state.occasion);
 const MAX_STICKERS = 30;
 
@@ -44,11 +48,14 @@ function renderWhoPreview() {
   whoScene = createScene(host, {
     occasion: state.occasion,
     recipient: rec,
-    cake: { flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name: t.decorate.name(rec) }
+    cake: decor(t.decorate.name(rec))
   });
   whoScene.setCandles(8);
   whoScene.lightAll();
 }
+
+// Everything picked in the decorate step, as stored in gift.cake.
+const decor = (name) => ({ flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name, accent: state.accent, pattern: state.pattern, topper: state.topper, age: state.age, backdrop: state.backdrop, music: state.music });
 
 let firstOccasion = true;
 function setOccasion(key) {
@@ -66,6 +73,9 @@ function setOccasion(key) {
   firstOccasion = false;
   state.flavor = asked && t.decorate.swatches[asked] ? asked : t.decorate.flavor;
   if (!t.decorate.shapes[state.shape]) state.shape = 'classic';
+  state.accent = Object.keys(t.decorate.accents)[0];
+  state.pattern = Object.keys(t.decorate.patterns)[0];
+  state.topper = 'none';
   state.nameTouched = false;
   renderWhoPreview();
   buildDecorate();
@@ -132,7 +142,9 @@ function buildDecorate() {
   $('#decorTitle').textContent = d.title;
   $('#decorLead').textContent = d.lead;
   $('#swatchLabel').textContent = d.swatchLabel;
-  $('#shapeLabel').textContent = d.shapeLabel;
+  $('#accentLabel').textContent = d.accentLabel;
+  $('#patternLabel').textContent = d.patternLabel;
+  $('#topperLabel').textContent = d.topperLabel;
   $('#nameLabel').textContent = d.nameLabel;
   $('#drawRow').hidden = !d.draw;
   const name = $('#cakeName');
@@ -143,12 +155,13 @@ function buildDecorate() {
 
   const host = $('#decorCake');
   host.textContent = '';
-  scene = createScene(host, { occasion: state.occasion, recipient: $('#recipient').value.trim(), cake: { flavor: state.flavor, shape: state.shape, font: state.font, name: name.value } });
+  scene = createScene(host, { occasion: state.occasion, recipient: $('#recipient').value.trim(), cake: decor(name.value) });
   scene.setCandles(0, { spots: 12 });
   scene.lightAll();
   if (d.draw && scene.drawArea) {
     const a = scene.drawArea;
-    const hit = h('div', { class: 'draw-hit', 'aria-label': 'Draw with your finger', style: { left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px` } });
+    const hit = h('div', { class: 'draw-hit', 'aria-label': 'Draw with your finger', style: { left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px` }, hidden: !state.sketch });
+    state.hit = hit;
     scene.stage.insertBefore(hit, scene.stickers.layer); // stickers stay on top, so they can still be dragged
     let drawing = false;
     hit.addEventListener('pointerdown', (e) => {
@@ -173,42 +186,120 @@ function buildDecorate() {
   renderShapes();
   renderFonts();
   renderSwatches();
+  renderDetails();
   renderStickerTray();
 }
 
+// A sideways strip that you slide: whichever item stops in the middle is the chosen one.
+function wheel(box, entries, current, draw, onPick) {
+  box._stop?.();
+  const items = entries.map(([key, v]) => { const el = draw(key, v); el.dataset.v = key; return el; });
+  box.replaceChildren(...items);
+  let chosen = current, settled = false, raf = 0;
+  const mark = () => items.forEach((el) => el.classList.toggle('on', el.dataset.v === chosen));
+  const center = (el, behavior) => box.scrollTo({ left: el.offsetLeft - (box.clientWidth - el.offsetWidth) / 2, behavior });
+  // The strip has no width while its screen is hidden, so it centres itself whenever it gets one.
+  const ro = new ResizeObserver(() => {
+    if (!box.clientWidth) return;
+    center(items.find((el) => el.dataset.v === chosen) || items[0], 'auto');
+    settled = true;
+  });
+  ro.observe(box);
+  const onScroll = () => {
+    if (!settled) return;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const mid = box.scrollLeft + box.clientWidth / 2;
+      const near = items.reduce((a, b) => (Math.abs(b.offsetLeft + b.offsetWidth / 2 - mid) < Math.abs(a.offsetLeft + a.offsetWidth / 2 - mid) ? b : a));
+      if (near.dataset.v === chosen) return;
+      chosen = near.dataset.v;
+      mark();
+      onPick(chosen);
+    });
+  };
+  box.addEventListener('scroll', onScroll, { passive: true });
+  items.forEach((el) => el.addEventListener('click', () => center(el, 'smooth')));
+  box._stop = () => { ro.disconnect(); box.removeEventListener('scroll', onScroll); };
+  mark();
+}
+const chip = (label, style) => h('button', { type: 'button', class: 'chip', style }, label);
+const swatch = (label, style, cls = '') => h('button', { type: 'button', class: `swatch ${cls}`, 'aria-label': label, title: label }, h('i', { style }));
+
+// Swipe the big gift sideways to change its kind. Stickers and drawing keep their own gestures.
+function stepShape(dir) {
+  const keys = Object.keys(t.decorate.shapes);
+  state.shape = keys[(keys.indexOf(state.shape) + dir + keys.length) % keys.length];
+  scene.setShape(state.shape);
+  scene.wrap.animate([{ transform: `translateX(${dir * 70}px)`, opacity: 0.25 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
+  renderShapes();
+  renderWhoPreview();
+}
+let swipeFrom = null;
+$('#decorCake').addEventListener('pointerdown', (e) => { swipeFrom = state.sketch || e.target.closest('.sticker') ? null : e.clientX; });
+$('#decorCake').addEventListener('pointerup', (e) => {
+  if (swipeFrom === null) return;
+  const dx = e.clientX - swipeFrom;
+  swipeFrom = null;
+  if (Math.abs(dx) > 36) stepShape(dx < 0 ? 1 : -1);
+});
+$('#decorCake').addEventListener('pointercancel', () => (swipeFrom = null));
+
+function renderDetails() {
+  const d = t.decorate;
+  wheel($('#accents'), Object.entries(d.accents), state.accent, (k, v) => swatch(v.label, { background: v.color }), (k) => { state.accent = k; scene.setAccent(k); });
+  wheel($('#patterns'), Object.entries(d.patterns), state.pattern, (k, v) => chip(v.label), (k) => { state.pattern = k; scene.setPattern(k); });
+  wheel($('#toppers'), Object.entries(d.toppers), state.topper, (k, v) => chip(v.emoji ? `${v.emoji} ${v.label}` : v.label), (k) => { state.topper = k; scene.setTopper(k, state.age); showAge(); });
+  wheel($('#backdrops'), Object.entries(BACKDROPS), state.backdrop, (k, v) => chip(v.label), (k) => { state.backdrop = k; scene.setBackdrop(k); });
+  wheel($('#tunes'), Object.entries(TUNES), state.music, (k, v) => chip(v.label), (k) => { state.music = k; if (stopTune) startTune(); });
+  $('#ageRange').value = state.age;
+  showAge();
+}
+function showAge() {
+  $('#ageRow').hidden = !t.decorate.toppers[state.topper]?.age;
+  $('#ageVal').textContent = state.age;
+}
+$('#ageRange').addEventListener('input', (e) => { state.age = Number(e.target.value); showAge(); scene.setTopper(state.topper, state.age); });
+
+// Listen to the music before choosing it. Stops by itself after one round.
+let tuneAc = null, stopTune = null;
+function startTune() {
+  stopTune?.();
+  stopTune = playTune(tuneAc, state.music);
+  $('#musicPlay').innerHTML = icon.pause(16);
+}
+$('#musicPlay').innerHTML = icon.play(16);
+$('#musicPlay').addEventListener('click', () => {
+  if (stopTune) { stopTune(); stopTune = null; $('#musicPlay').innerHTML = icon.play(16); return; }
+  tuneAc ||= new (window.AudioContext || window.webkitAudioContext)();
+  tuneAc.resume().catch(() => {});
+  startTune();
+});
+
+$('#sketchToggle').addEventListener('click', () => {
+  state.sketch = !state.sketch;
+  $('#sketchToggle').textContent = state.sketch ? '✓ Done' : '✏️ Draw';
+  $('#brushes').hidden = $('#clearDraw').hidden = !state.sketch;
+  if (state.hit) state.hit.hidden = !state.sketch;
+});
+
 // The kind of cake / bouquet / lanterns. Changing it keeps the drawing and the stickers.
 function renderShapes() {
-  const box = $('#shapes');
-  box.textContent = '';
-  for (const [key, s] of Object.entries(t.decorate.shapes)) {
-    box.append(h('button', { type: 'button', class: 'chip' + (key === state.shape ? ' on' : ''), 'data-v': key, onclick: () => { state.shape = key; scene.setShape(key); renderShapes(); renderWhoPreview(); } }, s.label));
-  }
+  const keys = Object.keys(t.decorate.shapes);
+  $('#shapeName').textContent = t.decorate.shapes[state.shape].label;
+  $('#shapeName').dataset.v = state.shape;
+  $('#shapeCount').textContent = `${keys.indexOf(state.shape) + 1} / ${keys.length}`;
 }
 
 // The letters of the name: each choice is written in its own font.
 function renderFonts() {
-  const box = $('#fonts');
-  box.textContent = '';
-  for (const [key, f] of Object.entries(NAME_FONTS)) {
-    box.append(h('button', { type: 'button', class: 'chip font-chip' + (key === state.font ? ' on' : ''), 'data-v': key, style: f.css,
-      onclick: () => { state.font = key; scene.setFont(key); renderFonts(); renderWhoPreview(); } }, f.label));
-  }
+  wheel($('#fonts'), Object.entries(NAME_FONTS), state.font, (k, f) => { const b = chip(f.label, f.css); b.classList.add('font-chip'); return b; },
+    (k) => { state.font = k; scene.setFont(k); renderWhoPreview(); });
 }
 
 function renderSwatches() {
   const d = t.decorate;
-  const fl = $('#flavors');
-  fl.textContent = '';
-  for (const [key, f] of Object.entries(d.swatches)) {
-    fl.append(h('button', { type: 'button', class: 'swatch' + (key === state.flavor ? ' on' : ''), 'aria-label': f.label, title: f.label, onclick: () => { state.flavor = key; scene.setFlavor(key); renderSwatches(); } },
-      h('i', { style: d.swatch(f) })));
-  }
-  const br = $('#brushes');
-  br.textContent = '';
-  BRUSHES.forEach((c, i) => {
-    br.append(h('button', { type: 'button', class: 'swatch brush' + (i === state.brush ? ' on' : ''), 'aria-label': `Brush color ${i + 1}`, onclick: () => { state.brush = i; renderSwatches(); } },
-      h('i', { style: { background: c } })));
-  });
+  wheel($('#flavors'), Object.entries(d.swatches), state.flavor, (k, f) => swatch(f.label, d.swatch(f)), (k) => { state.flavor = k; scene.setFlavor(k); });
+  wheel($('#brushes'), BRUSHES.map((c, i) => [String(i), c]), String(state.brush), (k, c) => swatch(`Brush color ${Number(k) + 1}`, { background: c }, 'brush'), (k) => { state.brush = Number(k); });
 }
 
 // ---------- stickers ----------
@@ -216,17 +307,51 @@ function renderStickerTray() {
   const tray = $('#stickerTray');
   tray.textContent = '';
   for (const emoji of t.decorate.stickers) {
-    tray.append(h('button', { type: 'button', class: 'sticker-btn', 'aria-label': `Add sticker ${emoji}`, onclick: () => addSticker(emoji) }, emoji));
+    const btn = h('button', { type: 'button', class: 'sticker-btn', 'aria-label': `Add sticker ${emoji}`, onclick: () => { if (!dragged) addSticker(emoji); dragged = false; } }, emoji);
+    dragFromTray(btn, emoji);
+    tray.append(btn);
   }
 }
 
-function addSticker(emoji) {
+// Slide a sticker up out of the tray and drop it on the gift, exactly where it should go.
+let dragged = false;
+function dragFromTray(btn, emoji) {
+  let start = null, ghost = null;
+  const place = (e) => { ghost.style.left = `${e.clientX}px`; ghost.style.top = `${e.clientY}px`; };
+  btn.addEventListener('pointerdown', (e) => { start = { x: e.clientX, y: e.clientY }; dragged = false; });
+  btn.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    const up = start.y - e.clientY;
+    if (!ghost && up > 12 && up > Math.abs(e.clientX - start.x)) {
+      btn.setPointerCapture?.(e.pointerId);
+      ghost = h('div', { class: 'sticker-ghost' }, emoji);
+      document.body.append(ghost);
+      dragged = true;
+    }
+    if (ghost) place(e);
+  });
+  const end = (e) => {
+    start = null;
+    if (!ghost) return;
+    ghost.remove();
+    ghost = null;
+    const r = scene.stage.getBoundingClientRect();
+    if (e.type === 'pointerup' && e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom) {
+      const p = scene.toStage(e);
+      addSticker(emoji, p.x, p.y);
+    }
+  };
+  btn.addEventListener('pointerup', end);
+  btn.addEventListener('pointercancel', end);
+}
+
+function addSticker(emoji, atX, atY) {
   const list = scene.stickers.get();
   if (list.length >= MAX_STICKERS) return toast(`Up to ${MAX_STICKERS} stickers`);
   // Land near the middle of the scene, a little apart from the last one.
   const { w, h: hgt } = scene.size;
-  const x = Math.round(w / 2 + (Math.random() - 0.5) * 160);
-  const y = Math.round(hgt * 0.6 + (Math.random() - 0.5) * 90);
+  const x = Math.round(atX ?? w / 2 + (Math.random() - 0.5) * 160);
+  const y = Math.round(atY ?? hgt * 0.6 + (Math.random() - 0.5) * 90);
   list.push([emoji, x, y]);
   state.sel = list.length - 1;
   scene.stickers.set(list);
@@ -298,7 +423,7 @@ $('#createBtn').addEventListener('click', async () => {
       organizer: $('#organizer').value.trim(),
       occasion: state.occasion,
       verifyPin: state.verifyPin,
-      cake: { flavor: state.flavor, shape: state.shape, font: state.font, name: $('#cakeName').value.trim(), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
+      cake: { ...decor($('#cakeName').value.trim()), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
     };
     if (state.created) {
       await api('/api/gifts', { method: 'PATCH', json: { ...body, slug: state.created.slug, key: state.created.manageKey } });
@@ -344,14 +469,17 @@ const editKey = params.get('k');
 if (editSlug && editKey) {
   api(`/api/manage?slug=${encodeURIComponent(editSlug)}&key=${encodeURIComponent(editKey)}`).then(({ gift }) => {
     state.created = { slug: gift.slug, manageKey: editKey };
+    $('#whoBack').href = `/m/${gift.slug}?k=${editKey}`;
     setOccasion(gift.occasion);
     $('#recipient').value = gift.recipient || '';
     $('#organizer').value = gift.organizer || '';
     if (/^\d{4}$/.test(gift.verifyPin || '')) { state.verifyPin = gift.verifyPin; $('#deliverySummaryVal').textContent = gift.verifyPin; }
     if (gift.cake) {
-      if (gift.cake.flavor) { state.flavor = gift.cake.flavor; scene.setFlavor(gift.cake.flavor); renderSwatches(); }
-      if (gift.cake.shape) { state.shape = gift.cake.shape; scene.setShape(gift.cake.shape); renderShapes(); renderWhoPreview(); }
-      if (NAME_FONTS[gift.cake.font]) { state.font = gift.cake.font; scene.setFont(gift.cake.font); renderFonts(); renderWhoPreview(); }
+      for (const k of ['flavor', 'shape', 'font', 'accent', 'pattern', 'topper', 'backdrop', 'music']) if (gift.cake[k]) state[k] = gift.cake[k];
+      if (gift.cake.age) state.age = gift.cake.age;
+      if (!NAME_FONTS[state.font]) state.font = DEFAULT_FONT;
+      buildDecorate();
+      renderWhoPreview();
       if (gift.cake.name) { state.nameTouched = true; $('#cakeName').value = gift.cake.name; scene.setName(gift.cake.name); }
       if (Array.isArray(gift.cake.dots)) scene.setDots(gift.cake.dots);
       if (Array.isArray(gift.cake.stickers)) scene.stickers.set(gift.cake.stickers);

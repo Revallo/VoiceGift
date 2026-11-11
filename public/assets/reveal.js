@@ -1,12 +1,14 @@
 // The recipient's page: the scene lights up (candles / flowers / lanterns) → listen to each voice
 // → the finale (blow out the candles / throw your cap / release the lanterns) → keepsake.
-import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, openSheet, closeSheet } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
+import { playTune } from './music.js';
 
 addStars($('#app'), 26, 55);
 if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
 if ($('#verLogo')) $('#verLogo').innerHTML = icon.lock(16);
+$$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const slug = slugFromPath();
 const searchParams = new URLSearchParams(location.search);
@@ -15,7 +17,7 @@ let verifiedAnswer = '';
 const NOTES = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 const el = { eyebrow: $('#eyebrow'), title: $('#title'), sub: $('#sub'), panel: $('#panel'), bottom: $('#bottom') };
 
-let gift, t, first = '', messages = [], scene, ac, preview = false, thanked = false;
+let gift, t, first = '', messages = [], scene, ac, thanked = false, stopMusic = () => {};
 let phase = 'loading';
 const buffers = [];
 const bufferJobs = [];
@@ -52,7 +54,6 @@ async function unlockAndShow(pin = '') {
   if (pin) q.set('pin', pin);
   const data = await api(`/api/reveal?${q.toString()}`);
   gift = data.gift;
-  preview = data.preview;
   thanked = data.thanked;
   t = applyTheme(gift.occasion);
   first = t.callName(gift.recipient);
@@ -155,8 +156,7 @@ $('#verifyForm')?.addEventListener('submit', async (ev) => {
 function showEmpty() {
   phase = 'empty';
   scene.setCandles(0, { spots: 12 });
-  if (preview) header('Preview · only you see this', 'Their voices are for ' + first, `Only ${first} can hear what your friends recorded. To see how it works, add demo voices on your dashboard.`);
-  else header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
+  header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
   setPanel(null);
   setBottom(btn('Check again', { ghost: true, onclick: () => unlockAndShow(verifiedAnswer).catch((e) => toast(e.message)) }));
 }
@@ -167,7 +167,7 @@ function showReady() {
   scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), onTap: (i) => phase === 'cake' && play(i, false) });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
-  header(preview ? 'Preview · only you see this' : t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
+  header(t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
   const pile = h('div', { class: 'facepile' });
   for (let i = 0; i < Math.min(messages.length, 12); i++) pile.append(h('i', {}, '?'));
   setPanel(h('div', { class: 'row' }, pile));
@@ -212,6 +212,7 @@ function loadBuffer(i) {
 // ---------- the scene lights up, one voice at a time ----------
 function startLighting() {
   phase = 'lighting';
+  stopMusic = playTune(ac, gift.cake?.music);
   scene.setDim(0);
   const n = messages.length;
   const eyebrow = t.eyebrow(first);
@@ -242,6 +243,7 @@ function startLighting() {
 
 // ---------- listen ----------
 function enterScene() {
+  stopMusic();
   phase = 'cake';
   scene.lightAll();
   scene.setBend(0);
@@ -515,6 +517,7 @@ function finishFinale() {
   phase = 'done';
   [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.07));
   [1046.5, 1318.51, 1567.98, 2093].forEach((f, k) => tone(ac, f, 0.3 + k * 0.09, 0.9, 0.04));
+  playTune(ac, gift.cake?.music, { loop: false });
   confetti();
   if (t.key === 'wedding') skyLanterns();
   showKeepsake();
@@ -528,7 +531,7 @@ function showKeepsake() {
   header(t.eyebrow(first), t.greeting(first), t.keepSub(n));
   const card = h('div', { class: 'panel row', style: { borderStyle: 'dashed', borderColor: 'rgba(246,185,59,0.5)' } },
     h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.gift(18) }),
-    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, preview ? 'Your preview, with demo voices only. It still opens fresh for them.' : 'Kept here. Open this link again any time.')));
+    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, 'Kept here. Open this link again any time.')));
   setPanel(card);
   const nameChip = (m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender);
   const names = h('div', { class: 'names' }, messages.slice(0, NAMES_SHOWN).map(nameChip));
@@ -545,7 +548,7 @@ function showKeepsake() {
   const again = btn('Listen again', { ghost: true, icon: icon.redo(15), onclick: () => { scene.reset(); enterScene(); } });
   const thank = btn(thanked ? 'Thank-you sent' : 'Thank everyone', { icon: icon.send(16), onclick: () => openThanks(thank) });
   thank.disabled = thanked;
-  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), ...(preview ? [] : [thank]), again);
+  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), thank, again);
 }
 
 function openThanks(thankBtn) {

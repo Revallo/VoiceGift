@@ -119,7 +119,7 @@ function openAsrPrefsSheet() {
   const prefs = currentUser.prefs || {};
   const langSel = h('select', {
     class: 'input',
-    style: { width: 'auto', minWidth: '152px', minHeight: '40px', padding: '0 12px', borderRadius: '12px', fontSize: '13px', background: '#1B1024' }
+    style: { width: 'auto', minWidth: '152px', minHeight: '40px', padding: '0 12px', borderRadius: '12px', fontSize: '13px', background: 'var(--panel)' }
   },
     h('option', { value: 'id-ID', selected: (prefs.asrLang || 'id-ID') === 'id-ID' }, 'id-ID · Indonesia'),
     h('option', { value: 'en-US', selected: prefs.asrLang === 'en-US' }, 'en-US · English')
@@ -272,29 +272,13 @@ async function loadGifts() {
   const list = $('#gifts');
   list.replaceChildren(h('div', { class: 'item small muted' }, 'Loading…'));
   try {
-    const { gifts = [], receivedGifts = [], stats = {} } = await api('/api/account?gifts=1');
+    const { gifts = [], stats = {} } = await api('/api/account?gifts=1');
     latestStats = stats;
     if ($('#acctHeroVal')) {
       $('#acctHeroVal').textContent = `${stats.totalRecordings ?? 0} voices`;
     }
     if ($('#rowCorpusVal')) {
       $('#rowCorpusVal').textContent = `${stats.totalRecordings ?? 0} voices · .jsonl`;
-    }
-    const recSec = $('#receivedSection');
-    const recList = $('#receivedList');
-    if (recSec && recList) {
-      recSec.hidden = !receivedGifts.length;
-      recList.replaceChildren(...receivedGifts.map((rg) =>
-        h('a', { class: 'nav-row', href: `/r/${rg.slug}?k=${rg.openKey}` },
-          h('span', { class: 'nav-ico', html: icon.gift(16) }),
-          h('div', { class: 'nav-info' },
-            h('b', {}, `for ${rg.recipient}`),
-            h('small', {}, `from ${rg.organizer} · ${rg.occasion} · ${rg.count || 0} voices`)
-          ),
-          h('span', { class: 'nav-val', style: { color: '#FFD166', fontWeight: '600' } }, 'open'),
-          h('span', { class: 'nav-chev', html: icon.chevronRight(16) })
-        )
-      ));
     }
     list.replaceChildren(...(gifts.length
       ? gifts.map((g) => giftItem(g, () => { toast('Gift deleted'); loadGifts(); }))
@@ -314,14 +298,7 @@ $('#logout').addEventListener('click', async () => {
   showAuth('login');
 });
 
-const wantDemo = new URLSearchParams(location.search).get('demo') === '1';
 me().then(async (user) => {
-  if (!user && wantDemo) {
-    try {
-      const res = await api('/api/account', { method: 'POST', json: { action: 'login', email: 'sari@voicegift.id', password: 'password123' } });
-      return showAccount(res.user);
-    } catch {}
-  }
   if (!user) return showAuth(location.pathname === '/signup' ? 'signup' : 'login');
   return location.pathname === '/account' ? showAccount(user) : goOn();
 });

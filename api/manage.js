@@ -1,37 +1,10 @@
 // GET  /api/manage?slug=…&key=…             → organizer dashboard: who has recorded (not what they said) + the recipient's key
-// POST /api/manage { slug, key, action }    → action "add-demo": 12 demo voices (TTS, public/demo/) so the gift can be shown
+// POST /api/manage { slug, key, action }    → action "update-delivery": change the PIN
 //                                            action "delete" + id: removes that message and its audio from storage
 //                                            action "delete-gift": removes the whole gift from storage
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { route, send, query, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { loadGift, saveGift, publicGift, loadMessages, createMessage, findMessage, deleteMessage, deleteGift, wavDuration, CONSENT_VERSION } from '../lib/gifts.js';
-import { transcribe, asrProvider, evenWords } from '../lib/asr.js';
+import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
+import { loadGift, saveGift, publicGift, loadMessages, findMessage, deleteMessage, deleteGift } from '../lib/gifts.js';
 import { forgetGift } from '../lib/accounts.js';
-
-const DEMO_DIR = path.join(process.cwd(), 'public', 'demo');
-
-// Adds the demo voices for the gift's occasion, as if 12 people had recorded and fixed their caption.
-// Stored with demo: true so the ASR export leaves them out.
-async function addDemo(gift) {
-  const have = new Set((await loadMessages(gift.slug)).filter((m) => m.demo).map((m) => m.sender));
-  const all = JSON.parse(await fs.readFile(path.join(DEMO_DIR, 'voices.json'), 'utf8'));
-  const occasion = all[gift.occasion] ? gift.occasion : 'birthday';
-  // Only the ones not there yet (so pressing again finishes an interrupted run), all at once: one by one
-  // takes longer than a serverless function may run.
-  const todo = all[occasion].map((p, i) => ({ ...p, i })).filter((p) => !have.has(p.name));
-  if (!todo.length) throw new HttpError(400, 'The demo voices are already added.');
-  await Promise.all(todo.map(async (p) => {
-    const wav = await fs.readFile(path.join(DEMO_DIR, `${occasion}-${String(p.i + 1).padStart(2, '0')}.wav`));
-    const durationSec = +wavDuration(wav).toFixed(2);
-    const asr = await transcribe({ wav, durationSec, recipient: gift.recipient, occasion: gift.occasion }).catch(() => ({ text: '', words: [] }));
-    await createMessage(gift.slug, {
-      sender: p.name, durationSec, asrProvider, asrText: asr.text, asrWords: asr.words,
-      finalText: p.text, finalWords: evenWords(p.text, durationSec), edited: p.text !== asr.text,
-      consent: true, consentVersion: CONSENT_VERSION, demo: true, sentAt: new Date().toISOString()
-    }, wav);
-  }));
-}
 
 async function authed(slug, key) {
   const gift = await loadGift(slug);
@@ -50,7 +23,6 @@ export default route({
       sent: Boolean(m.finalText),
       edited: Boolean(m.edited),
       fixes: Array.isArray(m.corrections) && m.corrections.length ? m.corrections.length : (m.edited ? 1 : 0),
-      demo: Boolean(m.demo),
       durationSec: m.durationSec
     }));
     send(res, 200, {
@@ -66,8 +38,7 @@ export default route({
   async POST(req, res) {
     const b = await jsonBody(req);
     const gift = await authed(b.slug, b.key);
-    if (b.action === 'add-demo') await addDemo(gift);
-    else if (b.action === 'update-delivery') {
+    if (b.action === 'update-delivery') {
       const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 4);
       gift.verifyPin = rawPin.length === 4 ? rawPin : '1234';
       gift.updatedAt = new Date().toISOString();

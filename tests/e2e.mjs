@@ -1,5 +1,5 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
-// (create → decorate → sign up → friends sign up + record → dashboard → 12 demo voices → recipient link → log in → PIN →
+// (create → decorate → sign up → friends sign up + record → dashboard → recipient link → log in → PIN →
 // reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop).
 // One-time setup:  npm i --no-save playwright && npx playwright install chromium
 // Run:             npm run dev   (in another terminal)
@@ -16,6 +16,7 @@ const BASE = process.env.BASE || 'http://localhost:3000';
 const OUT = fileURLToPath(new URL('./screenshots/', import.meta.url));
 fs.mkdirSync(OUT, { recursive: true });
 const errors = [];
+const pins = {}; // recipient link → PIN (each gift gets its own)
 const RUN = Date.now().toString(36); // a new organizer account per run
 const PASSWORD = 'candles at midnight';
 const emailFor = (occasion) => `sari.${occasion}.${RUN}@example.com`;
@@ -68,7 +69,7 @@ async function signUpHere(p, name, email) {
 const CASES = {
   birthday: { recipient: 'Dimas', swatch: 9, shape: 'tower', friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
   graduation: { recipient: 'Nadia', swatch: 6, shape: 'basket', friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
-  wedding: { recipient: 'Rina & Bayu', swatch: 6, shape: 'heart', extraGuests: 12, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
+  wedding: { recipient: 'Rina & Bayu', swatch: 6, shape: 'heart', extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };
 
 async function runGift(occasion, c) {
@@ -94,16 +95,29 @@ async function runGift(occasion, c) {
   await shot(p, P('01-create-who'));
   await p.click('#nextBtn');
   await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
-  await p.click(`#shapes [data-v="${c.shape}"]`); // the kind of cake / bouquet / lanterns
-  await p.click(`#flavors .swatch >> nth=${c.swatch}`);
+  // the kind of cake / bouquet / lanterns: swipe the big gift until it's the right one
+  const sb0 = await (await p.$('#decorCake')).boundingBox();
+  for (let i = 0; i < 14 && (await p.getAttribute('#shapeName', 'data-v')) !== c.shape; i++) {
+    await p.mouse.move(sb0.x + sb0.width * 0.8, sb0.y + 60);
+    await p.mouse.down();
+    await p.mouse.move(sb0.x + sb0.width * 0.2, sb0.y + 60, { steps: 4 });
+    await p.mouse.up();
+  }
+  // a strip picks whatever stops in the middle
+  const flavor = await p.$eval(`#flavors > :nth-child(${c.swatch + 1})`, (el) => { el.parentElement.scrollLeft = el.offsetLeft - (el.parentElement.clientWidth - el.offsetWidth) / 2; return el.dataset.v; });
+  await p.waitForTimeout(400);
+  if ((await p.getAttribute('#flavors .on', 'data-v')) !== flavor) errors.push(`${occasion}: sliding the strip did not pick ${flavor}`);
   const hit = await p.$('.draw-hit');
   if (hit) {
+    await p.click('#sketchToggle');
     await p.click('[aria-label="Brush color 2"]');
+    await p.waitForTimeout(400);
     const b = await hit.boundingBox();
     await p.mouse.move(b.x + 40, b.y + b.height - 40);
     await p.mouse.down();
     for (let i = 0; i < 20; i++) await p.mouse.move(b.x + 40 + i * 3, b.y + b.height - 40 - Math.sin(i / 3) * 12);
     await p.mouse.up();
+    await p.click('#sketchToggle');
   }
   // stickers: add two, drag one, remove one with ×
   await p.click('#stickerTray .sticker-btn >> nth=0');
@@ -184,18 +198,17 @@ async function runGift(occasion, c) {
   const m = await page();
   await m.goto(BASE + manageHref);
   await m.waitForSelector('[data-screen="main"]:not([hidden])');
+  await m.waitForFunction(() => document.querySelector('#recipientBox .linkbox'));
   await m.waitForTimeout(500);
   await shot(m, P('09-dashboard'), true);
   // the dashboard needs the organizer's key
   const noKey = await fetch(`${BASE}/api/manage?slug=${slug}`);
   const badKey = await fetch(`${BASE}/api/manage?slug=${slug}&key=guess`);
   if (noKey.status !== 403 || badKey.status !== 403) errors.push(`dashboard without key: ${noKey.status}/${badKey.status}`);
-  const before = c.friends.length + (c.extraGuests || 0);
-  await m.click('#addDemo');
-  await m.waitForFunction((n) => document.querySelectorAll('#list .who-row').length === n, before + 12, { timeout: 30000 });
-  await m.waitForSelector('#addDemo', { state: 'hidden' });
-  await shot(m, P('10-dashboard-demo'), true);
-  const recipientLink = await m.getAttribute('#openReveal', 'href');
+  if (await m.$('#addDemo, #openReveal')) errors.push('the dashboard still has demo voices or a preview');
+  const recipientLink = 'http://' + (await m.textContent('#recipientBox .linkbox span'));
+  const pin = await m.textContent('#pinVal');
+  pins[recipientLink] = pin;
   await m.context().close();
 
   // recipient reveal (the link from the dashboard)
@@ -206,17 +219,17 @@ async function runGift(occasion, c) {
   await shot(r, P('10b-pin'));
   // without the PIN, even with the recipient's key: no voices
   const k = new URL(recipientLink).searchParams.get('k');
-  for (const u of [`/api/reveal?slug=${slug}&k=${k}`, `/api/reveal?slug=${slug}&k=${k}&pin=0000`, `/api/reveal?slug=${slug}&pin=1234`]) {
+  for (const u of [`/api/reveal?slug=${slug}&k=${k}`, `/api/reveal?slug=${slug}&k=${k}&pin=${pin === '0000' ? '1111' : '0000'}`, `/api/reveal?slug=${slug}&pin=${pin}`]) {
     const st = (await r.context().request.get(BASE + u)).status();
     if (st !== 403) errors.push(`${u}: ${st}, expected 403`);
   }
-  const logoutSt = (await fetch(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=1234`)).status;
+  const logoutSt = (await fetch(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=${pin}`)).status;
   if (logoutSt !== 401) errors.push(`right key + PIN while logged out: ${logoutSt}, expected 401`);
   if (await r.$('#verifySubmitBtn')) errors.push('the PIN page still has a button');
   await r.click('.pin-digit >> nth=0');
-  await r.keyboard.type('0000'); // wrong: the boxes empty again
+  await r.keyboard.type(pin === '0000' ? '1111' : '0000'); // wrong: the boxes empty again
   await r.waitForSelector('#verifyError:not([hidden])');
-  await r.keyboard.type('1234'); // the 4th digit opens it
+  await r.keyboard.type(pin); // the 4th digit opens it
   await r.waitForSelector('text=Open your gift');
   const shown = (await r.$$('.stickers .sticker')).length;
   if (shown !== 3) errors.push(`${occasion}: recipient sees ${shown} stickers, expected 3`);
@@ -267,7 +280,7 @@ async function runGift(occasion, c) {
   await r.click('text=Listen again');
   await r.waitForTimeout(800);
   await shot(r, P('18-listen-again'));
-  const rev = await (await r.context().request.get(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=1234`)).json();
+  const rev = await (await r.context().request.get(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=${pin}`)).json();
   if (!rev.thanked) errors.push(`${occasion}: the thank-you was not saved`);
   await r.context().close();
 
@@ -311,6 +324,8 @@ async function accountFlow(occasion, recipientLink) {
   await a.fill('#acPass', PASSWORD);
   await a.click('#authBox button[type="submit"]');
   await a.waitForSelector('[data-screen="home"]:not([hidden])'); // logged in → the home page: make a gift / open your gift
+  const own = (await a.context().request.get(`${BASE}/api/reveal?slug=${slug}&k=${new URL(recipientLink).searchParams.get('k')}&pin=${pins[recipientLink]}`)).status();
+  if (own !== 403) errors.push(`the organizer opening their own gift: ${own}, expected 403`);
   await shot(a, 'account-01b-home');
   await a.click('#openToggle');
   await a.fill('#openLink', recipientLink);
@@ -372,7 +387,7 @@ await d.goto(Object.values(slugs)[0]);
 await signUpHere(d, 'Dimas', `desktop.${RUN}@example.com`);
 await d.waitForSelector('[data-screen="verify"]:not([hidden])');
 await d.click('.pin-digit >> nth=0');
-await d.keyboard.type('1234');
+await d.keyboard.type(pins[Object.values(slugs)[0]]);
 await d.waitForSelector('text=Open your gift');
 await shot(d, 'desktop-ready');
 

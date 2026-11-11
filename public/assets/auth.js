@@ -75,30 +75,6 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
       h('button', { type: 'button', class: 'auth-tab' + (mode === 'signup' ? ' on' : ''), onclick: () => switchMode('signup') }, 'create account')
     );
 
-    const demoBtn = h('button', {
-      type: 'button',
-      class: 'btn ghost sm',
-      style: { width: '100%', minHeight: '42px', borderStyle: 'dashed' },
-      onclick: async () => {
-        demoBtn.disabled = true;
-        demoBtn.textContent = 'Signing in as Sari…';
-        try {
-          const { user } = await api('/api/account', {
-            method: 'POST',
-            json: { action: 'login', email: 'sari@voicegift.id', password: 'password123' }
-          });
-          current = Promise.resolve(user);
-          await claimDeviceGifts();
-          await onDone(user);
-        } catch (e) {
-          fail(e.message);
-        } finally {
-          demoBtn.disabled = false;
-          demoBtn.textContent = '1-tap demo login · Sari (organizer)';
-        }
-      }
-    }, '1-tap demo login · Sari (organizer)');
-
     const other = h('button', { type: 'button', class: 'linkbtn', onclick: () => switchMode(mode === 'signup' ? 'login' : 'signup') }, m.other);
 
     const form = h('form', { class: 'card stack', style: { gap: '14px' }, novalidate: true },
@@ -108,7 +84,6 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
       h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'password'), show), passIn),
       err,
       submit,
-      /[?&]demo=1/.test(location.search) && demoBtn, // only for demos: /login?demo=1
       h('p', { class: 'small muted center', style: { margin: 0 } }, `${m.ask} `, other));
 
     form.addEventListener('submit', async (e) => {

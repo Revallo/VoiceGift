@@ -38,8 +38,7 @@
   ],
   "functions": {
     "api/*.js": {
-      "maxDuration": 60,
-      "includeFiles": "public/demo/**"
+      "maxDuration": 60
     }
   }
 }

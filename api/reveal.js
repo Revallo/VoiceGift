@@ -1,6 +1,6 @@
 // GET  /api/reveal?slug=…&k=…&pin=…  → the messages, only for a logged-in account with the recipient's key
 // (the link the organizer sends) and the gift's 4-digit PIN.
-// The organizer's own account previewing it ("Preview what Dimas sees") gets the demo voices only (preview: true).
+// The organizer can't open it: the voices are for the recipient only.
 // POST /api/reveal { slug, k, pin, text } → the recipient thanks everyone once; each friend who recorded finds it on their home page.
 import { route, send, query, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, publicGift, canOpen, checkVerifyPin, loadMessages } from '../lib/gifts.js';
@@ -20,10 +20,9 @@ export default route({
     if (!canOpen(gift, k, { pin })) {
       throw new HttpError(403, `This link isn’t complete. Ask ${gift.organizer} for the link or PIN to the gift.`);
     }
-    const preview = isOrganizer(gift, user);
+    if (isOrganizer(gift, user)) throw new HttpError(403, `This gift is for ${gift.recipient}. Only they can open it.`);
     const messages = (await loadMessages(gift.slug))
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
-      .filter((m) => !preview || m.demo)
       .map((m) => {
         const text = m.finalText || m.asrText;
         return {
@@ -37,7 +36,6 @@ export default route({
     send(res, 200, {
       gift: publicGift(gift),
       messages,
-      preview,
       thanked: Boolean(gift.thanks)
     });
   },

@@ -8,7 +8,7 @@
 // GET  /api/account?thanks=1      → also the thank-you notes this account received
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
-import { signUp, logIn, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, receivedGiftSlugs, listThanks, markThanksRead } from '../lib/accounts.js';
+import { signUp, logIn, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead } from '../lib/accounts.js';
 
 // The account's gifts, newest first. Gifts deleted since are skipped (and forgotten).
 async function giftsAndStatsOf(user) {
@@ -51,29 +51,8 @@ async function giftsAndStatsOf(user) {
   }));
   const sorted = gifts.filter(Boolean).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  const recSlugs = await receivedGiftSlugs(user.email);
-  const receivedGifts = (await Promise.all(recSlugs.map(async (slug) => {
-    try {
-      const g = await loadGift(slug);
-      const msgs = await loadMessages(slug).catch(() => []);
-      const sent = msgs.filter((m) => m.finalText || m.asrText);
-      return {
-        slug,
-        openKey: g.openKey,
-        recipient: g.recipient,
-        organizer: g.organizer,
-        occasion: g.occasion,
-        createdAt: g.createdAt,
-        count: sent.length
-      };
-    } catch {
-      return null;
-    }
-  }))).filter(Boolean);
-
   return {
     gifts: sorted,
-    receivedGifts,
     stats: {
       totalGifts: sorted.length,
       totalRecordings,

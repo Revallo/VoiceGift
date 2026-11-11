@@ -7,9 +7,9 @@ const seq = (s) => s.split(' ').map((c) => (c === '-' ? null : c.split('+').map(
 export const TUNES = {
   none: { label: 'No music' },
   party: { label: 'Party', beat: 0.19, notes: seq('C4+E5 G4 E5 G4 D5 G4 C5 - A3+C5 E4 C5 E4 D5 E4 E5 - F4+A4 C5 A4 C5 G3+B4 D5 B4 G5 C4+C5 E4 G4 C5 E5 - C5 -') },
-  musicbox: { label: 'Music box', beat: 0.3, vol: 0.06, notes: seq('E5 G5 C5 G5 D5 G5 B4 G5 C5 E5 A4 E5 B4 D5 G4 D5') },
+  musicbox: { label: 'Music box', beat: 0.3, vol: 0.12, notes: seq('E5 G5 C5 G5 D5 G5 B4 G5 C5 E5 A4 E5 B4 D5 G4 D5') },
   waltz: { label: 'Waltz', beat: 0.27, notes: seq('C4+E5 G4 C5 C4+D5 G4 C5 A3+C5 E4 A4 A3+B4 E4 A4 F4+A4 C5 F4 G3+B4 D5 G4') },
-  dreamy: { label: 'Dreamy', beat: 0.42, vol: 0.055, notes: seq('C4+G4 E5 A3+E4 C5 F4+A4 D5 G3+G4 B4') }
+  dreamy: { label: 'Dreamy', beat: 0.42, vol: 0.11, notes: seq('C4+G4 E5 A3+E4 C5 F4+A4 D5 G3+G4 B4') }
 };
 
 // Starts a tune; returns a function that stops it.
@@ -20,7 +20,7 @@ export function playTune(ac, key, { loop = true } = {}) {
   const tick = () => {
     if (stopped) return;
     if (!loop && i >= tune.notes.length) return;
-    for (const f of tune.notes[i % tune.notes.length] || []) tone(ac, f, 0, tune.beat * 3, tune.vol || 0.05);
+    for (const f of tune.notes[i % tune.notes.length] || []) tone(ac, f, 0, tune.beat * 3, tune.vol || 0.11);
     i++;
     timer = setTimeout(tick, tune.beat * 1000);
   };

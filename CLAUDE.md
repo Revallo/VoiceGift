@@ -26,7 +26,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | home, logged in only (else `/login`): thank-you notes received, "Make a gift" → `/start`, "Open your gift" (paste the link) |
+| `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/start`, "Open your gift" (paste the link), "My gifts" |
 | `/start` | `start.html` | pick cake / bouquet / lanterns, then its kind (sideways strip of live minis) and flavor; page takes that occasion's colors → "Yes, make the …" → `/new?occasion=…&shape=…&flavor=…` |
 | `/new` | `create.html` + `assets/create.js` | organizer: occasion/who (the gift is always drawn on top; 4-digit PIN) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: create an account / log in → their gifts (dashboard links), log out |
@@ -43,7 +43,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - Scenes: `cake.js` (birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
-- Decorate step: nothing is picked by tapping. Swipe the big gift to change its kind; every strip (`wheel()` in `create.js`) picks whatever stops in the middle; stickers are dragged up onto the gift.
+- Decorate step: nothing is picked by tapping. Swipe the big gift to change its kind; every strip (`wheel()` in `create.js`) picks whatever stops in the middle; stickers are dragged up onto the gift. The gift stays on screen and only the tools card scrolls; a music plays as soon as it's picked.
 - `gift.cake` also has `accent` (cream / ribbon / string), `pattern`, `topper` + `age`, `backdrop` (`BACKDROPS` in `stage.js`) and `music` (`TUNES` in `music.js`); each scene exports its own `ACCENTS`, `PATTERNS`, `TOPPERS`. On the cake the name is an SVG text along the tier's curve (`curvedName()` in `cake.js`).
 - `gift.cake {flavor, shape, font, name, dots, stickers}` is reused by every scene: `font` is a key of `NAME_FONTS` in `stage.js`
   (script/serif/hand/round, loaded from Google Fonts by the stage; cake and bouquet names shrink to fit); `flavor` is a key of that scene's

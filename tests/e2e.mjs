@@ -132,6 +132,15 @@ async function runGift(occasion, c) {
   if ((await p.$$('.stickers .sticker')).length !== 2) errors.push(`${occasion}: expected 2 stickers after removing one`);
   await p.waitForTimeout(300);
   await shot(p, P('02-decorate'));
+  // "No music" is the default: pressing play goes to a real tune and plays it
+  await p.click('#musicPlay');
+  await p.waitForFunction(() => document.querySelector('#tunes .on')?.dataset.v === 'party');
+  await p.waitForTimeout(200);
+  if (!(await p.$eval('#musicPlay', (b) => b.innerHTML.includes('rect')))) errors.push(`${occasion}: pressing play did not start the music`);
+  await p.click('#musicPlay');
+  // the tools scroll on their own, so the gift stays on screen
+  await p.$eval('#decorToolsCard', (c) => { c.scrollTop = c.scrollHeight; });
+  if ((await (await p.$('#decorCake')).boundingBox()).y < 0) errors.push(`${occasion}: scrolling the tools moved the gift off screen`);
   await p.click('#createBtn');
   // "Create" opens the gift's one page: the gift, invite friends, who recorded, send it
   await p.waitForURL(/\/m\/.+\?k=/);

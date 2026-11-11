@@ -32,7 +32,7 @@ function go(screen) {
   showScreen(screen);
 }
 history.replaceState({ screen: 'who' }, '');
-window.addEventListener('popstate', (e) => showScreen(e.state?.screen || 'who'));
+window.addEventListener('popstate', (e) => { stopPreview(); showScreen(e.state?.screen || 'who'); });
 $$('[data-back]').forEach((b) => b.addEventListener('click', () => history.back()));
 
 // ---------- step 1 ----------
@@ -129,6 +129,7 @@ $('#whoForm').addEventListener('submit', (e) => {
   err.hidden = !msg;
   err.textContent = msg;
   if (msg) return;
+  unlockAudio(); // inside the tap, so sliding the music strip can already play
   if (!state.nameTouched) $('#cakeName').value = t.decorate.name(recipient);
   scene.setName($('#cakeName').value);
   scene.setNames?.(recipient);
@@ -250,7 +251,7 @@ function renderDetails() {
   wheel($('#patterns'), Object.entries(d.patterns), state.pattern, (k, v) => chip(v.label), (k) => { state.pattern = k; scene.setPattern(k); });
   wheel($('#toppers'), Object.entries(d.toppers), state.topper, (k, v) => chip(v.emoji ? `${v.emoji} ${v.label}` : v.label), (k) => { state.topper = k; scene.setTopper(k, state.age); showAge(); });
   wheel($('#backdrops'), Object.entries(BACKDROPS), state.backdrop, (k, v) => chip(v.label), (k) => { state.backdrop = k; scene.setBackdrop(k); });
-  wheel($('#tunes'), Object.entries(TUNES), state.music, (k, v) => chip(v.label), (k) => { state.music = k; if (stopTune) startTune(); });
+  wheel($('#tunes'), Object.entries(TUNES), state.music, (k, v) => chip(v.label), (k) => { state.music = k; if (tuneAc?.state === 'running') startTune(); });
   $('#ageRange').value = state.age;
   showAge();
 }
@@ -260,18 +261,36 @@ function showAge() {
 }
 $('#ageRange').addEventListener('input', (e) => { state.age = Number(e.target.value); showAge(); scene.setTopper(state.topper, state.age); });
 
-// Listen to the music before choosing it. Stops by itself after one round.
-let tuneAc = null, stopTune = null;
-function startTune() {
-  stopTune?.();
-  stopTune = playTune(tuneAc, state.music);
-  $('#musicPlay').innerHTML = icon.pause(16);
-}
-$('#musicPlay').innerHTML = icon.play(16);
-$('#musicPlay').addEventListener('click', () => {
-  if (stopTune) { stopTune(); stopTune = null; $('#musicPlay').innerHTML = icon.play(16); return; }
+// Music plays as soon as it's picked, so you hear what you're choosing. Stops by itself after two rounds.
+let tuneAc = null, stopTune = null, tuneTimer = 0;
+function unlockAudio() { // browsers only allow sound after a tap
   tuneAc ||= new (window.AudioContext || window.webkitAudioContext)();
   tuneAc.resume().catch(() => {});
+}
+function stopPreview() {
+  stopTune?.();
+  stopTune = null;
+  clearTimeout(tuneTimer);
+  $('#musicPlay').innerHTML = icon.play(16);
+}
+function startTune() {
+  stopPreview();
+  const tune = TUNES[state.music];
+  if (!tune?.notes) return;
+  stopTune = playTune(tuneAc, state.music);
+  $('#musicPlay').innerHTML = icon.pause(16);
+  tuneTimer = setTimeout(stopPreview, tune.notes.length * tune.beat * 2000);
+}
+stopPreview();
+$('[data-screen="decorate"]').addEventListener('pointerup', unlockAudio);
+$('#tunes').addEventListener('click', (e) => {
+  unlockAudio();
+  if (e.target.closest('[data-v]')?.dataset.v === state.music) startTune(); // already in the middle, so no slide will pick it
+});
+$('#musicPlay').addEventListener('click', () => {
+  if (stopTune) return stopPreview();
+  unlockAudio();
+  if (!TUNES[state.music]?.notes) return $('#tunes [data-v="party"]').click(); // "No music" has nothing to play: go to the first tune
   startTune();
 });
 

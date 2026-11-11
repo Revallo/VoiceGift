@@ -145,6 +145,8 @@ async function upload() {
     sentDone = false;
     $('#captionText').value = sent.asrText;
     $('#seenLabel').textContent = `How ${first} will see it`;
+    $('#seenHint').textContent = `This is your ${t.item}. Tap it to try what ${first} will hear.`;
+    showSeenScene();
     $('#seenAvatar').textContent = initials($('#name').value.trim());
     $('#seenAvatar').style.background = colorFor(count);
     $('#seenName').textContent = $('#name').value.trim();
@@ -335,7 +337,19 @@ $('#captionText').addEventListener('input', refreshTypoStudio);
 
 // ---------- Play it the way the recipient will hear it ----------
 // The words light up while the voice plays (spread evenly over the recording, like the reveal page does).
-let audio = null, raf = 0, seenWords = [];
+let audio = null, raf = 0, seenWords = [], seenScene = null;
+
+// The gift as the recipient will find it, with this friend's item ready to be tapped.
+function showSeenScene() {
+  const n = count + 1;
+  $('#seenScene').textContent = '';
+  seenScene = createScene($('#seenScene'), gift);
+  seenScene.setCandles(n, { spots: Math.max(12, n), onTap: () => $('#playOwn').click() });
+  seenScene.stage.classList.add('interactive');
+  seenScene.lightAll();
+  seenScene.setActive(count);
+}
+
 function paintSeen(k) {
   seenWords.forEach((w, i) => w.classList.toggle('done', k < 0 || i < k));
   seenWords.forEach((w, i) => w.classList.toggle('now', i === k));
@@ -354,9 +368,9 @@ function setupPlayer() {
   const setIcon = () => (btn.innerHTML = audio.paused ? icon.play(16) : icon.pause(16));
   setIcon();
   btn.onclick = () => { if (audio.paused) { audio.currentTime = audio.ended ? 0 : audio.currentTime; audio.play(); raf = requestAnimationFrame(paint); } else audio.pause(); };
-  audio.onplay = setIcon;
-  audio.onpause = setIcon;
-  audio.onended = () => { setIcon(); cancelAnimationFrame(raf); paintSeen(-1); };
+  audio.onplay = () => { setIcon(); seenScene?.setActive(count, true); };
+  audio.onpause = () => { setIcon(); seenScene?.setActive(count, false); };
+  audio.onended = () => { setIcon(); seenScene?.setActive(count, false); cancelAnimationFrame(raf); paintSeen(-1); };
 }
 
 $('#againBtn').addEventListener('click', async () => {

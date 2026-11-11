@@ -78,13 +78,13 @@
     <div class="web-grid">
       <div class="web-col">
         <div class="stage-showcase">
-          <div id="decorCake" style="width:100%"></div>
+          <div id="decorCake"></div>
           <div class="shape-nav" aria-live="polite"><span aria-hidden="true">‹</span><b id="shapeName"></b><small id="shapeCount"></small><span aria-hidden="true">›</span></div>
           <p class="tiny muted center" style="margin:0">Swipe the gift to change it</p>
         </div>
       </div>
 
-      <div class="web-col">
+      <div class="web-col decor-tools">
         <div class="card stack" id="decorToolsCard" style="gap:14px">
           <div class="row"><span class="label tool" id="swatchLabel">Style</span><div class="wheel" id="flavors"></div></div>
           <div class="row"><span class="label tool" id="accentLabel">Cream</span><div class="wheel" id="accents"></div></div>
@@ -109,7 +109,6 @@
           </div>
         </div>
         <p class="small err" id="createError" hidden></p>
-        <div class="spacer"></div>
         <div class="row">
           <button type="button" class="btn grow" id="createBtn">Create the gift</button>
         </div>

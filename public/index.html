@@ -21,8 +21,15 @@
 
   <section data-screen="home" hidden>
     <div class="row" style="justify-content:space-between">
-      <a class="brand" href="/"><span class="logo" data-logo></span>voice gift</a>
-      <a class="btn ghost sm" href="/account" id="profileLink">My gifts</a>
+      <span class="brand home-brand">voice gift</span>
+      <a class="profile-btn" href="/account" id="profileLink"><span class="profile-ava" id="profileAva"></span>Profile</a>
+    </div>
+
+    <!-- the three gifts, drawn live; each one starts making that kind of gift -->
+    <div class="home-hero">
+      <a class="home-gift left" id="heroBouquet" href="/start?occasion=graduation" aria-label="Make a bouquet"></a>
+      <a class="home-gift right" id="heroLanterns" href="/start?occasion=wedding" aria-label="Make lanterns"></a>
+      <a class="home-gift mid" id="heroCake" href="/start?occasion=birthday" aria-label="Make a cake"></a>
     </div>
 
     <div class="home-title">
@@ -49,24 +56,38 @@
         <p class="small err" id="openError" hidden></p>
         <button class="btn" type="submit">Continue</button>
       </form>
+      <a class="choice" href="/account" id="myGifts">
+        <span class="choice-ico" id="mineIco"></span>
+        <span class="choice-text"><b>My gifts</b><small>See the gifts you’ve made.</small></span>
+      </a>
     </div>
   </section>
 </main>
 <script type="module">
-import { $, h, api, icon, addStars, showScreen, fmtAgo } from '/assets/common.js';
+import { $, h, api, icon, addStars, showScreen, fmtAgo, initials } from '/assets/common.js';
 import { me } from '/assets/auth.js';
-import { theme } from '/assets/themes.js';
+import { theme, createScene, firstName } from '/assets/themes.js';
 
 const user = await me();
 if (!user) location.replace('/login');
 else {
   addStars($('#app'), 20, 40);
-  $('[data-logo]').innerHTML = icon.gift(14);
   $('#makeIco').innerHTML = icon.plus(22);
   $('#openIco').innerHTML = icon.gift(22);
+  $('#mineIco').innerHTML = icon.sparkle(22);
+  $('#profileAva').textContent = initials(user.name);
   $('#hello').textContent = `Hi, ${user.name}`;
   showScreen('home');
+  drawGifts(firstName(user.name));
   showThanks();
+}
+
+function drawGifts(name) {
+  for (const [occasion, host] of [['birthday', '#heroCake'], ['graduation', '#heroBouquet'], ['wedding', '#heroLanterns']]) {
+    const scene = createScene($(host), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
+    scene.setCandles(10);
+    scene.lightAll();
+  }
 }
 
 $('#openToggle').addEventListener('click', () => {

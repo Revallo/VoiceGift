@@ -315,6 +315,33 @@ export function createCake(host, opts = {}) {
   const name = curvedName();
   const setTopper = createTopper(stage, { x: 195, base: 98, size: 66 });
 
+  // The age: thick wax numbers pushed into the cream, standing among the candles.
+  const AGE_BASE = 100;
+  const ageEl = div('age-numbers', { left: `${CX}px`, top: `${AGE_BASE}px` });
+  let lipColor = '#FFFFFF';
+  function seatAge() { // candles nearer the front stay in front of the numbers
+    if (!ageEl.childElementCount) return ageEl.remove();
+    layer.insertBefore(ageEl, [...layer.children].find((c) => Number(c.dataset.base) > AGE_BASE) || null);
+  }
+  function setAge(value) {
+    const digits = [...value];
+    const fs = digits.length > 2 ? 50 : 66;
+    const w = digits.length * fs * 0.62;
+    ageEl.replaceChildren();
+    if (digits.length) {
+      ageEl.append(div('age-hole', { width: `${w + 22}px` }));
+      for (const ch of digits) {
+        const d = div('age-digit', { fontSize: `${fs}px` });
+        const face = div('age-face');
+        d.textContent = face.textContent = ch;
+        d.append(face);
+        ageEl.append(d);
+      }
+      ageEl.append(div('age-lip', { width: `${w + 14}px`, background: lipColor }));
+    }
+    seatAge();
+  }
+
   function setShape(shape) {
     shapeEl.textContent = '';
     parts = {};
@@ -341,6 +368,8 @@ export function createCake(host, opts = {}) {
       const cream = accent && ACCENTS[accent]?.color?.startsWith('#') ? ACCENTS[accent].color : null;
       const colors = { ...c, frost: cream || c.frost, top2: cream || c.top2, stripe: `repeating-linear-gradient(90deg, ${c.b1} 0 20px, ${c.b2} 20px 40px)` };
       for (const role of ['b1', 'b2', 'frost', 'top2', 'stripe']) (parts[role] || []).forEach((d) => (d.style.background = colors[role]));
+      lipColor = colors.top2;
+      ageEl.querySelector('.age-lip')?.style.setProperty('background', lipColor);
       // On a plaque the letters are on the cream, so they take whatever reads best on it.
       name.setColor(nameArea?.plaque ? (lightness(colors.frost) > 0.55 ? '#4A2238' : '#FFFFFF') : c.text);
     },
@@ -363,7 +392,7 @@ export function createCake(host, opts = {}) {
         decoEl.append(d);
       }
     },
-    setTopper(k, age) { const t = TOPPERS[k]; setTopper(t, t?.age ? String(age || '') : ''); },
+    setTopper(k, age) { const t = TOPPERS[k]; setTopper(t?.age ? null : t, ''); setAge(t?.age ? String(age || '') : ''); },
     setShape,
     setName: name.setText,
     setFont: name.setFont,
@@ -382,6 +411,7 @@ export function createCake(host, opts = {}) {
         btn.type = 'button';
         btn.className = 'candle' + (isSpot ? ' spot' : '');
         btn.tabIndex = isSpot || !onTap ? -1 : 0;
+        btn.dataset.base = p.base;
         const hitH = p.h + 46;
         Object.assign(btn.style, { left: `${(p.x - 15).toFixed(1)}px`, top: `${Math.round(p.base - hitH)}px`, height: `${hitH}px` });
         const bodyEl = div('c-body', { left: `${(15 - p.w / 2).toFixed(1)}px`, width: `${p.w.toFixed(1)}px`, height: `${p.h}px`, background: `repeating-linear-gradient(135deg, ${color} 0px, ${color} 5px, #FFFFFF 5px, #FFFFFF 8px)` });
@@ -398,6 +428,7 @@ export function createCake(host, opts = {}) {
         els[p.i] = btn;
       }
       candles.push(...els.slice(0, total));
+      seatAge();
       return els;
     },
     // Finale: candles go out left to right while the flames bend.

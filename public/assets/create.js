@@ -236,7 +236,12 @@ function stepShape(dir) {
   renderWhoPreview();
 }
 let swipeFrom = null;
-$('#decorCake').addEventListener('pointerdown', (e) => { swipeFrom = state.sketch || e.target.closest('.sticker') ? null : e.clientX; });
+$('#shapePrev').addEventListener('click', () => stepShape(-1));
+$('#shapeNext').addEventListener('click', () => stepShape(1));
+$('#decorCake').addEventListener('pointerdown', (e) => {
+  swipeFrom = state.sketch || e.target.closest('.sticker') ? null : e.clientX;
+  if (swipeFrom !== null) $('#decorCake').setPointerCapture?.(e.pointerId); // the swipe counts even if it ends outside the gift
+});
 $('#decorCake').addEventListener('pointerup', (e) => {
   if (swipeFrom === null) return;
   const dx = e.clientX - swipeFrom;

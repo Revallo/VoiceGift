@@ -11,7 +11,7 @@ const fullName = (r) => String(r || '').trim().replace(/\s+/g, ' '); // "Kevin S
 
 export const THEMES = {
   birthday: {
-    key: 'birthday', label: 'Birthday', bg: '#211820', emoji: '🎂',
+    key: 'birthday', label: 'Birthday', bg: '#1C1A18', emoji: '🎂',
     callName: firstName,
     people: (n) => count(n, 'person', 'people'),
     item: 'candle', items: 'candles', itemsOn: 'lit',
@@ -41,7 +41,7 @@ export const THEMES = {
   },
 
   graduation: {
-    key: 'graduation', label: 'Graduation', bg: '#151C33', emoji: '🎓',
+    key: 'graduation', label: 'Graduation', bg: '#191B1F', emoji: '🎓',
     callName: firstName,
     people: (n) => count(n, 'person', 'people'),
     item: 'flower', items: 'flowers', itemsOn: 'open',
@@ -73,7 +73,7 @@ export const THEMES = {
   },
 
   wedding: {
-    key: 'wedding', label: 'Wedding', bg: '#15211D', emoji: '💍',
+    key: 'wedding', label: 'Wedding', bg: '#191C1A', emoji: '💍',
     callName: (r) => String(r || '').trim(), // "Rina & Bayu": the couple, not a first name
     people: (n) => count(n, 'guest', 'guests'),
     item: 'lantern', items: 'lanterns', itemsOn: 'lit',

@@ -158,6 +158,12 @@ export function createBouquet(host, opts = {}) {
     P(body, { left: `${Math.round(195 + Math.cos(a) * rr * 1.05)}px`, top: `${Math.round(150 - Math.sin(a) * rr * 0.72)}px`, width: `${d}px`, height: `${d}px`, borderRadius: '50%', background: '#FFFFFF', opacity: '0.85' });
   }
 
+  // what's tucked in: on a pick, behind the flowers and in front of the leaves
+  const tuck = div('tuck');
+  tuck.append(div('tuck-stick'));
+  body.append(tuck);
+  const setTucked = createTopper(tuck, { x: 232, base: 66, size: 54 });
+
   // front cone, in front of the flowers (clicks pass through to them)
   const front = div('', { position: 'absolute', inset: '0', pointerEvents: 'none' });
   stage.append(front);
@@ -171,7 +177,6 @@ export function createBouquet(host, opts = {}) {
   let flavor = opts.flavor;
   let accent = opts.accent;
   let nameSize = null;
-  const setTopper = createTopper(front, { x: 195, base: 50, size: 50 });
   function setShape(shape) {
     backEl.textContent = frontEl.textContent = '';
     parts = {};
@@ -206,7 +211,7 @@ export function createBouquet(host, opts = {}) {
     setShape,
     setAccent(k) { accent = k; api.setFlavor(flavor); },
     setPattern(k) { stage.dataset.petal = PATTERNS[k] ? k : 'round'; },
-    setTopper(k) { setTopper(TOPPERS[k]); },
+    setTopper(k) { setTucked(TOPPERS[k]); tuck.hidden = !TOPPERS[k]?.emoji; },
     setName(t) {
       nameEl.textContent = t || '';
       nameFit.setSize(nameSize || 30); // shrinks to fit

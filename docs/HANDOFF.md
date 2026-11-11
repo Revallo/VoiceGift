@@ -68,6 +68,7 @@ Claude (claude.ai), so a new session can continue without re-asking.
   `demo-2026-10`). It doesn't mention ASR training: change it (and the version) before collecting real data.
 - Decision (2026-11-11): no demo voices, demo logins or preview: to test, use three real accounts (organizer, friend, recipient). One colour per occasion, one accent, Fredoka headings.
 - Decision (2026-11-11, same day, after the bright look hurt to look at): **the look is dim**: one dark colour per occasion, one calm accent; the optional backdrops are darkened too.
+- Decision (2026-11-11, later): after the dim look still felt too bright and purple, **the look is quiet**: flat near-neutral pages with no gradients, thin lines instead of coloured blocks, Fraunces headings, colour only as a small muted accent per occasion. To change the feel, start with the design, not just the colours.
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)

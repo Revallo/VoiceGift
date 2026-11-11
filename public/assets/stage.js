@@ -56,11 +56,11 @@ export function nameText(el, fit) {
 // What stands behind the gift (gift.cake.backdrop). '' = the occasion's own colour.
 export const BACKDROPS = {
   party: { label: 'Party', bg: '' },
-  sunny: { label: 'Sunny', bg: 'linear-gradient(180deg, #FFE27A, #FFB36B)' },
-  bubblegum: { label: 'Bubblegum', bg: 'radial-gradient(circle at 20% 25%, #FFFFFF99 0 26px, transparent 27px), radial-gradient(circle at 82% 60%, #FFFFFF77 0 38px, transparent 39px), linear-gradient(180deg, #FFB3D1, #C9B6FF)' },
-  garden: { label: 'Garden', bg: 'linear-gradient(180deg, #BDE8FF 0 62%, #9BDB8A 62% 100%)' },
-  sky: { label: 'Blue sky', bg: 'radial-gradient(ellipse 70px 24px at 22% 22%, #FFFFFF 98%, transparent), radial-gradient(ellipse 90px 28px at 78% 34%, #FFFFFFDD 98%, transparent), linear-gradient(180deg, #6EC6FF, #C8ECFF)' },
-  sunset: { label: 'Sunset', bg: 'linear-gradient(180deg, #5B4B9A, #E8708F 62%, #FFC36B)' },
+  sunny: { label: 'Sunny', bg: 'linear-gradient(180deg, #8A6A3A, #7A4A38)' },
+  bubblegum: { label: 'Bubblegum', bg: 'radial-gradient(circle at 20% 25%, #FFFFFF22 0 26px, transparent 27px), radial-gradient(circle at 82% 60%, #FFFFFF1A 0 38px, transparent 39px), linear-gradient(180deg, #7A4A68, #574A84)' },
+  garden: { label: 'Garden', bg: 'linear-gradient(180deg, #2F4F63 0 62%, #35583F 62% 100%)' },
+  sky: { label: 'Blue sky', bg: 'radial-gradient(ellipse 70px 24px at 22% 22%, #FFFFFF33 98%, transparent), radial-gradient(ellipse 90px 28px at 78% 34%, #FFFFFF2B 98%, transparent), linear-gradient(180deg, #27507A, #41708F)' },
+  sunset: { label: 'Sunset', bg: 'linear-gradient(180deg, #342B60, #84455F 62%, #A8743F)' },
   night: { label: 'Starry night', bg: 'radial-gradient(circle at 16% 18%, #FFF 0 1.5px, transparent 2px), radial-gradient(circle at 68% 12%, #FFF 0 2px, transparent 2.5px), radial-gradient(circle at 88% 42%, #FFF 0 1.5px, transparent 2px), radial-gradient(circle at 36% 38%, #FFF 0 1.5px, transparent 2px), linear-gradient(180deg, #16215A, #3B3F8F)' }
 };
 

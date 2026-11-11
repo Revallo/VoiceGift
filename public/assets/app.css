@@ -1,74 +1,75 @@
 :root {
-  --fg: 59, 34, 48;
-  --bg: #FFF6EC;
-  --bg-outer: #FFEEDD;
-  --panel: #FFFFFF;
-  --panel-subtle: #FFF1E4;
-  --panel-hover: #FFE8D6;
+  --fg: 243, 233, 228;
+  --bg: #211820;
+  --bg-outer: #171117;
+  --panel: #2C2129;
+  --panel-subtle: #261C24;
+  --panel-hover: #372A33;
   --line: rgba(var(--fg), 0.1);
   --line-strong: rgba(var(--fg), 0.2);
-  --text: #3B2230;
-  --soft: rgba(var(--fg), 0.74);
-  --muted: rgba(var(--fg), 0.56);
-  --ink: #3B2230;
-  --emerald: #E8434F;
-  --emerald-light: #FF8A80;
-  --emerald-dark: #C22E3A;
-  --emerald-grad: #E8434F;
-  --gold: #C97A00;
-  --gold-soft: rgba(255, 182, 39, 0.24);
-  --gold-border: rgba(201, 122, 0, 0.4);
-  --coral: #E8434F;
-  --coral-soft: rgba(232, 67, 79, 0.12);
-  --green: #1FA971;
-  --green-soft: rgba(31, 169, 113, 0.16);
-  --face: #FFE1CC;
-  --face-text: #3B2230;
+  --text: #F3E9E4;
+  --soft: rgba(var(--fg), 0.76);
+  --muted: rgba(var(--fg), 0.6);
+  --ink: #1A1208;
+  --emerald: #C4505A;
+  --emerald-light: #F0A09A;
+  --emerald-dark: #A63F49;
+  --emerald-grad: #C4505A;
+  --tint: color-mix(in srgb, var(--emerald) 30%, transparent);
+  --gold: #E0B45F;
+  --gold-soft: rgba(224, 180, 95, 0.16);
+  --gold-border: rgba(224, 180, 95, 0.38);
+  --coral: #FF8A80;
+  --coral-soft: rgba(255, 138, 128, 0.14);
+  --green: #4CC38A;
+  --green-soft: rgba(76, 195, 138, 0.16);
+  --face: #3D2F39;
+  --face-text: #F3E9E4;
   --sep: rgba(var(--fg), 0.2);
-  --stage-bg: linear-gradient(180deg, #FFE3C9, #FFC9BE);
-  --wash: rgba(255, 182, 39, 0.26);
-  --wash2: rgba(232, 67, 79, 0.14);
+  --stage-bg: linear-gradient(180deg, #33242F, #261B24);
+  --wash: rgba(224, 180, 95, 0.08);
+  --wash2: rgba(196, 80, 90, 0.1);
   --display: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
   --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Each occasion has its own bright colours */
+/* Each occasion has its own dim colours */
 body[data-theme="graduation"] {
-  --fg: 30, 42, 85;
-  --bg: #EEF6FF;
-  --bg-outer: #DEEDFF;
-  --panel-subtle: #E6F1FF;
-  --panel-hover: #DAEAFF;
-  --text: #1E2A55;
-  --ink: #1E2A55;
-  --emerald: #2F6BFF;
-  --emerald-light: #7EA6FF;
-  --emerald-dark: #1F52D1;
-  --emerald-grad: #2F6BFF;
-  --face: #D5E6FF;
-  --face-text: #1E2A55;
-  --stage-bg: linear-gradient(180deg, #BFE3FF, #E8F6FF);
-  --wash: rgba(255, 197, 49, 0.26);
-  --wash2: rgba(47, 107, 255, 0.14);
+  --fg: 232, 237, 247;
+  --bg: #151C33;
+  --bg-outer: #0F1426;
+  --panel: #1F2844;
+  --panel-subtle: #1A2240;
+  --panel-hover: #293355;
+  --text: #E8EDF7;
+  --emerald: #3F6FD8;
+  --emerald-light: #9DB8F5;
+  --emerald-dark: #3159B5;
+  --emerald-grad: #3F6FD8;
+  --face: #303B60;
+  --face-text: #E8EDF7;
+  --stage-bg: linear-gradient(180deg, #24335A, #1A2442);
+  --wash: rgba(224, 180, 95, 0.07);
+  --wash2: rgba(63, 111, 216, 0.1);
 }
 
 body[data-theme="wedding"] {
-  --fg: 47, 62, 52;
-  --bg: #FFF4F3;
-  --bg-outer: #FDE9E6;
-  --panel-subtle: #FFECE9;
-  --panel-hover: #FDE2DE;
-  --text: #2F3E34;
-  --ink: #2F3E34;
-  --emerald: #2E8B65;
-  --emerald-light: #7CC7A6;
-  --emerald-dark: #226E4F;
-  --emerald-grad: #2E8B65;
-  --face: #FAD9D4;
-  --face-text: #2F3E34;
-  --stage-bg: linear-gradient(180deg, #2B3A67, #6B4C7A 68%, #C77C8E);
-  --wash: rgba(255, 155, 184, 0.26);
-  --wash2: rgba(46, 139, 101, 0.14);
+  --fg: 233, 240, 235;
+  --bg: #15211D;
+  --bg-outer: #0E1714;
+  --panel: #1E2E28;
+  --panel-subtle: #192722;
+  --panel-hover: #283A33;
+  --text: #E9F0EB;
+  --emerald: #2F7F60;
+  --emerald-light: #8FD0B3;
+  --emerald-dark: #256650;
+  --emerald-grad: #2F7F60;
+  --face: #30443C;
+  --face-text: #E9F0EB;
+  --stage-bg: linear-gradient(180deg, #1B2A3F, #33304F 68%, #5A4560);
+  --wash: rgba(214, 130, 150, 0.08);
+  --wash2: rgba(47, 127, 96, 0.1);
 }
 
 * { box-sizing: border-box; }
@@ -501,7 +502,7 @@ button { font-family: inherit; }
   background: var(--emerald);
   color: var(--text);
   border-color: var(--emerald-light);
-  box-shadow: 0 6px 18px -4px rgba(var(--fg), 0.25);
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.4);
 }
 
 /* ---------- 2-Column "history" Bento Grid (Kaiya +$250 / Lincoln -$77 style) ---------- */
@@ -751,7 +752,7 @@ h3 {
   outline: none;
   border-color: var(--emerald-light);
   background: var(--panel);
-  box-shadow: 0 0 0 3px rgba(232, 69, 122, 0.25);
+  box-shadow: 0 0 0 3px var(--tint);
 }
 textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resize: vertical; font-weight: 400; }
 
@@ -1240,7 +1241,7 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
   cursor: pointer;
   transition: all 0.14s ease;
 }
-.tok:hover { border-color: var(--line-strong); color: var(--text); background: #FFFFFF; color: #1B1024; }
+.tok:hover { border-color: var(--line-strong); color: var(--text); background: var(--panel-hover); }
 .tok.suspect {
   background: var(--coral-soft);
   border-color: rgba(255, 107, 107, 0.35);
@@ -1394,7 +1395,7 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
   transition: background 0.15s ease, transform 0.12s ease;
 }
 .list .play-mini:hover, .who-list .play-mini:hover { background: var(--emerald); color: var(--text); transform: scale(1.06); }
-.list .play-mini.playing, .who-list .play-mini.playing { background: #FFFFFF; color: #1B1024; }
+.list .play-mini.playing, .who-list .play-mini.playing { background: var(--text); color: #1B1024; }
 .list .del, .who-list .del {
   flex: 0 0 auto;
   display: grid;
@@ -1912,7 +1913,7 @@ body[data-viewport="desktop"] .bottom-sheet {
   height: 60px;
   border-radius: 16px;
   border: 1.5px solid rgba(var(--fg), 0.12);
-  background: #121515;
+  background: var(--panel-subtle);
   color: var(--text);
   font-family: inherit;
   font-size: 24px;
@@ -1926,14 +1927,14 @@ body[data-viewport="desktop"] .bottom-sheet {
   font-size: 20px;
 }
 .pin-digit:focus {
-  border-color: #FF7FA6;
-  background: rgba(232, 69, 122, 0.18);
-  box-shadow: 0 0 0 3px rgba(255, 127, 166, 0.24);
+  border-color: var(--emerald-light);
+  background: var(--tint);
+  box-shadow: 0 0 0 3px var(--tint);
   transform: translateY(-1px);
 }
 .pin-digit.filled {
-  border-color: rgba(124, 232, 216, 0.45);
-  background: rgba(232, 69, 122, 0.14);
+  border-color: var(--emerald-light);
+  background: var(--tint);
 }
 
 /* ---------- Animations ---------- */
@@ -1971,7 +1972,7 @@ body[data-viewport="desktop"] .bottom-sheet {
 
 /* ---------- The friend's page: calm, one big record button ---------- */
 body.calm { --wash: transparent; --wash2: transparent; background: var(--bg-outer); }
-body.calm .app { background: #17121C; }
+body.calm .app { background: var(--bg); }
 .calm-page { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 440px; margin: 0 auto; padding-top: 8px; }
 .calm-from { margin: 0; font-size: 13px; color: var(--muted); }
 .calm-title { margin: 0; font-family: var(--display); font-weight: 600; font-size: clamp(26px, 7vw, 32px); line-height: 1.15; letter-spacing: -0.01em; }
@@ -1989,7 +1990,7 @@ body.calm .app { background: #17121C; }
 .seen { display: flex; flex-direction: column; gap: 8px; }
 .seen-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: lowercase; }
 .seen .panel .who .avatar { width: 36px; height: 36px; border-radius: 12px; font-size: 13px; flex-shrink: 0; }
-.seen-play { width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; background: #fff; color: #1B1024; flex-shrink: 0; }
+.seen-play { width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; background: var(--text); color: #1B1024; flex-shrink: 0; }
 .seen .caption { font-size: 16.5px; }
 .seen .caption span.suspect { cursor: pointer; text-decoration: underline wavy #FF6B6B; text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
 .done-scene { width: min(100%, 300px); margin: 0 auto; }
@@ -2008,27 +2009,30 @@ body.calm .app { background: #17121C; }
 .who-row .avatar { width: 32px; height: 32px; border-radius: 10px; font-size: 12px; }
 .pin-row { width: 100%; background: var(--panel-subtle); border: 1px solid var(--line); border-radius: 16px; }
 
-/* ---------- The bright look: one strong accent per occasion on a light page ---------- */
+/* ---------- The dim look: one calm accent per occasion on a dark page ---------- */
 h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .step-title { font-family: var(--display); font-weight: 600; letter-spacing: 0; }
 .hero-card { background: var(--emerald); border: 0; box-shadow: 0 16px 30px -16px var(--emerald); }
 .hero-card, .hero-card * { color: #FFFFFF !important; }
-.hero-card .pill-btn.light, .hero-card .pill-btn.light * { color: var(--emerald) !important; }
+.hero-card .pill-btn.light, .hero-card .pill-btn.light * { color: var(--emerald-dark) !important; }
 .linkbox button span { color: #FFFFFF; }
-.linkbtn { color: var(--emerald); }
+.linkbtn, .caption span.now, .shape-nav span, .badge-pill.gold, .badge-pill.green, .tok.fixed, .typo-pill.applied, .typo-pill.applied .right, .nav-ico, .menu-link i, .list .play-mini, .who-list .play-mini { color: var(--emerald-light); }
+.badge-pill.gold, .badge-pill.green, .tok.fixed, .typo-pill.applied, .nav-ico, .menu-link i, .list .play-mini, .who-list .play-mini, .diff-line { background: var(--tint); }
+.badge-pill.gold, .badge-pill.green, .tok.fixed, .typo-pill.applied, .diff-line { border-color: var(--line-strong); }
+.diff-line.idle { background: var(--panel); border-color: var(--line); }
 .pill-btn.dark { background: rgba(255, 255, 255, 0.2); color: #FFFFFF; }
 .pill-btn.dark:hover { background: rgba(255, 255, 255, 0.3); }
-.pill-btn.light { background: #FFFFFF; color: var(--emerald); }
+.pill-btn.light { background: var(--text); color: var(--emerald-dark); }
 .btn:not(.ghost):not(.emerald-track) { background: var(--emerald); color: #FFFFFF; text-shadow: none; font-weight: 700; }
 .btn:not(.ghost):not(.emerald-track):hover:not(:disabled) { background: var(--emerald-dark); }
 .btn.ghost { background: var(--panel); color: var(--text); border-color: var(--line-strong); }
 .holdbtn > span, .friend.on, .friend.on span, .linkbox button, .chip.on, .avatar, .step-n, .logo { color: #FFFFFF; }
 .logo { background: var(--emerald); }
-.card, .panel, .input, .friend, .choice, .item { box-shadow: 0 6px 18px -14px rgba(var(--fg), 0.45); }
+.card, .panel, .input, .friend, .choice, .item { box-shadow: 0 6px 18px -14px rgba(0, 0, 0, 0.5); }
 .swatch i { box-shadow: inset 0 0 0 1px rgba(var(--fg), 0.1); }
 .mic-big { background: var(--emerald); color: #FFFFFF; border: 0; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 0 0 8px var(--wash2), 0 0 0 16px var(--wash); }
 
 /* The back button: the same pill on every page, top left */
-.backbtn[data-icon="back"] { width: auto; height: 44px; padding: 0 18px 0 12px; display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; border-radius: 999px; background: var(--panel); color: var(--text); border: 1.5px solid var(--line-strong); box-shadow: 0 4px 12px -6px rgba(var(--fg), 0.4); font-weight: 700; font-size: 14.5px; }
+.backbtn[data-icon="back"] { width: auto; height: 44px; padding: 0 18px 0 12px; display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; border-radius: 999px; background: var(--panel); color: var(--text); border: 1.5px solid var(--line-strong); box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.5); font-weight: 700; font-size: 14.5px; }
 .backbtn[data-icon="back"]::after { content: 'Back'; }
 .backbtn[hidden] { display: none; }
 

@@ -66,7 +66,8 @@ Claude (claude.ai), so a new session can continue without re-asking.
   moved to `/start`. The look is one deep colour per occasion + one gold accent + Fraunces headings. The recipient can thank everyone once.
 - Consent wording is demo-only for now ("I allow my voice to be saved for this gift", `consentVersion`
   `demo-2026-10`). It doesn't mention ASR training: change it (and the version) before collecting real data.
-- Decision (2026-11-11): no demo voices, demo logins or preview: to test, use three real accounts (organizer, friend, recipient). The look is now bright: one light colour per occasion, one strong accent, Fredoka headings.
+- Decision (2026-11-11): no demo voices, demo logins or preview: to test, use three real accounts (organizer, friend, recipient). One colour per occasion, one accent, Fredoka headings.
+- Decision (2026-11-11, same day, after the bright look hurt to look at): **the look is dim**: one dark colour per occasion, one calm accent; the optional backdrops are darkened too.
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)

@@ -1,10 +1,8 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast, openSheet, closeSheet } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, copyText, colorFor, initials, toast, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { friendUrl, recipientUrl, shareRow, linkbox } from './share.js';
 import { me } from './auth.js';
 
-addStars($('#app'), 20, 40);
-$$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const slug = slugFromPath();
@@ -59,7 +57,7 @@ async function load() {
       h('div', { class: 'grow', style: { minWidth: 0 } },
         h('b', {}, m.sender),
         h('div', { class: 'tiny muted' }, `${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)}s${m.sent ? '' : ' · not sent yet'}`)),
-      h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(12), onclick: () => remove(m) })));
+      h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(16), onclick: () => remove(m) })));
   });
 
   // 3. send it to the recipient: their link + the PIN

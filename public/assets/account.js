@@ -1,14 +1,12 @@
 // /signup and /login: the form. /account: layered mobile-app profile & settings (progressive disclosure via bottom sheets).
-import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet } from './common.js';
+import { $, $$, h, api, icon, showScreen, toast, openSheet, closeSheet, tabBar } from './common.js';
 import { me, logOut, authForm, giftItem } from './auth.js';
 import { applyTheme } from './themes.js';
 
-addStars($('#app'), 20, 40);
-$$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 // What the person picked on the first page ("/"): from ?occasion= or inside ?next=/new?occasion=…
-const THINGS = { birthday: ['cake', '🎂'], graduation: ['bouquet', '💐'], wedding: ['lanterns', '🏮'] };
+const THINGS = { birthday: 'cake', graduation: 'bouquet', wedding: 'lanterns' };
 const picked = (() => {
   const q = new URLSearchParams(location.search);
   let o = q.get('occasion');
@@ -25,17 +23,15 @@ const WORDS = {
 const nextPath = new URLSearchParams(location.search).get('next') || '';
 const afterLogin = nextPath.startsWith('/r/') ? 'Then you can open your gift.'
   : nextPath.startsWith('/g/') ? 'Then you can record your message.'
-  : picked ? `Then we’ll start on your ${THINGS[picked][0]}.`
+  : picked ? `Then we’ll start on your ${THINGS[picked]}.`
   : 'Make a gift, or open one you received.';
 
 let currentUser = null;
 let latestStats = {};
 
 function showAuth(mode) {
-  if (picked) {
-    applyTheme(picked); // same colors as the thing they picked
-    $('#authEmoji').textContent = THINGS[picked][1];
-  }
+  tabBar(false);
+  if (picked) applyTheme(picked); // same colors as the thing they picked
   const words = (m) => {
     const w = WORDS[m];
     history.replaceState(null, '', w.path + location.search); // keeps ?next=
@@ -52,16 +48,9 @@ function showAuth(mode) {
 
 function populateUserUI(user) {
   currentUser = user;
-  const initial = (user.name || user.email || 'U').trim()[0].toUpperCase();
-  if ($('#acctAvatar')) $('#acctAvatar').textContent = initial;
-  $('#hello').textContent = `Hi, ${user.name || 'organizer'}`;
+  $('#hello').textContent = user.name || 'You';
   $('#meEmail').textContent = user.email;
-  if ($('#rowProfileSub')) {
-    $('#rowProfileSub').textContent = user.bio ? `${user.name} · ${user.bio}` : `${user.name} · ${user.email}`;
-  }
-  if ($('#rowProfileVal')) {
-    $('#rowProfileVal').textContent = 'Edit';
-  }
+  $('#rowProfileSub').textContent = user.bio || 'Your name and a line about you';
   const prefs = user.prefs || {};
   if ($('#rowPrefsVal')) {
     $('#rowPrefsVal').textContent = `${prefs.asrLang || 'id-ID'} · ${prefs.autoHighlight !== false ? 'auto' : 'off'}`;
@@ -72,9 +61,9 @@ function populateUserUI(user) {
 function openEditProfileSheet() {
   if (!currentUser) return;
   const nameIn = h('input', { class: 'input', value: currentUser.name || '', maxlength: 60, required: true, placeholder: 'Your name' });
-  const bioIn = h('input', { class: 'input', value: currentUser.bio || '', maxlength: 120, placeholder: 'e.g. Voice Gift Organizer · Jakarta' });
+  const bioIn = h('input', { class: 'input', value: currentUser.bio || '', maxlength: 120, placeholder: 'A line about you' });
   const emailIn = h('input', { class: 'input', value: currentUser.email || '', disabled: true, style: { opacity: '0.55', cursor: 'not-allowed' } });
-  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save profile changes');
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save');
 
   const form = h('form', {
     class: 'stack',
@@ -97,15 +86,14 @@ function openEditProfileSheet() {
       }
     }
   },
-    h('div', { class: 'field' }, h('label', {}, 'Display name'), nameIn),
-    h('div', { class: 'field' }, h('label', {}, 'Role / bio'), bioIn),
-    h('div', { class: 'field' }, h('label', {}, 'Verified email'), emailIn),
+    h('div', { class: 'field' }, h('label', {}, 'Name'), nameIn),
+    h('div', { class: 'field' }, h('label', {}, 'About you'), bioIn),
+    h('div', { class: 'field' }, h('label', {}, 'Email'), emailIn),
     saveBtn
   );
 
   openSheet({
-    title: 'Personal profile',
-    subtitle: 'Update your organizer display name and bio',
+    title: 'Edit profile',
     content: form
   });
 }
@@ -241,8 +229,7 @@ function openSecuritySheet() {
   );
 
   openSheet({
-    title: 'Security & password',
-    subtitle: 'Scrypt N=32768 · HttpOnly encrypted session',
+    title: 'Change password',
     content: form
   });
 }
@@ -259,6 +246,7 @@ function showAccount(user) {
   document.title = 'Your account · Voice Gift';
   populateUserUI(user);
   showScreen('me');
+  tabBar('profile');
   return loadGifts().then(() => {
     if (keepHash === '#settings') openEditProfileSheet();
     else if (keepHash === '#ASR') openAsrPrefsSheet();
@@ -271,15 +259,12 @@ async function loadGifts() {
   try {
     const { gifts = [], stats = {} } = await api('/api/account?gifts=1');
     latestStats = stats;
-    if ($('#acctHeroVal')) {
-      $('#acctHeroVal').textContent = `${stats.totalRecordings ?? 0} voices`;
-    }
     if ($('#rowCorpusVal')) {
       $('#rowCorpusVal').textContent = `${stats.totalRecordings ?? 0} voices · .jsonl`;
     }
     list.replaceChildren(...(gifts.length
       ? gifts.map((g) => giftItem(g, () => { toast('Gift deleted'); loadGifts(); }))
-      : [h('div', { class: 'item small muted' }, 'No gifts yet. Make your first one!')]));
+      : [h('div', { class: 'item small muted' }, 'No gifts yet.')]));
   } catch (e) {
     list.replaceChildren(h('div', { class: 'item small muted' }, e.message));
   }

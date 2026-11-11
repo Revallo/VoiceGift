@@ -12,7 +12,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -20,10 +20,7 @@
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
   <section data-screen="home" hidden>
-    <div class="row" style="justify-content:space-between">
-      <span class="brand home-brand"><span class="home-logo" id="homeLogo"></span>Voice Gift</span>
-      <a class="profile-btn" href="/account" id="profileLink"><span class="profile-ava" id="profileAva"></span>Profile</a>
-    </div>
+    <div class="nav-header"><span class="home-brand">Voice Gift</span></div>
 
     <!-- the three gifts, drawn live; each one starts making that kind of gift -->
     <div class="home-hero">
@@ -37,48 +34,40 @@
       <h1>What would you like to do?</h1>
     </div>
 
-    <div class="stack" id="thanksBox" style="gap:10px" hidden>
-      <div class="eyebrow">Thank-you notes</div>
-      <div class="stack" id="thanksList" style="gap:10px"></div>
-    </div>
-
-    <div class="stack" style="gap:12px">
+    <div class="nav-list">
       <a class="choice" href="/new" id="makeGift">
-        <span class="choice-ico" id="makeIco"></span>
         <span class="choice-text"><b>Make a gift</b><small>Collect your friends’ voices for someone.</small></span>
       </a>
       <button type="button" class="choice" id="openToggle" aria-expanded="false">
-        <span class="choice-ico" id="openIco"></span>
         <span class="choice-text"><b>Open your gift</b><small>Received a link? Paste it here.</small></span>
       </button>
-      <form class="card stack" id="openForm" style="gap:12px" novalidate hidden>
+      <form class="stack" id="openForm" style="padding:4px 0 18px" novalidate hidden>
         <input class="input" id="openLink" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste your gift link" aria-label="Your gift link">
         <p class="small err" id="openError" hidden></p>
         <button class="btn" type="submit">Continue</button>
       </form>
       <a class="choice" href="/account" id="myGifts">
-        <span class="choice-ico" id="mineIco"></span>
         <span class="choice-text"><b>My gifts</b><small>See the gifts you’ve made.</small></span>
       </a>
+    </div>
+
+    <div class="stack" id="thanksBox" style="gap:0" hidden>
+      <h2 style="margin-bottom:10px">Thank-you notes</h2>
+      <div id="thanksList"></div>
     </div>
   </section>
 </main>
 <script type="module">
-import { $, h, api, icon, addStars, showScreen, fmtAgo, initials } from '/assets/common.js';
-$('#homeLogo').innerHTML = icon.mic(15); // static icon markup
+import { $, h, api, showScreen, fmtAgo, tabBar } from '/assets/common.js';
 import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
 
 const user = await me();
 if (!user) location.replace('/login');
 else {
-  addStars($('#app'), 20, 40);
-  $('#makeIco').innerHTML = icon.plus(22);
-  $('#openIco').innerHTML = icon.gift(22);
-  $('#mineIco').innerHTML = icon.sparkle(22);
-  $('#profileAva').textContent = initials(user.name);
   $('#hello').textContent = `Hi, ${user.name}`;
   showScreen('home');
+  tabBar('home');
   drawGifts(firstName(user.name));
   showThanks();
 }
@@ -115,7 +104,6 @@ async function showThanks() {
   if (!thanks.length) return;
   $('#thanksList').replaceChildren(...thanks.map((n) => h('article', { class: 'thanks-card' + (n.read ? '' : ' new') },
     h('div', { class: 'thanks-head' },
-      h('span', { class: 'thanks-emoji' }, theme(n.occasion).emoji),
       h('b', {}, `${n.from} says thank you`),
       !n.read && h('span', { class: 'thanks-new' }, 'New')),
     h('p', {}, n.text),

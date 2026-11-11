@@ -1,13 +1,10 @@
 // The recipient's page: the scene lights up (candles / flowers / lanterns) → listen to each voice
 // → the finale (blow out the candles / throw your cap / release the lanterns) → keepsake.
-import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, openSheet, closeSheet } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, toast, colorFor, initials, tone, copyText, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
 import { playTune } from './music.js';
 
-addStars($('#app'), 26, 55);
-if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
-if ($('#verLogo')) $('#verLogo').innerHTML = icon.lock(16);
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const slug = slugFromPath();
@@ -58,7 +55,6 @@ async function unlockAndShow(pin = '') {
   t = applyTheme(gift.occasion);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
-  if ($('#revealAccessBadge')) $('#revealAccessBadge').textContent = '✓ PIN';
   if (!scene) scene = createScene($('#cake'), gift);
   showScreen('scene');
   messages = data.messages;

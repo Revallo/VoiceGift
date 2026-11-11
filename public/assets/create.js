@@ -1,11 +1,9 @@
-import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet, swipeButton } from './common.js';
+import { $, $$, h, api, icon, showScreen, toast, openSheet, closeSheet } from './common.js';
 import { BRUSHES, NAME_FONTS, DEFAULT_FONT, BACKDROPS } from './stage.js';
 import { TUNES, playTune } from './music.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { me, forgetMe, authForm } from './auth.js';
 
-addStars($('#app'), 20, 40);
-$$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const params = new URLSearchParams(location.search);
@@ -36,7 +34,6 @@ window.addEventListener('popstate', (e) => { stopPreview(); showScreen(e.state?.
 $$('[data-back]').forEach((b) => b.addEventListener('click', () => history.back()));
 
 // ---------- step 1 ----------
-swipeButton($('#nextBtn'));
 let whoScene;
 const sampleName = () => (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
 
@@ -311,7 +308,7 @@ $('#musicPlay').addEventListener('click', () => {
 
 $('#sketchToggle').addEventListener('click', () => {
   state.sketch = !state.sketch;
-  $('#sketchToggle').textContent = state.sketch ? '✓ Done' : '✏️ Draw';
+  $('#sketchToggle').textContent = state.sketch ? 'Done' : 'Draw';
   $('#brushes').hidden = $('#clearDraw').hidden = $('#undoDraw').hidden = !state.sketch;
   if (state.hit) state.hit.hidden = !state.sketch;
 });

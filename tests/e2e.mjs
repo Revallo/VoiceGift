@@ -349,7 +349,7 @@ async function accountFlow(occasion, recipientLink) {
   await a.click('#openForm button[type="submit"]');
   await a.waitForURL(/\/r\/.+\?k=/); // pasting the link opens the gift's PIN page
   await a.goto(`${BASE}/`);
-  await a.click('#profileLink');
+  await a.click('.tabbar a[href="/account"]'); // the bar at the bottom: Home, Record, Profile
   await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
   await a.waitForTimeout(400);
   await shot(a, 'account-02-me', true);
@@ -359,8 +359,7 @@ async function accountFlow(occasion, recipientLink) {
   if ((await a.inputValue('#name')) !== 'Sari') errors.push(`friends' page name for a logged-in organizer: ${await a.inputValue('#name')}`);
   await a.waitForTimeout(400);
   await shot(a, 'account-03-friend-page');
-  await a.goto(`${BASE}/new`);
-  await a.click('[data-screen="who"] a[aria-label="Profile"]');
+  await a.goto(`${BASE}/account`);
   await a.waitForSelector('[data-screen="me"]:not([hidden])');
   await a.click('#logout');
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');

@@ -4,6 +4,10 @@
   "outputDirectory": "public",
   "rewrites": [
     {
+      "source": "/start",
+      "destination": "/start.html"
+    },
+    {
       "source": "/new",
       "destination": "/create.html"
     },

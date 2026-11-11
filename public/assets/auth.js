@@ -10,6 +10,13 @@ export function me() {
   return current;
 }
 
+// Pages that need an account: a logged-out visitor goes to create one and comes straight back here.
+export async function requireLogin() {
+  const user = await me();
+  if (!user) location.replace('/signup?next=' + encodeURIComponent(location.pathname + location.search));
+  return user;
+}
+
 // When the server says nobody is logged in after all (logged out in another tab, say).
 export function forgetMe() {
   current = Promise.resolve(null);
@@ -151,7 +158,7 @@ export function giftItem(g, onDeleted) {
   const countLabel = typeof g.count === 'number' ? `+ ${g.count} ${g.count === 1 ? 'voice' : 'voices'}` : '+ open';
   return h('div', { class: 'item' },
     h('div', { class: 'bento-top' },
-      h('span', { class: 'avatar', style: { background: 'var(--emerald)', color: '#fff', width: '32px', height: '32px', borderRadius: '10px', fontSize: '12px' } }, initials(g.recipient)),
+      h('span', { class: 'avatar', style: { background: 'var(--gold)', color: 'var(--ink)', width: '32px', height: '32px', borderRadius: '10px', fontSize: '12px' } }, initials(g.recipient)),
       h('div', { class: 'bento-meta' },
         h('b', {}, g.recipient),
         h('span', {}, sub)

@@ -26,12 +26,13 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | first page: pick cake / bouquet / lanterns, then its kind (sideways strip of live minis) and flavor; page takes that occasion's colors → "Yes, make the …" → `/login?next=/new?occasion=…&shape=…&flavor=…` |
+| `/` | `index.html` | home, logged in only (else `/login`): thank-you notes received, "Make a gift" → `/start`, "Open your gift" (paste the link) |
+| `/start` | `start.html` | pick cake / bouquet / lanterns, then its kind (sideways strip of live minis) and flavor; page takes that occasion's colors → "Yes, make the …" → `/new?occasion=…&shape=…&flavor=…` |
 | `/new` | `create.html` + `assets/create.js` | organizer: occasion/who (the gift is always drawn on top; 4-digit PIN) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | organizer: create an account / log in → their gifts (dashboard links), log out |
-| `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): name + consent → record → check words (shown as the recipient will see them) → done |
+| `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content) + demo voices, 3. send it (recipient link + PIN, preview) |
-| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: 4-digit PIN → items light → listen → finale (blow / throw cap / release lanterns) → keepsake |
+| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → items light → listen → finale (blow / throw cap / release lanterns) → keepsake → thank everyone |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
 Grad* = graduation, Wed* = wedding; Decorate = cake editor).
@@ -60,15 +61,16 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 manage key) stores them like real messages with `demo: true`; `/api/export` leaves them out.
 
 ## Accounts
-- Email + password, **only for organizers**: creating a gift needs one (`POST /api/gifts` → 401 without a session),
-  so we know who made each gift and `/account` lists it on any phone. Friends and the recipient never sign up
-  ("No sign-up" on the friends' page stays true).
-- Organizers log in first: `/new` sends a logged-out visitor to `/login?next=/new`; after logging in, `/login` goes to
-  `next` (or `/new`). The login page is deliberately simple and wears the picked occasion's colors + emoji
+- Email + password, **for everyone** (decided 2026-11-11): making a gift, recording and opening a gift all need one
+  (401 without a session, enforced in `api/`). A logged-out friend or recipient goes to `/signup?next=<their link>` and comes straight back.
+- `/new` sends a logged-out visitor to `/login?next=/new`; after logging in, `/login` goes to
+  `next` (or `/`). The login page is deliberately simple and wears the picked occasion's colors + emoji
   (`--wash`/`--wash2` per theme in `app.css`). The demo-login button only shows with `?demo=1`. The in-place account step at "Create the gift" stays as a fallback (e.g. an expired session).
   Browser: `assets/auth.js` (`me()`, the form, the "Your gifts" row). Server: `lib/accounts.js`.
-- A friend who happens to be logged in is linked: the message gets `userId` (also in the export) and the page
-  says "Logged in as …". The name on the message is still the one they type.
+- Every new message gets the friend's `userId` (also in the export). The name is filled in from the account; the name on the
+  message is still the one in the box.
+- Thank-you: after the finale the recipient can "Thank everyone" once. Each friend who recorded gets a note on their home page
+  (`users/<id>/thanks/<slug>.json`), marked New until seen. Friends who recorded before accounts were required have no `userId` and get none.
 - Passwords: scrypt (`node:crypto`, no dependency). Sessions: a random token in an HttpOnly, SameSite=Lax cookie
   (`vg_session`, 30 days); storage keeps only its sha256. 10 wrong passwords in a row → 15 minutes' wait.
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
@@ -77,19 +79,20 @@ manage key) stores them like real messages with `demo: true`; `/api/export` leav
 
 ## API (`api/*.js`)
 - `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
-- `GET /api/account` → {user} or {user: null} (`?gifts=1`: + their gifts with keys); `POST` actions `signup`, `login`, `logout`, `claim`
+- `GET /api/account` → {user} or {user: null} (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `signup`, `login`, `logout`, `claim`, `thanks-read`
 - `GET /api/gift?slug` → public gift + message count (never content)
-- `POST /api/message?slug&name&consent=1` body = WAV (octet-stream) → stores, runs ASR → {id, token, asrText}
+- `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
-- `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only with the recipient's key + PIN** (server-side rule); the organizer's own account gets demo voices only (`preview: true`)
-- `GET /api/audio?slug&id&k=openKey&pin` (or `&token` for your own recording) → WAV with Range support (iOS); the organizer (manage key): demo voices only
+- `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only for a logged-in account with the recipient's key + PIN** (server-side rule); the organizer's own account gets demo voices only (`preview: true`)
+- `POST /api/reveal` {slug, k, pin, text} → the recipient's thank-you to everyone, once
+- `GET /api/audio?slug&id&k=openKey&pin` logged in (or `&token` for your own recording) → WAV with Range support (iOS); the organizer (manage key): demo voices only
 - `POST /api/manage` action `update-delivery` {verifyPin} → change the 4-digit PIN
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey / `add-demo`
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent… (+ `userId` if the speaker was logged in)
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
 
 Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`;
-accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`.
+accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `users/<id>/thanks/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`.
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
@@ -99,19 +102,18 @@ company API (wins over Groq; adapt `fromProvider()` to its response shape). Loca
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.
-- Never return message audio/text without the recipient's key **and** the gift's 4-digit PIN (`canOpen` in `lib/gifts.js`,
-  enforced in `api/`, not just the UI). Being logged in never opens a gift; the manage key plays demo voices only.
+- Never return message audio/text without a logged-in account, the recipient's key **and** the gift's 4-digit PIN (`canOpen` in `lib/gifts.js`,
+  enforced in `api/`, not just the UI). Being logged in alone never opens a gift; the manage key plays demo voices only.
   The friend's page promises "Only you and <name> can hear this voice": keep that true. No email delivery.
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
-- Consent checkbox on every recording; store `consentVersion`. Accounts only for organizers (email + password):
-  never make friends or the recipient sign up. No phone numbers.
+- Consent checkbox on every recording; store `consentVersion`. Accounts are email + password. No phone numbers.
 - Never send `passwordHash`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
 - Mobile first: test at 390×844, and desktop (the app is a centered 440 px column).
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 
 ## Not built yet (designed)
-"Save video" export; thank-you reply to everyone; notifications; per-gift link-preview images.
+"Save video" export; notifications; per-gift link-preview images.
 
 ## Later: moving to the company server
 Keep the API contract. Replace `lib/store.js` with the company storage (same 5 functions) and set

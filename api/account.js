@@ -4,9 +4,11 @@
 //                   { action: "login", email, password }         → logged in for 30 days (HttpOnly cookie)
 //                   { action: "logout" }
 //                   { action: "claim", gifts: [{ slug, key }] }  → gifts this browser made before accounts join the account
+//                   { action: "thanks-read" }                    → the thank-you notes on the home page have been seen
+// GET  /api/account?thanks=1      → also the thank-you notes this account received
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
-import { signUp, logIn, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, receivedGiftSlugs } from '../lib/accounts.js';
+import { signUp, logIn, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, receivedGiftSlugs, listThanks, markThanksRead } from '../lib/accounts.js';
 
 // The account's gifts, newest first. Gifts deleted since are skipped (and forgotten).
 async function giftsAndStatsOf(user) {
@@ -142,6 +144,7 @@ export default route({
     }
     const out = { user: publicUser(user) };
     if (q.gifts) Object.assign(out, await giftsAndStatsOf(user));
+    if (q.thanks) out.thanks = (await listThanks(user.id)).map(({ path, ...note }) => note);
     send(res, 200, out);
   },
 
@@ -168,6 +171,12 @@ export default route({
       const user = await currentUser(req);
       if (!user) throw new HttpError(401, 'Please log in first.');
       return send(res, 200, { claimed: await claim(user, b.gifts) });
+    }
+    if (b.action === 'thanks-read') {
+      const user = await currentUser(req);
+      if (!user) throw new HttpError(401, 'Please log in first.');
+      await markThanksRead(user.id);
+      return send(res, 200, { ok: true });
     }
     throw new HttpError(400, 'Unknown action');
   }

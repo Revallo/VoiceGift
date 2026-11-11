@@ -60,7 +60,7 @@ async function load() {
   const friends = gift.occasion === 'wedding' ? 'guests' : 'friends';
   const friend = friendUrl(gift);
   $('#inviteTitle').textContent = `Invite ${friends} to record`;
-  $('#inviteLead').textContent = `Send this link to ${friends}. Each one records a 15-second wish for ${name}. Keep it a secret from ${name}!`;
+  $('#inviteLead').textContent = `Send this link to ${friends}. They log in, then record a 15-second wish for ${name}. Keep it a secret from ${name}!`;
   $('#friendLink').textContent = friend.replace(/^https?:\/\//, '');
   const b = $('#copyFriend');
   b.innerHTML = icon.copy(14);
@@ -90,7 +90,7 @@ async function load() {
   const pin = gift.verifyPin || '1234';
   const url = recipientUrl(gift, openKey);
   $('#sendTitle').textContent = `Send it to ${name}`;
-  $('#sendLead').textContent = `When everyone has recorded (e.g. at 00:00), send ${name} this link and the PIN.`;
+  $('#sendLead').textContent = `When everyone has recorded (e.g. at 00:00), send ${name} this link and the PIN. ${name} logs in, then types the PIN.`;
   $('#pinVal').textContent = pin;
   $('#recipientBox').replaceChildren(linkbox(url), shareRow(`${t.waRecipient(name)}
 PIN: ${pin}`, url));

@@ -12,7 +12,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div class="loading"><h1>Hmm.</h1><p class="lead" id="errorText"></p><a class="btn ghost" href="/" style="max-width:240px">Go to Voice Gift</a></div>
   </section>
 
-  <!-- Step 0 (Only when Recipient has NO Account): Verification Question Gate -->
+  <!-- After logging in: the 4-digit PIN. The 4th digit opens the gift. -->
   <section data-screen="verify" hidden>
     <div class="web-grid">
       <div class="web-col" style="max-width:440px;width:100%;margin:0 auto">
@@ -63,9 +63,6 @@
           <input type="hidden" id="verifyPinInput" value="">
 
           <p class="small err" id="verifyError" hidden style="margin:0;text-align:center"></p>
-          <button type="submit" class="btn emerald-track" id="verifySubmitBtn">
-            <span>Open my gift</span>
-          </button>
         </form>
 
       </div>

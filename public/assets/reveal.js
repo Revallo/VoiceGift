@@ -1,7 +1,8 @@
 // The recipient's page: the scene lights up (candles / flowers / lanterns) → listen to each voice
 // → the finale (blow out the candles / throw your cap / release the lanterns) → keepsake.
-import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, swipeButton } from './common.js';
+import { $, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
+import { requireLogin } from './auth.js';
 
 addStars($('#app'), 26, 55);
 if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
@@ -14,7 +15,7 @@ let verifiedAnswer = '';
 const NOTES = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 const el = { eyebrow: $('#eyebrow'), title: $('#title'), sub: $('#sub'), panel: $('#panel'), bottom: $('#bottom') };
 
-let gift, t, first = '', messages = [], scene, ac, preview = false;
+let gift, t, first = '', messages = [], scene, ac, preview = false, thanked = false;
 let phase = 'loading';
 const buffers = [];
 const bufferJobs = [];
@@ -52,6 +53,7 @@ async function unlockAndShow(pin = '') {
   const data = await api(`/api/reveal?${q.toString()}`);
   gift = data.gift;
   preview = data.preview;
+  thanked = data.thanked;
   t = applyTheme(gift.occasion);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
@@ -63,7 +65,6 @@ async function unlockAndShow(pin = '') {
   showReady();
 }
 
-swipeButton($('#verifySubmitBtn'));
 const pinBoxes = Array.from(document.querySelectorAll('.pin-digit'));
 function syncPinInput() {
   const code = pinBoxes.map((b) => b.value.replace(/\D/g, '')).join('');
@@ -106,6 +107,7 @@ async function load() {
     $('#errorText').textContent = 'This link isn’t complete. Ask the person who sent it for the whole link.';
     return showScreen('error');
   }
+  if (!(await requireLogin())) return; // the link → log in → the PIN
   let pub;
   try {
     pub = await api(`/api/gift?slug=${encodeURIComponent(slug)}`);
@@ -127,26 +129,26 @@ async function load() {
   setTimeout(() => pinBoxes[0]?.focus(), 80);
 }
 
+// The 4th digit opens the gift: there is no button to press.
+let checkingPin = false;
 $('#verifyForm')?.addEventListener('submit', async (ev) => {
   ev.preventDefault();
-  const pin = (syncPinInput() || $('#verifyPinInput')?.value || '').trim();
-  const errEl = $('#verifyError');
-  if (pin.length < 4) {
-    if (errEl) { errEl.textContent = 'Please type all 4 digits of the PIN.'; errEl.hidden = false; }
-    return;
-  }
-  if (errEl) errEl.hidden = true;
-  const btn = $('#verifySubmitBtn');
-  if (btn) btn.disabled = true;
+  const pin = syncPinInput();
+  if (checkingPin || pin.length < 4) return;
+  checkingPin = true;
+  $('#verifyError').hidden = true;
   try {
     verifiedAnswer = pin;
     await unlockAndShow(pin);
-    toast('Opening your gift…');
   } catch (e) {
     verifiedAnswer = '';
-    if (errEl) { errEl.textContent = e.message; errEl.hidden = false; }
+    $('#verifyError').textContent = e.message;
+    $('#verifyError').hidden = false;
+    pinBoxes.forEach((b) => (b.value = ''));
+    syncPinInput();
+    pinBoxes[0].focus();
   } finally {
-    if (btn) btn.disabled = false;
+    checkingPin = false;
   }
 });
 
@@ -273,13 +275,14 @@ function updateHeader() {
 }
 function updateHeard() {
   const heard = $('#heard');
-  if (heard) heard.textContent = played.size >= messages.length ? `You heard all ${messages.length} voices` : `${played.size} of ${messages.length} voices heard`;
+  const more = messages.length > 18 ? ' · scroll for everyone' : '';
+  if (heard) heard.textContent = (played.size >= messages.length ? `You heard all ${messages.length} voices` : `${played.size} of ${messages.length} voices heard`) + more;
   $('#blowBtn')?.classList.toggle('pulse', played.size >= messages.length);
 }
 
 function idlePanel() {
   const p = h('div', { class: 'panel row' });
-  const circle = h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.play(16) });
+  const circle = h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.wave(18) });
   p.append(circle, h('div', {}, h('b', {}, t.idleTitle), h('div', { class: 'small muted' }, 'Their words appear as they speak.')));
   return p;
 }
@@ -304,7 +307,7 @@ async function play(i, chain) {
   scene.setActive(i, true);
 
   const words = m.words.map((w) => h('span', {}, w.w + ' '));
-  const bars = h('div', { class: 'bars' }, ...[0, 1, 2, 3].map(() => h('i', { style: { background: colorFor(i) } })));
+  const bars = h('div', { class: 'bars' }, ...[0, 1, 2, 3, 4].map(() => h('i', { style: { background: colorFor(i) } })));
   setPanel(h('div', { class: 'panel' },
     h('div', { class: 'who' }, h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
       h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec))), bars),
@@ -380,7 +383,9 @@ function startBlow() {
   setBottom(ring, micLine);
 
   let holding = false, progress = 0, last = performance.now(), out = 0, analyser = null, buf = null;
-  const down = (e) => { e.preventDefault(); holding = true; ring.classList.add('down'); ring.setPointerCapture?.(e.pointerId); };
+  const breath = breathSound();
+  let breathing = false, lastPuff = 0;
+  const down = (e) => { e.preventDefault(); ac.resume().catch(() => {}); holding = true; ring.classList.add('down'); ring.setPointerCapture?.(e.pointerId); };
   const up = () => { holding = false; ring.classList.remove('down'); };
   ring.addEventListener('pointerdown', down);
   ring.addEventListener('pointerup', up);
@@ -409,19 +414,20 @@ function startBlow() {
       analyser.getFloatTimeDomainData(buf);
       let s = 0;
       for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i];
-      if (Math.sqrt(s / buf.length) > 0.12) blowing = true;
+      if (Math.sqrt(s / buf.length) > (breathing ? 0.2 : 0.12)) blowing = true; // higher while our own breath sound plays, so the mic can't hear itself
     }
     if (blowing) progress = Math.min(1, progress + dt / 1.4);
     scene.setBend(blowing ? 1 : 0.15);
+    if (blowing !== breathing) { breathing = blowing; breath.set(blowing); }
     const deg = Math.round(progress * 360);
-    ring.style.background = `conic-gradient(var(--coral) ${deg}deg, var(--line) ${deg}deg)`;
+    ring.style.background = `conic-gradient(var(--gold) ${deg}deg, var(--line) ${deg}deg)`;
     const nowOut = th.filter((x) => progress >= x).length;
     if (nowOut > out) {
       th.forEach((x, ci) => { if (progress >= x) scene.finaleOut(ci); });
-      noise(0.22, 900, 0.2);
+      if (ts - lastPuff > 80) { lastPuff = ts; puff(); }
       out = nowOut;
     }
-    if (progress >= 1) return finishFinale();
+    if (progress >= 1) { breath.stop(); return finishFinale(); }
     requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -451,7 +457,40 @@ function startTap() {
   });
 }
 
-function noise(dur, freq, vol) {
+// The sound of blowing: a soft loop of breath that follows the blowing, and a small puff for each flame.
+function breathSound() {
+  try {
+    const b = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+    const d = b.getChannelData(0);
+    for (let j = 0; j < d.length; j++) d[j] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource();
+    src.buffer = b;
+    src.loop = true;
+    const f = ac.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 700;
+    f.Q.value = 0.6;
+    const g = ac.createGain();
+    g.gain.value = 0;
+    src.connect(f); f.connect(g); g.connect(ac.destination);
+    src.start();
+    return {
+      set(on) {
+        g.gain.setTargetAtTime(on ? 0.28 : 0, ac.currentTime, on ? 0.06 : 0.14);
+        f.frequency.setTargetAtTime(on ? 1300 : 700, ac.currentTime, 0.2);
+      },
+      stop() {
+        g.gain.setTargetAtTime(0, ac.currentTime, 0.08);
+        src.stop(ac.currentTime + 0.5);
+      }
+    };
+  } catch {
+    return { set() {}, stop() {} };
+  }
+}
+const puff = () => noise(0.18, 2600, 0.45, 300);
+
+function noise(dur, freq, vol, endFreq) {
   try {
     const len = Math.floor(ac.sampleRate * dur);
     const b = ac.createBuffer(1, len, ac.sampleRate);
@@ -462,6 +501,7 @@ function noise(dur, freq, vol) {
     const f = ac.createBiquadFilter();
     f.type = 'lowpass';
     f.frequency.value = freq;
+    if (endFreq) f.frequency.exponentialRampToValueAtTime(endFreq, ac.currentTime + dur);
     const g = ac.createGain();
     g.gain.value = vol;
     s.connect(f); f.connect(g); g.connect(ac.destination);
@@ -503,7 +543,30 @@ function showKeepsake() {
     else copyText(location.href);
   } });
   const again = btn('Listen again', { ghost: true, icon: icon.redo(15), onclick: () => { scene.reset(); enterScene(); } });
-  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), again);
+  const thank = btn(thanked ? 'Thank-you sent' : 'Thank everyone', { icon: icon.send(16), onclick: () => openThanks(thank) });
+  thank.disabled = thanked;
+  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), ...(preview ? [] : [thank]), again);
+}
+
+function openThanks(thankBtn) {
+  const text = h('textarea', { class: 'input', maxlength: '200', 'aria-label': 'Your thank-you' }, t.thanksText);
+  const send = h('button', { type: 'submit', class: 'btn' }, 'Send to everyone');
+  const form = h('form', { class: 'stack', style: { gap: '12px' }, onsubmit: async (ev) => {
+    ev.preventDefault();
+    send.disabled = true;
+    try {
+      await api('/api/reveal', { method: 'POST', json: { slug, k: openKey, pin: verifiedAnswer, text: text.value } });
+      thanked = true;
+      thankBtn.disabled = true;
+      thankBtn.querySelector('span').textContent = 'Thank-you sent';
+      closeSheet();
+      toast('Your thank-you is on its way');
+    } catch (e) {
+      toast(e.message);
+      send.disabled = false;
+    }
+  } }, text, send);
+  openSheet({ title: 'Thank everyone', subtitle: 'They’ll see this when they next log in.', content: form });
 }
 
 async function exportKeepsakeVideo(saveBtn) {
@@ -517,16 +580,16 @@ async function exportKeepsakeVideo(saveBtn) {
     ctx.fillRect(0, 0, cv.width, cv.height);
 
     // Party hero card at top
-    ctx.fillStyle = '#E8457A';
+    ctx.fillStyle = '#E0B766';
     ctx.beginPath();
     ctx.roundRect?.(40, 40, cv.width - 80, 140, 28) || ctx.rect(40, 40, cv.width - 80, 140);
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillStyle = 'rgba(26,18,8,0.7)';
     ctx.font = '600 15px -apple-system, sans-serif';
     ctx.fillText(t.eyebrow(first).toLowerCase(), 72, 86);
 
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = '#1A1208';
     ctx.font = '700 40px -apple-system, sans-serif';
     ctx.fillText(t.greeting(first), 72, 138);
 
@@ -572,7 +635,7 @@ async function exportKeepsakeVideo(saveBtn) {
     // Progress bar
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.fillRect(56, 820, cv.width - 112, 6);
-    ctx.fillStyle = '#FF7FA6';
+    ctx.fillStyle = '#E0B766';
     ctx.fillRect(56, 820, (cv.width - 112) * Math.min(1, Math.max(0, progressRatio)), 6);
   };
 

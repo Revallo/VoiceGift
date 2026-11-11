@@ -61,6 +61,9 @@ Claude (claude.ai), so a new session can continue without re-asking.
   branch's organizer-only email + password; the organizer-only system was kept for now. Not settled with the manager.
   Limit: the recipient's link still works for anyone who has it, including a logged-out organizer. Accounts and
   claims made under the old system don't carry over.
+- Decision (2026-11-11): **everyone logs in**. Friends log in to record (name filled in from the account, can be changed); the recipient follows
+  link → log in → PIN. This replaces the organizer-only rule above. `/` is now a logged-in home (make a gift / open your gift / thank-you notes); the picker
+  moved to `/start`. The look is one deep colour per occasion + one gold accent + Fraunces headings. The recipient can thank everyone once.
 - Consent wording is demo-only for now ("I allow my voice to be saved for this gift", `consentVersion`
   `demo-2026-10`). It doesn't mention ASR training: change it (and the version) before collecting real data.
 - For the manager demo: dashboard → "Add 12 demo voices" (TTS, marked `demo`, not exported), then "Preview their page".
@@ -68,6 +71,5 @@ Claude (claude.ai), so a new session can continue without re-asking.
 
 ## Ideas offered, not started (ask Revallo before building)
 - Indonesian UI language (target users are Indonesian).
-- Thank-you reply from the recipient to everyone.
 - A simple admin page showing recordings + ASR text vs corrected text (to show the data value).
 - "Save video" export.

@@ -1,6 +1,6 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
-// (create → decorate → sign up → friends record → dashboard → 12 demo voices → recipient link → reveal → finale → keepsake,
-// then log in / account page / log out, plus desktop).
+// (create → decorate → sign up → friends sign up + record → dashboard → 12 demo voices → recipient link → log in → PIN →
+// reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop).
 // One-time setup:  npm i --no-save playwright && npx playwright install chromium
 // Run:             npm run dev   (in another terminal)
 //                  BASE=http://localhost:3000 node tests/e2e.mjs            (all occasions)
@@ -47,10 +47,22 @@ function wav(sec = 2) {
   for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.sin((i / 16000) * 2 * Math.PI * 330) * 3000), 44 + i * 2);
   return b;
 }
+let guestCookie; // recording needs an account: every API guest shares this one
 async function apiGuest(slug, name, text) {
-  const r = await fetch(`${BASE}/api/message?slug=${slug}&name=${encodeURIComponent(name)}&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: wav() });
+  guestCookie ||= (await fetch(`${BASE}/api/account`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'signup', name: 'Tamu', email: `tamu.${RUN}@example.com`, password: PASSWORD }) })).headers.get('set-cookie').split(';')[0];
+  const r = await fetch(`${BASE}/api/message?slug=${slug}&name=${encodeURIComponent(name)}&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', Cookie: guestCookie }, body: wav() });
   const m = await r.json();
   await fetch(`${BASE}/api/message`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, id: m.id, token: m.token, text }) });
+}
+
+// Friends and the recipient arrive logged out: their link asks for an account, then comes straight back.
+async function signUpHere(p, name, email) {
+  await p.waitForSelector('[data-screen="auth"]:not([hidden])');
+  if (new URL(p.url()).pathname !== '/signup') errors.push(`logged-out link went to ${p.url()}`);
+  await p.fill('#acName', name);
+  await p.fill('#acEmail', email);
+  await p.fill('#acPass', PASSWORD);
+  await p.click('#authBox button[type="submit"]');
 }
 
 const CASES = {
@@ -132,10 +144,12 @@ async function runGift(occasion, c) {
   for (const [k, [name, text]] of c.friends.entries()) {
     const f = await page();
     await f.goto(`${BASE}/g/${slug}`);
+    await signUpHere(f, name, `friend.${occasion}.${k}.${RUN}@example.com`);
     await f.waitForSelector('[data-screen="invite"]:not([hidden])');
+    if ((await f.inputValue('#name')) !== name) errors.push(`${occasion}: the friend's name wasn't filled in: ${await f.inputValue('#name')}`);
     await f.waitForTimeout(400);
     if (k === 0) await shot(f, P('04-invite'));
-    await f.fill('#name', name);
+    if (k === 1) await f.fill('#name', `${name} Sayang`); // the name can still be changed
     await f.check('#consent');
     await f.click('#startBtn');
     await f.waitForSelector('[data-screen="record"]:not([hidden])');
@@ -161,8 +175,10 @@ async function runGift(occasion, c) {
   await peek.context().close();
   for (const u of [`/api/reveal?slug=${slug}`, `/api/reveal?slug=${slug}&k=guess`]) {
     const st = (await fetch(BASE + u)).status;
-    if (st !== 403) errors.push(`${u} without the key: ${st}`);
+    if (st !== 401) errors.push(`${u} logged out: ${st}, expected 401`);
   }
+  const anon = (await fetch(`${BASE}/api/message?slug=${slug}&name=X&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: wav() })).status;
+  if (anon !== 401) errors.push(`recording while logged out: ${anon}, expected 401`);
 
   // dashboard + demo voices
   const m = await page();
@@ -183,18 +199,24 @@ async function runGift(occasion, c) {
   await m.context().close();
 
   // recipient reveal (the link from the dashboard)
-  const r = await page();
+  const r = await page(phone, /status of 403/); // the wrong PIN below
   await r.goto(recipientLink);
-  await r.waitForSelector('[data-screen="verify"]:not([hidden])'); // the link + the 4-digit PIN
+  await signUpHere(r, c.recipient, `recipient.${occasion}.${RUN}@example.com`);
+  await r.waitForSelector('[data-screen="verify"]:not([hidden])'); // the link → log in → the 4-digit PIN
   await shot(r, P('10b-pin'));
   // without the PIN, even with the recipient's key: no voices
   const k = new URL(recipientLink).searchParams.get('k');
   for (const u of [`/api/reveal?slug=${slug}&k=${k}`, `/api/reveal?slug=${slug}&k=${k}&pin=0000`, `/api/reveal?slug=${slug}&pin=1234`]) {
-    const st = (await fetch(BASE + u)).status;
+    const st = (await r.context().request.get(BASE + u)).status();
     if (st !== 403) errors.push(`${u}: ${st}, expected 403`);
   }
+  const logoutSt = (await fetch(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=1234`)).status;
+  if (logoutSt !== 401) errors.push(`right key + PIN while logged out: ${logoutSt}, expected 401`);
+  if (await r.$('#verifySubmitBtn')) errors.push('the PIN page still has a button');
   await r.click('.pin-digit >> nth=0');
-  await r.keyboard.type('1234');
+  await r.keyboard.type('0000'); // wrong: the boxes empty again
+  await r.waitForSelector('#verifyError:not([hidden])');
+  await r.keyboard.type('1234'); // the 4th digit opens it
   await r.waitForSelector('text=Open your gift');
   const shown = (await r.$$('.stickers .sticker')).length;
   if (shown !== 3) errors.push(`${occasion}: recipient sees ${shown} stickers, expected 3`);
@@ -205,6 +227,10 @@ async function runGift(occasion, c) {
   await r.waitForSelector('#blowBtn', { timeout: 30000 });
   await r.waitForTimeout(600);
   await shot(r, P('13-listen'));
+  if (occasion === 'wedding') { // many guests: the list scrolls and the buttons stay
+    const sc = await r.$eval('.friends', (e) => { e.scrollTop = 60; const t = e.scrollTop; e.scrollTop = 0; return t; });
+    if (sc <= 0) errors.push('the list of 26 guests does not scroll');
+  }
   await r.click('.friend >> nth=1');
   await r.waitForTimeout(1200);
   await shot(r, P('14-playing'));
@@ -228,6 +254,12 @@ async function runGift(occasion, c) {
   await r.waitForSelector('text=With love from', { timeout: 15000 });
   await r.waitForTimeout(1500);
   await shot(r, P('17-keepsake'));
+  await r.click('text=Thank everyone');
+  await r.waitForSelector('.bottom-sheet textarea');
+  await r.waitForTimeout(350);
+  await shot(r, P('17a-thanks'));
+  await r.click('text=Send to everyone');
+  await r.waitForSelector('text=Thank-you sent');
   if (await r.$('.names .more')) {
     await r.click('.names .more');
     await shot(r, P('17b-keepsake-all'), true);
@@ -235,15 +267,31 @@ async function runGift(occasion, c) {
   await r.click('text=Listen again');
   await r.waitForTimeout(800);
   await shot(r, P('18-listen-again'));
+  const rev = await (await r.context().request.get(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=1234`)).json();
+  if (!rev.thanked) errors.push(`${occasion}: the thank-you was not saved`);
   await r.context().close();
 
-  const rev = await (await fetch(`${BASE}/api/reveal?slug=${slug}&k=${k}&pin=1234`)).json();
+  // the friend's next login: the thank-you is on their home page, "New" only the first time
+  const t = await page();
+  await t.goto(`${BASE}/`);
+  await t.waitForSelector('[data-screen="auth"]:not([hidden])');
+  await t.fill('#acEmail', `friend.${occasion}.0.${RUN}@example.com`);
+  await t.fill('#acPass', PASSWORD);
+  await t.click('#authBox button[type="submit"]');
+  await t.waitForSelector('.thanks-card.new');
+  await t.waitForTimeout(600);
+  await shot(t, P('19-home-thanks'));
+  await t.reload();
+  await t.waitForSelector('.thanks-card');
+  if (await t.$('.thanks-card.new')) errors.push(`${occasion}: the thank-you is still new after being seen`);
+  await t.context().close();
+
   console.log(occasion, 'messages', rev.messages.length, rev.messages.slice(0, 3).map((x) => `${x.sender}: ${x.text} (${x.durationSec}s)`));
   return recipientLink;
 }
 
 // Accounts: no gift without one; the organizer logs in on another phone, finds the gift, is recognized on a
-// friends' page (without being asked to sign up), logs out; an email can't sign up twice.
+// friends' page, logs out; an email can't sign up twice.
 async function accountFlow(occasion, recipientLink) {
   const slug = new URL(recipientLink).pathname.split('/')[2];
   const email = emailFor(occasion);
@@ -251,8 +299,7 @@ async function accountFlow(occasion, recipientLink) {
   if (st !== 401) errors.push(`creating a gift without an account: ${st}`);
 
   const a = await page(phone, /status of (401|409)/); // the wrong password and the taken email
-  await a.goto(`${BASE}/`); // the first page: pick cake / bouquet / lanterns; "Log in" top right
-  await a.click('#loginLink');
+  await a.goto(`${BASE}/`); // the home page needs an account: logged out it goes to log in
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');
   if (new URL(a.url()).pathname !== '/login') errors.push('"Log in" went to ' + a.url());
   await a.fill('#acEmail', email);
@@ -263,8 +310,14 @@ async function accountFlow(occasion, recipientLink) {
   await shot(a, 'account-01-login-wrong');
   await a.fill('#acPass', PASSWORD);
   await a.click('#authBox button[type="submit"]');
-  await a.waitForURL(/\/new$/); // logged in → straight to making a gift
-  await a.click('[data-screen="who"] a[aria-label="Profile"]'); // the profile button, top right
+  await a.waitForSelector('[data-screen="home"]:not([hidden])'); // logged in → the home page: make a gift / open your gift
+  await shot(a, 'account-01b-home');
+  await a.click('#openToggle');
+  await a.fill('#openLink', recipientLink);
+  await a.click('#openForm button[type="submit"]');
+  await a.waitForURL(/\/r\/.+\?k=/); // pasting the link opens the gift's PIN page
+  await a.goto(`${BASE}/`);
+  await a.click('#profileLink');
   await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
   await a.waitForTimeout(400);
   await shot(a, 'account-02-me', true);
@@ -297,9 +350,9 @@ const slugs = {};
 for (const [occasion, c] of Object.entries(CASES)) if (!only || only === occasion) slugs[occasion] = await runGift(occasion, c);
 await accountFlow(...Object.entries(slugs)[0]);
 
-// first page: pick what to make → "Yes" → log in (in that occasion's colors) + desktop
+// the picker: pick what to make → "Yes" → log in (in that occasion's colors) + desktop
 const l = await page();
-await l.goto(BASE + '/');
+await l.goto(BASE + '/start');
 for (const o of ['birthday', 'graduation', 'wedding']) {
   await l.click(`.pick[data-v="${o}"]`);
   await l.waitForTimeout(2400);
@@ -312,10 +365,12 @@ if (!/occasion%3Dwedding/.test(l.url())) errors.push('"Yes" went to ' + l.url())
 await l.waitForTimeout(500);
 await shot(l, 'login-wedding');
 const d = await page({ viewport: { width: 1280, height: 860 }, permissions: ['microphone'] });
-await d.goto(BASE + '/');
+await d.goto(BASE + '/start');
 await d.waitForTimeout(2400);
 await shot(d, 'desktop-pick');
 await d.goto(Object.values(slugs)[0]);
+await signUpHere(d, 'Dimas', `desktop.${RUN}@example.com`);
+await d.waitForSelector('[data-screen="verify"]:not([hidden])');
 await d.click('.pin-digit >> nth=0');
 await d.keyboard.type('1234');
 await d.waitForSelector('text=Open your gift');

@@ -1,7 +1,7 @@
 import { $, $$, h, api, icon, showScreen, slugFromPath, copyText, toast, initials, colorFor } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
-import { me } from './auth.js';
+import { requireLogin } from './auth.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
@@ -29,6 +29,8 @@ window.addEventListener('pagehide', () => {
 function err(el, msg) { el.textContent = msg || ''; el.hidden = !msg; }
 
 async function load() {
+  const user = await requireLogin(); // friends log in, then their name is already filled in
+  if (!user) return;
   try {
     const data = await api(`/api/gift?slug=${encodeURIComponent(slug)}`);
     gift = data.gift;
@@ -42,22 +44,13 @@ async function load() {
   document.title = t.inviteTitle(first);
   $('#invitedBy').textContent = `${gift.organizer} invited you`;
   $('#inviteTitle').textContent = t.inviteTitle(first);
-  const tip = t.tip(first);
-  $('#inviteTip').textContent = tip.charAt(0).toUpperCase() + tip.slice(1);
-  $('#startBtn').innerHTML = icon.mic(34);
+  $('#startBtn').innerHTML = icon.mic(48);
   $$('[data-private]').forEach((p) => (p.textContent = `🔒 Only you and ${first} can hear this voice.`));
   $('#recEyebrow').textContent = `For ${first} · max 15 seconds`;
-  $('#tip').textContent = tip;
-  try { $('#name').value = localStorage.getItem('vg-name') || ''; } catch {}
+  $('#name').value = user.name;
+  $('#signedIn').textContent = `Logged in as ${user.email}`;
+  $('#signedIn').hidden = false;
   showScreen('invite');
-  // No sign-up here. But a friend who is logged in (an organizer too, say) records as their account: say so.
-  me().then((u) => {
-    if (!u) return;
-    if (!$('#name').value) $('#name').value = u.name;
-    $('#signedIn').textContent = `Logged in as ${u.email}`;
-    $('#signedIn').hidden = false;
-    if ($('#optionalLogin')) $('#optionalLogin').hidden = true;
-  });
 }
 
 // ---------- invite → record ----------
@@ -67,7 +60,6 @@ $('#inviteForm').addEventListener('submit', async (e) => {
   if (!name) return err($('#inviteError'), 'Please enter your name.');
   if (!$('#consent').checked) return err($('#inviteError'), 'Please tick the box to continue.');
   err($('#inviteError'), '');
-  try { localStorage.setItem('vg-name', name); } catch {}
   await beginRecording();
 });
 

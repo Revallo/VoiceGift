@@ -17,9 +17,16 @@ const picked = (() => {
 })();
 
 const WORDS = {
-  signup: { path: '/signup', doc: 'Create an account', title: 'Create your account', lead: 'Then we’ll start on your gift.' },
-  login: { path: '/login', doc: 'Log in', title: 'Log in', lead: 'Then we’ll start on your gift.' }
+  signup: { path: '/signup', doc: 'Create an account', title: 'Create your account' },
+  login: { path: '/login', doc: 'Log in', title: 'Log in' }
 };
+
+// What happens after logging in, said in one line.
+const nextPath = new URLSearchParams(location.search).get('next') || '';
+const afterLogin = nextPath.startsWith('/r/') ? 'Then you can open your gift.'
+  : nextPath.startsWith('/g/') ? 'Then you can record your message.'
+  : picked ? `Then we’ll start on your ${THINGS[picked][0]}.`
+  : 'Make a gift, or open one you received.';
 
 let currentUser = null;
 let latestStats = {};
@@ -34,9 +41,11 @@ function showAuth(mode) {
     history.replaceState(null, '', w.path + location.search); // keeps ?next=
     document.title = `${w.doc} · Voice Gift`;
     $('#authTitle').textContent = w.title;
-    $('#authLead').textContent = picked ? `Then we’ll start on your ${THINGS[picked][0]}.` : w.lead;
+    $('#authLead').textContent = afterLogin;
   };
   words(mode);
+  $('#authBack').hidden = !picked;
+  $('#authBack').href = picked ? `/start?occasion=${picked}` : '/';
   $('#authBox').replaceChildren(authForm({ mode, onMode: words, onDone: goOn }));
   showScreen('auth');
 }
@@ -317,8 +326,8 @@ me().then(async (user) => {
   return location.pathname === '/account' ? showAccount(user) : goOn();
 });
 
-// The app starts at the login page; once logged in, go to ?next= (same site only) or straight to "Create gift".
+// Once logged in, go to ?next= (same site only) or to the home page.
 function goOn() {
   const next = new URLSearchParams(location.search).get('next') || '';
-  location.replace(/^\/(?![/\\])/.test(next) ? next : '/new');
+  location.replace(/^\/(?![/\\])/.test(next) ? next : '/');
 }

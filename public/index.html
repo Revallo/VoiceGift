@@ -21,7 +21,7 @@
 
   <section data-screen="home" hidden>
     <div class="row" style="justify-content:space-between">
-      <span class="brand home-brand">Voice Gift</span>
+      <span class="brand home-brand"><span class="home-logo" id="homeLogo"></span>Voice Gift</span>
       <a class="profile-btn" href="/account" id="profileLink"><span class="profile-ava" id="profileAva"></span>Profile</a>
     </div>
 
@@ -65,6 +65,7 @@
 </main>
 <script type="module">
 import { $, h, api, icon, addStars, showScreen, fmtAgo, initials } from '/assets/common.js';
+$('#homeLogo').innerHTML = icon.mic(15); // static icon markup
 import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
 

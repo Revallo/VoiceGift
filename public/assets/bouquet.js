@@ -48,6 +48,67 @@ export const TOPPERS = {
 
 const W = 390, H = 370;
 
+// The greenery around the flowers (gift.cake.greens).
+export const GREENS = {
+  leaf: { label: 'Leaves' },
+  eucalyptus: { label: 'Eucalyptus' },
+  fern: { label: 'Fern' },
+  none: { label: 'None' }
+};
+
+// One sprig, drawn pointing up from (0, 0) with length l. Returns SVG markup (static, no user text).
+const r1 = (n) => Math.round(n * 10) / 10;
+function leafPath(l, w) { // a pointed leaf; the right half a shade darker, a light vein down the middle
+  const a = `M0 0C${r1(w * 0.62)} ${r1(-l * 0.22)} ${r1(w * 0.52)} ${r1(-l * 0.74)} 0 ${-l}`;
+  const b = `C${r1(-w * 0.52)} ${r1(-l * 0.74)} ${r1(-w * 0.62)} ${r1(-l * 0.22)} 0 0Z`;
+  return `<path d="${a}${b}" fill="#6FA86A"/><path d="${a}Z" fill="#4F8A50"/><path d="M0 0L0 ${r1(-l * 0.88)}" stroke="#CFE8C4" stroke-opacity=".45" stroke-width="1.2"/>`;
+}
+function sprig(kind, l) {
+  let out = '';
+  const at = (x, y, rot, inner) => `<g transform="translate(${r1(x)} ${r1(y)}) rotate(${rot})">${inner}</g>`;
+  if (kind === 'eucalyptus') {
+    out += `<path d="M0 0Q4 ${r1(-l / 2)} 0 ${-l}" stroke="#7F9A8C" stroke-width="2" fill="none"/>`;
+    for (let k = 0, y = -8; y > -l + 2; k++, y -= 9) {
+      const r = 8.5 - (k * 4.5) / (l / 9);
+      out += `<ellipse cx="${k % 2 ? 6 : -6}" cy="${y}" rx="${r1(r)}" ry="${r1(r * 0.86)}" fill="${k % 2 ? '#9DB8A8' : '#86A595'}" stroke="#6E8C7C" stroke-width="1"/>`;
+    }
+    return out;
+  }
+  if (kind === 'fern') {
+    out += `<path d="M0 0L0 ${-l}" stroke="#4C8746" stroke-width="2"/>`;
+    for (let y = -6; y > -l + 3; y -= 5) {
+      const len = 4 + 13 * ((l + y) / l);
+      for (const side of [-1, 1]) out += at(0, y, side * 62, `<ellipse cx="0" cy="${r1(-len / 2)}" rx="2.2" ry="${r1(len / 2)}" fill="${side < 0 ? '#6BAA60' : '#57944F'}"/>`);
+    }
+    return out + at(0, -l, 0, '<ellipse cx="0" cy="-3" rx="2.2" ry="4" fill="#6BAA60"/>');
+  }
+  // leaf: a short stem, one leaf at the tip and two at the sides
+  out += `<path d="M0 0L0 ${r1(-l * 0.62)}" stroke="#4F8A50" stroke-width="2.4"/>`;
+  out += at(0, -l * 0.3, -46, leafPath(l * 0.42, l * 0.3));
+  out += at(0, -l * 0.42, 44, leafPath(l * 0.4, l * 0.28));
+  out += at(0, -l * 0.58, 0, leafPath(l * 0.44, l * 0.32));
+  return out;
+}
+function greensSvg(kind) {
+  if (kind === 'none') return '';
+  const rnd = seeded(23);
+  let g = '';
+  // around the edge: sprigs reaching out from behind the flowers
+  for (const a of [-86, -64, -42, -20, 2, 22, 44, 66, 88]) {
+    const rad = ((a + (rnd() - 0.5) * 8) * Math.PI) / 180;
+    const x = 195 + Math.sin(rad) * 112, y = 146 - Math.cos(rad) * 84;
+    const l = (a / 2) % 2 ? 54 : 64;
+    g += `<g transform="translate(${r1(x)} ${r1(y)}) rotate(${r1((rad * 180) / Math.PI)})">${sprig(kind, l)}</g>`;
+  }
+  // inside: a few short ones among the flowers, so a bouquet with few voices still looks full
+  for (const [x, y, r] of [[118, 120, -40], [156, 96, -16], [234, 96, 16], [272, 120, 40], [195, 138, 0], [104, 160, -64], [286, 160, 64]]) {
+    g += `<g transform="translate(${x} ${y}) rotate(${r})">${sprig(kind, 40)}</g>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="position:absolute;inset:0;overflow:visible" aria-hidden="true">${g}</svg>`;
+}
+
+
+
 // Flower positions for n flowers (1–40): rows from the back (top) to the front, each wider than the last.
 export function flowerSpots(n) {
   const rows = n <= 3 ? 1 : n <= 7 ? 2 : n <= 12 ? 3 : n <= 20 ? 4 : n <= 30 ? 5 : 6;
@@ -137,18 +198,12 @@ export function createBouquet(host, opts = {}) {
   const backEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
   body.append(backEl);
   // greenery and baby's breath inside the wrap, so the bouquet looks full even with a few flowers
+  const greensEl = div('', { position: 'absolute', inset: '0' }); // the greenery (gift.cake.greens), drawn as SVG
+  body.append(greensEl);
   const rndIn = seeded(9);
-  for (const [x, y, r] of [[118, 112, -42], [156, 86, -18], [195, 78, 0], [234, 86, 18], [272, 112, 42], [100, 150, -64], [290, 150, 64], [146, 140, -26], [244, 140, 26], [195, 128, 0]]) {
-    P(body, { left: `${x - 9}px`, top: `${y - 30}px`, width: '18px', height: '52px', borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', background: r % 4 ? '#4F8455' : '#3F6E46', transform: `rotate(${r}deg)`, transformOrigin: '50% 100%' });
-  }
   for (let i = 0; i < 26; i++) {
     const d = 3 + Math.round(rndIn() * 3);
     P(body, { left: `${Math.round(92 + rndIn() * 206)}px`, top: `${Math.round(58 + rndIn() * 104)}px`, width: `${d}px`, height: `${d}px`, borderRadius: '50%', background: '#FFFFFF', opacity: '0.9' });
-  }
-  // leaves
-  const leafA = '#5C8F5E', leafB = '#4A7A50';
-  for (const [x, y, r, c] of [[150, -2, -14, leafA], [195, -14, 0, leafB], [240, -2, 14, leafA], [92, 30, -48, leafB], [298, 30, 48, leafB], [52, 84, -72, leafA], [338, 84, 72, leafA], [40, 138, -96, leafB], [350, 138, 96, leafB]]) {
-    P(body, { left: `${x - 11}px`, top: `${y}px`, width: '22px', height: '64px', borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', background: c, transform: `rotate(${r}deg)`, transformOrigin: '50% 100%', boxShadow: 'inset -4px 0 0 rgba(0,0,0,0.1)' });
   }
   // baby's breath
   const rnd = seeded(5);
@@ -212,6 +267,7 @@ export function createBouquet(host, opts = {}) {
     setAccent(k) { accent = k; api.setFlavor(flavor); },
     setPattern(k) { stage.dataset.petal = PATTERNS[k] ? k : 'round'; },
     setTopper(k) { setTucked(TOPPERS[k]); tuck.hidden = !TOPPERS[k]?.emoji; },
+    setGreens(k) { greensEl.innerHTML = greensSvg(GREENS[k] ? k : 'leaf'); }, // static markup, no user text
     setName(t) {
       nameEl.textContent = t || '';
       nameFit.setSize(nameSize || 30); // shrinks to fit
@@ -258,6 +314,7 @@ export function createBouquet(host, opts = {}) {
   api.setDots(opts.dots);
   api.setPattern(opts.pattern);
   api.setTopper(opts.topper);
+  api.setGreens(opts.greens);
   setBackdrop(opts.backdrop);
   stickers.set(opts.stickers);
   return api;

@@ -23,7 +23,7 @@ function cleanCake(cake = {}) {
   const font = /^[a-z]{2,16}$/.test(cake.font) ? cake.font : ''; // a key of NAME_FONTS (stage.js); '' = the default
   const key = (v) => (/^[a-z]{2,16}$/.test(v) ? v : ''); // keys of the scene's lists; '' or unknown = the default
   const age = Math.max(0, Math.min(120, Math.round(+cake.age) || 0));
-  return { flavor, shape, font, name, dots, stickers, accent: key(cake.accent), pattern: key(cake.pattern), topper: key(cake.topper), backdrop: key(cake.backdrop), music: key(cake.music), age };
+  return { flavor, shape, font, name, dots, stickers, accent: key(cake.accent), pattern: key(cake.pattern), topper: key(cake.topper), greens: key(cake.greens), backdrop: key(cake.backdrop), music: key(cake.music), age };
 }
 
 function readGift(b) {

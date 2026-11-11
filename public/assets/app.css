@@ -2071,17 +2071,18 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .gift-item-open:hover { opacity: 1; background: var(--emerald-dark); }
 
 /* ---------- Home page ---------- */
-.home-brand { font-family: var(--display); font-size: 28px; font-weight: 600; letter-spacing: -0.01em; line-height: 1; color: var(--text); }
+.home-brand { display: inline-flex; align-items: center; gap: 8px; font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: 0; line-height: 1; color: var(--muted); }
+.home-logo { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--panel); border: 1px solid var(--line-strong); color: var(--text); }
 .profile-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 6px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: var(--panel); color: var(--text); font-size: 14px; font-weight: 700; text-decoration: none; }
 .profile-btn:hover { background: var(--panel-hover); opacity: 1; }
 .profile-ava { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--emerald); color: #FFFFFF; font-size: 12px; font-weight: 700; }
-.home-hero { position: relative; aspect-ratio: 2.55; margin: 6px 0 2px; }
-.home-gift { position: absolute; bottom: 9%; width: 34%; border-radius: 24px; box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.75); transition: transform 0.18s ease; }
-.home-gift.left { left: 0; transform: rotate(-5deg); }
-.home-gift.right { right: 0; transform: rotate(5deg); }
-.home-gift.mid { left: 50%; bottom: 0; width: 40%; z-index: 2; transform: translateX(-50%); }
-.home-gift.left:hover { transform: rotate(-5deg) translateY(-4px); opacity: 1; }
-.home-gift.right:hover { transform: rotate(5deg) translateY(-4px); opacity: 1; }
+.home-hero { position: relative; aspect-ratio: 2.4; margin: 12px 0 6px; }
+.home-gift { position: absolute; bottom: 14%; width: 27%; border-radius: 24px; box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.75); transition: transform 0.18s ease; }
+.home-gift.left { left: 0; transform: rotate(-7deg); }
+.home-gift.right { right: 0; transform: rotate(7deg); }
+.home-gift.mid { left: 50%; bottom: 0; width: 52%; z-index: 2; transform: translateX(-50%); }
+.home-gift.left:hover { transform: rotate(-7deg) translateY(-4px); opacity: 1; }
+.home-gift.right:hover { transform: rotate(7deg) translateY(-4px); opacity: 1; }
 .home-gift.mid:hover { transform: translateX(-50%) translateY(-4px); opacity: 1; }
 .home-gift .stage-wrap { border-color: var(--line-strong); }
 .home-gift .stage, .home-gift .stage * { pointer-events: none; }
@@ -2103,7 +2104,7 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .tuck { position: absolute; inset: 0; transform: rotate(13deg); transform-origin: 232px 190px; }
 .tuck-stick { position: absolute; left: 230px; top: 58px; width: 4px; height: 130px; border-radius: 2px; background: #B98D5E; box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.2); }
 .home-title p { margin: 0 0 4px; color: var(--gold); font-weight: 600; font-size: 14px; }
-.home-title h1 { margin: 0; font-size: 1.8rem; line-height: 1.15; }
+.home-title h1 { margin: 0; font-size: 1.8rem; line-height: 1.15; text-wrap: balance; }
 .choice { display: flex; align-items: center; gap: 14px; width: 100%; padding: 18px 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--panel); color: var(--text); font: inherit; text-align: left; text-decoration: none; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
 .choice:hover, .choice[aria-expanded="true"] { background: var(--panel-hover); border-color: var(--gold-border); }
 .choice-ico { flex: 0 0 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold); }

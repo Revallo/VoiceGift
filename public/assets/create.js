@@ -19,7 +19,7 @@ const state = {
   sel: -1,
   created: null,
   verifyPin: String(1000 + Math.floor(Math.random() * 9000)), // the organizer can change it
-  accent: '', pattern: '', topper: 'none', age: 21, backdrop: 'party', music: 'none',
+  accent: '', pattern: '', topper: 'none', greens: 'leaf', age: 21, backdrop: 'party', music: 'none',
   sketch: false
 };
 $('#deliverySummaryVal').textContent = state.verifyPin;
@@ -55,7 +55,7 @@ function renderWhoPreview() {
 }
 
 // Everything picked in the decorate step, as stored in gift.cake.
-const decor = (name) => ({ flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name, accent: state.accent, pattern: state.pattern, topper: state.topper, age: state.age, backdrop: state.backdrop, music: state.music });
+const decor = (name) => ({ flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name, accent: state.accent, pattern: state.pattern, topper: state.topper, greens: state.greens, age: state.age, backdrop: state.backdrop, music: state.music });
 
 const LEADS = {
   birthday: 'Each friend’s voice lights one candle on the cake.',
@@ -82,6 +82,7 @@ function setOccasion(key) {
   state.accent = Object.keys(t.decorate.accents)[0];
   state.pattern = Object.keys(t.decorate.patterns)[0];
   state.topper = 'none';
+  state.greens = 'leaf';
   state.nameTouched = false;
   renderWhoPreview();
   buildDecorate();
@@ -262,6 +263,8 @@ function renderDetails() {
   wheel($('#accents'), Object.entries(d.accents), state.accent, (k, v) => swatch(v.label, { background: v.color }), (k) => { state.accent = k; scene.setAccent(k); });
   wheel($('#patterns'), Object.entries(d.patterns), state.pattern, (k, v) => chip(v.label), (k) => { state.pattern = k; scene.setPattern(k); });
   wheel($('#toppers'), Object.entries(d.toppers), state.topper, (k, v) => chip(v.emoji ? `${v.emoji} ${v.label}` : v.label), (k) => { state.topper = k; scene.setTopper(k, state.age); showAge(); });
+  $('#greensRow').hidden = !d.greens;
+  if (d.greens) wheel($('#greens'), Object.entries(d.greens), state.greens, (k, v) => chip(v.label), (k) => { state.greens = k; scene.setGreens?.(k); });
   wheel($('#backdrops'), Object.entries(BACKDROPS), state.backdrop, (k, v) => chip(v.label), (k) => { state.backdrop = k; scene.setBackdrop(k); });
   wheel($('#tunes'), Object.entries(TUNES), state.music, (k, v) => chip(v.label), (k) => { state.music = k; if (tuneAc?.state === 'running') startTune(); });
   $('#ageRange').value = state.age;
@@ -324,7 +327,7 @@ function buildKinds() {
   for (const [key, s] of Object.entries(t.decorate.shapes)) {
     const mini = h('div', { class: 'mini' });
     box.append(h('button', { type: 'button', class: 'kind', role: 'radio', 'data-v': key, onclick: () => pickShape(key) }, mini, h('span', {}, s.label)));
-    const sc = createScene(mini, { occasion: state.occasion, recipient: '', cake: { flavor: state.flavor, shape: key, name: '' } });
+    const sc = createScene(mini, { occasion: state.occasion, recipient: '', cake: { flavor: state.flavor, shape: key, name: '', greens: state.greens } });
     sc.setCandles(6);
     sc.lightAll();
   }
@@ -541,7 +544,7 @@ if (editSlug && editKey) {
     $('#organizer').value = gift.organizer || '';
     if (/^\d{4}$/.test(gift.verifyPin || '')) { state.verifyPin = gift.verifyPin; $('#deliverySummaryVal').textContent = gift.verifyPin; }
     if (gift.cake) {
-      for (const k of ['flavor', 'shape', 'font', 'accent', 'pattern', 'topper', 'backdrop', 'music']) if (gift.cake[k]) state[k] = gift.cake[k];
+      for (const k of ['flavor', 'shape', 'font', 'accent', 'pattern', 'topper', 'greens', 'backdrop', 'music']) if (gift.cake[k]) state[k] = gift.cake[k];
       if (gift.cake.age) state.age = gift.cake.age;
       if (!NAME_FONTS[state.font]) state.font = DEFAULT_FONT;
       buildDecorate();

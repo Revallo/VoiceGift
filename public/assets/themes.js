@@ -1,7 +1,7 @@
 // The occasions. Each one has its own scene and its own words; the flow is the same everywhere.
 // Pages call theme(gift.occasion) for the words and createScene() for the cake / bouquet / lanterns.
 import { createCake, FLAVORS, SHAPES as CAKE_SHAPES, SWATCH as CAKE_SWATCH, ACCENTS as CREAMS, PATTERNS as CAKE_PATTERNS, TOPPERS as CAKE_TOPPERS } from './cake.js';
-import { createBouquet, WRAPS, SHAPES as WRAP_SHAPES, SWATCH as WRAP_SWATCH, ACCENTS as RIBBONS, PATTERNS as PETALS, TOPPERS as WRAP_TOPPERS } from './bouquet.js';
+import { createBouquet, WRAPS, SHAPES as WRAP_SHAPES, SWATCH as WRAP_SWATCH, ACCENTS as RIBBONS, PATTERNS as PETALS, TOPPERS as WRAP_TOPPERS, GREENS } from './bouquet.js';
 import { createLanterns, LIGHTS, SHAPES as LIGHT_SHAPES, SWATCH as LIGHT_SWATCH, ACCENTS as STRINGS, PATTERNS as MOTIFS, TOPPERS as LIGHT_TOPPERS } from './lanterns.js';
 
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -46,7 +46,7 @@ export const THEMES = {
     people: (n) => count(n, 'person', 'people'),
     item: 'flower', items: 'flowers', itemsOn: 'open',
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Nadia',
-    decorate: { next: 'Next: customize gift', title: 'Customize graduation gift', lead: 'wrap, title & accents', shapeLabel: 'Bouquet', shapes: WRAP_SHAPES, swatchLabel: 'Wrap', swatches: WRAPS, swatch: WRAP_SWATCH, flavor: 'strawberry', accentLabel: 'Ribbon', accents: RIBBONS, patternLabel: 'Flowers', patterns: PETALS, topperLabel: 'Tuck in', toppers: WRAP_TOPPERS, nameLabel: 'Title', nameMax: 20, name: (r) => fullName(r).slice(0, 20), namePlaceholder: 'e.g. Nadia, S.Kom.', draw: true,
+    decorate: { next: 'Next: customize gift', title: 'Customize graduation gift', lead: 'wrap, title & accents', shapeLabel: 'Bouquet', shapes: WRAP_SHAPES, swatchLabel: 'Wrap', swatches: WRAPS, swatch: WRAP_SWATCH, flavor: 'strawberry', accentLabel: 'Ribbon', accents: RIBBONS, patternLabel: 'Flowers', patterns: PETALS, topperLabel: 'Tuck in', toppers: WRAP_TOPPERS, greens: GREENS, nameLabel: 'Title', nameMax: 20, name: (r) => fullName(r).slice(0, 20), namePlaceholder: 'e.g. Nadia, S.Kom.', draw: true,
       stickers: ['🎓', '✨', '🏆', '📜', '⭐', '🥂', '💐', '🌷', '🌟', '🎉', '📚', '🥇', '👑', '💫', '🍀', '🚀', '🌸', '🎀', '🤍', '💎', '🦋', '🌙', '🌻', '🎶'] },
     inviteTitle: (name) => `Record a message for ${name}’s graduation`,
     countLine: (n) => (n ? `${count(n, 'friend has', 'friends have')} added a flower` : 'Be the first to add a flower'),
@@ -111,7 +111,7 @@ export const theme = (occasion) => THEMES[occasion] || THEMES.birthday;
 export function createScene(host, gift, opts = {}) {
   const t = theme(gift.occasion);
   const cake = gift.cake || {};
-  const o = { ...opts, flavor: cake.flavor || t.decorate.flavor, shape: cake.shape, font: cake.font, name: cake.name, dots: cake.dots, stickers: cake.stickers, accent: cake.accent, pattern: cake.pattern, topper: cake.topper, age: cake.age, backdrop: cake.backdrop };
+  const o = { ...opts, flavor: cake.flavor || t.decorate.flavor, shape: cake.shape, font: cake.font, name: cake.name, dots: cake.dots, stickers: cake.stickers, accent: cake.accent, pattern: cake.pattern, topper: cake.topper, age: cake.age, backdrop: cake.backdrop, greens: cake.greens };
   if (t.key === 'graduation') return createBouquet(host, o);
   if (t.key === 'wedding') return createLanterns(host, { ...o, names: gift.recipient });
   return createCake(host, o);

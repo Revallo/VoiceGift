@@ -100,8 +100,7 @@ a { color: var(--text); text-decoration-color: var(--line-strong); text-underlin
 a:hover { opacity: 0.8; }
 button { font-family: inherit; }
 
-/* ---------- Prototype Viewport Switcher (Mobile vs Desktop) ---------- */
-/* Mobile Phone Shell (#1B1024) */
+/* The app is always a phone: full screen on a real one, a phone-sized frame on anything wider */
 .app {
   position: relative;
   width: 100%;
@@ -122,37 +121,33 @@ button { font-family: inherit; }
 }
 
 @media (min-width: 520px) {
-  body { padding: 14px 16px 28px; }
+  body { height: 100dvh; padding: 14px 16px; justify-content: center; overflow: hidden; }
   .app {
+    flex-shrink: 0;
+    height: min(844px, calc(100dvh - 28px));
+    min-height: 0;
+    overflow: hidden auto;
+    scrollbar-width: none;
     border-radius: 44px;
     border: 1px solid rgba(var(--fg), 0.12);
     box-shadow: 0 32px 90px rgba(0, 0, 0, 0.8), 0 0 0 7px #161818, 0 0 0 8.5px rgba(var(--fg), 0.1);
-    padding: 28px 18px 26px;
+    padding: 0 18px 26px;
   }
-  /* Subtle Dynamic Island notch when in Mobile prototype mode */
-  body:not([data-viewport="desktop"]) .app::before {
+  .app::-webkit-scrollbar { display: none; }
+  /* The notch stays put while the page scrolls under it */
+  .app::before {
     content: '';
+    position: sticky;
+    top: 14px;
+    z-index: 30;
     width: 92px;
     height: 22px;
     border-radius: 999px;
     background: #050505;
     border: 1px solid rgba(var(--fg), 0.07);
-    margin: -14px auto 12px;
+    margin: 14px auto 12px;
     flex-shrink: 0;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9);
-  }
-}
-
-/* Desktop Web Studio Mode (toggled via [desktop] button) */
-@media (min-width: 760px) {
-  body[data-viewport="desktop"] {
-    padding: 16px 24px 32px;
-  }
-  body[data-viewport="desktop"] .app {
-    max-width: 960px;
-    padding: 28px 32px 34px;
-    border-radius: 36px;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.75), 0 0 0 6px rgba(var(--fg), 0.02);
   }
 }
 
@@ -179,14 +174,6 @@ button { font-family: inherit; }
   flex-direction: column;
   gap: 16px;
   min-width: 0;
-}
-@media (min-width: 760px) {
-  body[data-viewport="desktop"] .web-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 28px;
-    align-items: start;
-  }
 }
 
 .stars { display: none !important; }
@@ -1838,11 +1825,10 @@ a.avatar.acct {
   overflow-y: auto;
   animation: vg-sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-body[data-viewport="desktop"] .bottom-sheet {
-  max-width: 500px;
-  border-radius: 28px;
-  border-bottom: 1px solid rgba(var(--fg), 0.14);
-  margin-bottom: 24px;
+/* In the phone frame, the sheet rises from the frame's bottom edge */
+@media (min-width: 520px) {
+  .sheet-backdrop { padding-bottom: max(14px, calc((100dvh - 844px) / 2)); }
+  .bottom-sheet { border-radius: 30px 30px 44px 44px; }
 }
 .sheet-handle-wrap {
   display: flex;

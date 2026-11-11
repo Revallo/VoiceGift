@@ -106,7 +106,7 @@ company API (wins over Groq; adapt `fromProvider()` to its response shape). Loca
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
 - Consent checkbox on every recording; store `consentVersion`. Accounts are email + password. No phone numbers.
 - Never send `passwordHash`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
-- Mobile first: test at 390×844, and desktop (the app is a centered 440 px column).
+- Mobile first: test at 390×844, and desktop (the app is a phone-sized frame, 420×844 at most, that scrolls inside; no wide layout).
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 
 ## Not built yet (designed)

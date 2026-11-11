@@ -92,6 +92,7 @@ export function swipeButton(btn) {
 export function showScreen(name) {
   for (const s of $$('[data-screen]')) s.hidden = s.dataset.screen !== name;
   window.scrollTo(0, 0);
+  document.querySelector('.app')?.scrollTo(0, 0); // on a wide screen the phone frame scrolls, not the page
 }
 
 export function slugFromPath() {
@@ -134,13 +135,7 @@ export function waShare(text) {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
-// Wide screens get the two-column layout.
-export function initViewportSwitcher() {
-  document.body.dataset.viewport = matchMedia('(min-width: 760px)').matches ? 'desktop' : 'mobile';
-}
-
 export function addStars(root, n = 24, maxTop = 70) {
-  initViewportSwitcher();
   const box = h('div', { class: 'stars', 'aria-hidden': 'true' });
   for (let i = 0; i < n; i++) {
     box.append(h('i', { style: { left: `${Math.random() * 100}%`, top: `${Math.random() * maxTop}%`, animationDelay: `${-Math.random() * 4}s`, animationDuration: `${2 + Math.random() * 3}s` } }));
@@ -231,14 +226,6 @@ export function openSheet({ title = '', subtitle = '', content = null, onClose =
   activeSheet = { backdrop, onClose, keyHandler };
   document.body.append(backdrop);
   return { close: closeSheet, sheet, bodyBox };
-}
-
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initViewportSwitcher, { once: true });
-  } else {
-    initViewportSwitcher();
-  }
 }
 
 // Soft chime for candles lighting, built with Web Audio (no files).

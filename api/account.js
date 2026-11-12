@@ -7,9 +7,13 @@
 //                   { action: "claim", gifts: [{ slug, key }] }  → gifts this browser made before accounts join the account
 //                   { action: "thanks-read" }                    → the thank-you notes on the home page have been seen
 // GET  /api/account?thanks=1      → also the thank-you notes this account received
+// GET  /api/account?home=1        → also what the home page and the Record tab show: { sent: [when…], giftsCount,
+//                                   invites: [{ slug, recipient, occasion, organizer }] (gifts still waiting for their voice),
+//                                   following: [{ handle, name, bio }] }
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
-import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
-import { signUp, logIn, googleLogIn, googleClientId, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead } from '../lib/accounts.js';
+import { listFollowing } from '../lib/follows.js';
+import { loadGift, saveGift, loadMessages, publicGift } from '../lib/gifts.js';
+import { signUp, logIn, googleLogIn, googleClientId, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead, inviteSlugs, forgetInvite, listSent } from '../lib/accounts.js';
 
 // The account's gifts, newest first. Gifts deleted since are skipped (and forgotten).
 async function giftsAndStatsOf(user) {
@@ -63,6 +67,24 @@ async function giftsAndStatsOf(user) {
       joinedAt: user.createdAt
     }
   };
+}
+
+// The home page and the Record tab: when the account sent voices (the page counts "today" in its own time zone),
+// how many gifts it made, and the gifts it was invited to and hasn't sent a voice for yet.
+async function homeOf(user) {
+  const [sent, invited, made, following] = await Promise.all([listSent(user.id), inviteSlugs(user.id), giftSlugs(user.id), listFollowing(user.id)]);
+  const done = new Set(sent.map((s) => s.slug));
+  const invites = await Promise.all(invited.filter((slug) => !done.has(slug)).map(async (slug) => {
+    try {
+      const g = publicGift(await loadGift(slug));
+      return { slug: g.slug, recipient: g.recipient, occasion: g.occasion, organizer: g.organizer };
+    } catch (e) {
+      if (e.status !== 404) throw e;
+      await forgetInvite(user.id, slug); // the gift was deleted
+      return null;
+    }
+  }));
+  return { sent: sent.slice(0, 200).map((s) => s.at), sentTotal: sent.length, giftsCount: made.length, invites: invites.filter(Boolean), following };
 }
 
 // The browser's own "Your gifts" list from before accounts: the manage key proves a gift is this person's,
@@ -125,6 +147,7 @@ export default route({
     const out = { user: publicUser(user), googleClientId: googleClientId() };
     if (q.gifts) Object.assign(out, await giftsAndStatsOf(user));
     if (q.thanks) out.thanks = (await listThanks(user.id)).map(({ path, ...note }) => note);
+    if (q.home) out.home = await homeOf(user);
     send(res, 200, out);
   },
 

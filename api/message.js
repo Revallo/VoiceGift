@@ -5,7 +5,7 @@
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { loadGift, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
-import { requireUser } from '../lib/accounts.js';
+import { requireUser, addSent } from '../lib/accounts.js';
 
 async function authorized(body) {
   if (!isSlug(body.slug)) throw new HttpError(404, 'Gift not found');
@@ -88,8 +88,10 @@ export default route({
     msg.finalWords = msg.edited
       ? evenWords(text, msg.durationSec, new Set(), msg.speechStartSec || 0, msg.speechEndSec || null)
       : msg.asrWords;
+    const firstSend = !msg.sentAt;
     msg.sentAt = new Date().toISOString();
     await updateMessage(path, msg);
+    if (firstSend && msg.userId) await addSent(msg.userId, { slug: body.slug, id: msg.id }).catch((e) => console.error(e)); // the count on their home page
     send(res, 200, { ok: true, edited: msg.edited, corrections: msg.corrections });
   },
 

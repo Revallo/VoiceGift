@@ -21,6 +21,7 @@ const state = {
   sketch: false
 };
 $('#deliverySummaryVal').textContent = state.verifyPin;
+if (params.get('for')) $('#recipient').value = params.get('for').slice(0, 40); // "a new gift for a friend" from the Record tab
 let t = theme(state.occasion);
 const MAX_STICKERS = 30;
 
@@ -497,7 +498,13 @@ $('#createBtn').addEventListener('click', async () => {
       state.created = await api('/api/gifts', { method: 'POST', json: body }); // listed on the account page
     }
     // everything else (invite friends, who recorded, send it) is on the gift's one page
-    return location.replace(`/m/${state.created.slug}?k=${state.created.manageKey}`);
+    const dash = `/m/${state.created.slug}?k=${state.created.manageKey}`;
+    if (params.get('draft') && !params.get('edit')) {
+      // made from the Record tab: the voice recorded there goes in first, then on to the gift's page
+      try { sessionStorage.setItem('vg-after-record', dash); } catch {}
+      return location.replace(`/g/${state.created.slug}?draft=1`);
+    }
+    return location.replace(dash);
   } catch (e) {
     if (e.status === 401) { forgetMe(); return askAccount(); } // logged out in another tab
     err.textContent = e.message;

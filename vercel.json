@@ -12,6 +12,10 @@
       "destination": "/quick.html"
     },
     {
+      "source": "/u/:handle",
+      "destination": "/user.html"
+    },
+    {
       "source": "/start",
       "destination": "/create.html"
     },

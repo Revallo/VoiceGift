@@ -22,16 +22,36 @@
   <section data-screen="home" hidden>
     <div class="nav-header"><span class="home-brand">Voice Gift</span></div>
 
-    <!-- the three gifts, drawn live; each one starts making that kind of gift -->
-    <div class="home-hero">
-      <a class="home-gift left" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"></a>
-      <a class="home-gift right" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"></a>
-      <a class="home-gift mid" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"></a>
+    <!-- First time: the three gifts, drawn live (each one starts making that kind of gift), and the question. -->
+    <div id="homeFirst" hidden>
+      <div class="home-hero">
+        <a class="home-gift left" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"></a>
+        <a class="home-gift right" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"></a>
+        <a class="home-gift mid" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"></a>
+      </div>
+      <div class="home-title" style="margin-top:20px">
+        <p id="hello"></p>
+        <h1>What would you like to do?</h1>
+      </div>
     </div>
 
-    <div class="home-title">
-      <p id="hello"></p>
-      <h1>What would you like to do?</h1>
+    <!-- Once they've used it: what they sent today, their friends, and the gifts waiting for their voice. -->
+    <div class="stack" id="homeBack" style="gap:26px" hidden>
+      <div>
+        <p class="big-number" id="sentToday">0</p>
+        <p id="sentLine"></p>
+      </div>
+      <div id="peopleBox">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <h2>Friends</h2>
+          <button type="button" class="linkbtn" id="findFriends">Find friends</button>
+        </div>
+        <div class="people" id="people"></div>
+      </div>
+      <div id="waitingBox" hidden>
+        <h2 style="margin-bottom:8px">Waiting for your voice</h2>
+        <div class="nav-list" id="waiting"></div>
+      </div>
     </div>
 
     <div class="nav-list">
@@ -58,30 +78,61 @@
   </section>
 </main>
 <script type="module">
-import { $, h, api, showScreen, fmtAgo, tabBar } from '/assets/common.js';
+import { $, h, api, showScreen, fmtAgo, tabBar, initials } from '/assets/common.js';
 import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
+import { friendsSheet, profileSheet } from '/assets/friends.js';
 
 const user = await me();
 if (!user) {
   let seen = false;
   try { seen = Boolean(localStorage.getItem('vg-welcomed')); } catch {}
   location.replace(seen ? '/login' : '/welcome');
-}
-else {
-  $('#hello').textContent = `Hi, ${user.name}`;
+} else {
+  const { home = {}, thanks = [] } = await api('/api/account?home=1&thanks=1').catch(() => ({}));
+  // "First time" lasts until they have sent a voice, made a gift or followed someone.
+  const used = Boolean(home.sentTotal || home.giftsCount || home.following?.length);
+  if (used) showBack(home);
+  else showFirst();
+  showThanks(thanks);
   showScreen('home');
   tabBar('home');
-  drawGifts(firstName(user.name));
-  showThanks();
 }
 
-function drawGifts(name) {
+function showFirst() {
+  $('#hello').textContent = `Hi, ${user.name}`;
+  $('#homeFirst').hidden = false;
+  const name = firstName(user.name);
   for (const [occasion, host] of [['birthday', '#heroCake'], ['graduation', '#heroBouquet'], ['wedding', '#heroLanterns']]) {
     const scene = createScene($(host), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
     scene.setCandles(10);
     scene.lightAll();
   }
+}
+
+function showBack(home) {
+  $('#homeBack').hidden = false;
+  $('#myGifts').hidden = true; // they're under Profile, one tap away in the bar
+  // "today" is the phone's own day, so the server sends the times and the page counts
+  const today = new Date().toDateString();
+  const n = (home.sent || []).filter((at) => new Date(at).toDateString() === today).length;
+  $('#sentToday').textContent = String(n);
+  $('#sentLine').textContent = `${n === 1 ? 'voice' : 'voices'} sent today${home.sentTotal > n ? ` · ${home.sentTotal} in all` : ''}`;
+  showPeople(home.following || []);
+  $('#waiting').replaceChildren(...(home.invites || []).map((g) => h('a', { class: 'choice', href: `/g/${g.slug}` },
+    h('span', { class: 'choice-text' }, h('b', {}, `For ${g.recipient}`), h('small', {}, `${g.organizer} invited you · ${theme(g.occasion).label}`)))));
+  $('#waitingBox').hidden = !(home.invites || []).length;
+}
+
+// The people they follow, as a strip to slide. Tapping one opens their profile.
+function showPeople(list) {
+  const refresh = async () => showPeople((await api('/api/account?home=1')).home.following || []);
+  $('#people').replaceChildren(
+    ...list.map((f) => h('button', { type: 'button', class: 'person', onclick: () => profileSheet(f, refresh) },
+      h('span', { class: 'avatar' }, initials(f.name)), h('span', {}, f.name))),
+    h('button', { type: 'button', class: 'person add', 'aria-label': 'Find friends', onclick: () => friendsSheet(refresh) },
+      h('span', { class: 'avatar' }, '+'), h('span', {}, 'Find')));
+  $('#findFriends').onclick = () => friendsSheet(refresh);
 }
 
 $('#openToggle').addEventListener('click', () => {
@@ -103,8 +154,7 @@ $('#openForm').addEventListener('submit', (e) => {
 });
 
 // The notes from people this account recorded for. Unread ones are marked "New" this once.
-async function showThanks() {
-  const { thanks = [] } = await api('/api/account?thanks=1').catch(() => ({}));
+function showThanks(thanks) {
   if (!thanks.length) return;
   $('#thanksList').replaceChildren(...thanks.map((n) => h('article', { class: 'thanks-card' + (n.read ? '' : ' new') },
     h('div', { class: 'thanks-head' },

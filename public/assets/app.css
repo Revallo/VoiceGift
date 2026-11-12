@@ -2095,7 +2095,16 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .seat-inner { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 2px; margin-bottom: -2px;
   -webkit-mask-image: linear-gradient(to top, transparent 5px, #000 5px); mask-image: linear-gradient(to top, transparent 5px, #000 5px); }
 .seat-back { position: absolute; left: 50%; bottom: -5px; height: 14px; border-radius: 50%; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(70, 30, 20, 0.22), transparent) !important; }
-.seat-figure { font-size: 74px; line-height: 1; margin-bottom: -12px; filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.18)); }
+/* A figure (teddy, crown, cherry…) stands ON the cream like a real sugar topper: not cut, not sunk in. */
+.age-numbers.figure .seat-inner { -webkit-mask-image: none; mask-image: none; margin-bottom: 0; }
+.seat-figure { position: relative; font-size: 70px; line-height: 1; margin-bottom: -4px; transform: perspective(260px) rotateX(10deg); transform-origin: 50% 100%; }
+.fig-glyph { display: block; /* its thickness: darker copies stepped back, like the age numbers */
+  text-shadow: 1px -1px 0 rgba(95, 50, 30, 0.3), 2px -2px 0 rgba(95, 50, 30, 0.24), 3px -3px 0 rgba(95, 50, 30, 0.16);
+  filter: drop-shadow(-2px 3px 2px rgba(40, 15, 5, 0.22)); }
+.fig-shade, .fig-shine { position: absolute; inset: 0; color: transparent; pointer-events: none; }
+.fig-shade { text-shadow: 0 0 0 rgba(45, 18, 8, 0.26); -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 32%); mask-image: linear-gradient(to top, #000 0%, transparent 32%); }
+.fig-shine { text-shadow: 0 0 0 rgba(255, 255, 255, 0.5); -webkit-mask-image: linear-gradient(135deg, #000 0%, transparent 38%); mask-image: linear-gradient(135deg, #000 0%, transparent 38%); mix-blend-mode: soft-light; }
+.seat-shadow { position: absolute; left: 50%; bottom: -7px; height: 13px; border-radius: 50%; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(60, 25, 15, 0.42), rgba(60, 25, 15, 0.16) 62%, transparent); }
 .age-digit { position: relative; display: block; font-family: 'Fredoka', sans-serif; font-weight: 600; line-height: 0.78; color: var(--age-side, #B5791A); text-shadow: 1px -1px 0 #B5791A, 2px -2px 0 #AD7316, 3px -3px 0 #A56C12, 4px -4px 0 #9D660F, 5px -5px 0 #955F0C; filter: drop-shadow(1px 0 1px rgba(0, 0, 0, 0.22)); }
 .age-face { position: absolute; inset: 0; background: linear-gradient(180deg, #FFE7A6 8%, #F5BE4E 52%, #DE9526 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
 .age-lip { position: absolute; left: 50%; bottom: -3px; height: 6px; border-radius: 50%; transform: translateX(-50%); opacity: 0.9; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(0, 0, 0, 0.12); }

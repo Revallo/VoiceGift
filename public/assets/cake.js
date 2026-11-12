@@ -328,10 +328,18 @@ export function createCake(host, opts = {}) {
     let w = 0;
     const inner = div('seat-inner');
     if (topper?.emoji) {
+      // A sugar figure standing ON the cake: the glyph with a little thickness behind it, lit from the top
+      // left and darker towards its feet, leaning back with the cake's top, and a soft shadow on the cream.
       w = 62;
       const f = div('seat-figure');
-      f.textContent = topper.emoji;
+      for (const part of ['fig-glyph', 'fig-shade', 'fig-shine']) {
+        const g = div(part);
+        g.textContent = topper.emoji;
+        f.append(g);
+      }
       inner.append(f);
+      ageEl.append(div('seat-shadow', { width: `${w + 14}px` }), inner);
+      return seatAge();
     } else if (age) {
       const digits = [...age];
       const fs = digits.length > 2 ? 62 : 82;

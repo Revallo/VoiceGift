@@ -318,11 +318,14 @@ $('#sketchToggle').addEventListener('click', () => {
 
 // The kinds of cake / bouquet / lanterns: a sideways strip of small live pictures. Tapping one (or swiping
 // the big gift) picks it; the strip is never rebuilt on a pick, so it stays where you scrolled it.
-// Changing the kind keeps the drawing and the stickers.
-let kindsFor = '', kindsTimer = 0;
+// Changing the kind keeps the drawing and the stickers. A new flavour only recolours the small pictures in
+// place (never a rebuild), so the strip doesn't jump back to the start and slide over again.
+let kindsFor = '', kindsFlavor = '', kindsTimer = 0, kindScenes = [];
 function buildKinds() {
   const box = $('#kinds');
-  kindsFor = `${state.occasion}/${state.flavor}`;
+  kindsFor = state.occasion;
+  kindsFlavor = state.flavor;
+  kindScenes = [];
   box.textContent = '';
   for (const [key, s] of Object.entries(t.decorate.shapes)) {
     const mini = h('div', { class: 'mini' });
@@ -330,15 +333,24 @@ function buildKinds() {
     const sc = createScene(mini, { occasion: state.occasion, recipient: '', cake: { flavor: state.flavor, shape: key, name: '', greens: state.greens } });
     sc.setCandles(6);
     sc.lightAll();
+    kindScenes.push(sc);
   }
 }
 function renderShapes() {
-  if (kindsFor !== `${state.occasion}/${state.flavor}`) buildKinds();
+  if (kindsFor !== state.occasion) buildKinds();
+  else if (kindsFlavor !== state.flavor) {
+    kindsFlavor = state.flavor;
+    for (const sc of kindScenes) sc.setFlavor(state.flavor);
+  }
+  const box = $('#kinds');
   for (const b of $$('#kinds .kind')) {
     const on = b.dataset.v === state.shape;
     b.classList.toggle('on', on);
     b.setAttribute('aria-checked', String(on));
-    if (on) { const box = $('#kinds'); box.scrollTo({ left: b.offsetLeft - (box.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' }); }
+    // only slide when the picked one isn't already in view (a picked kind stays where it is)
+    if (on && (b.offsetLeft < box.scrollLeft || b.offsetLeft + b.offsetWidth > box.scrollLeft + box.clientWidth)) {
+      box.scrollTo({ left: b.offsetLeft - (box.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' });
+    }
   }
 }
 function pickShape(key) {

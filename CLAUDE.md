@@ -19,7 +19,8 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
   everywhere and ready for ASR, so no ffmpeg/conversion anywhere.
 
 ## Commands
-- `npm run dev` → http://localhost:3000 (`dev.mjs` mimics Vercel rewrites + functions)
+- `npm run dev` → http://localhost:3000 (`dev.mjs` mimics Vercel rewrites + functions). Logging in needs `GOOGLE_CLIENT_ID`
+  in `.env`, or `DEV_LOGIN=1` for a plain email form (local only; the e2e test needs it).
 - End-to-end test with a fake mic: see the header of `tests/e2e.mjs`. Run it after UI changes;
   it must print `ERRORS none` (it also fails if the page can scroll sideways).
 
@@ -28,7 +29,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | --- | --- | --- |
 | `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/new`, "Open your gift" (paste the link), "My gifts" |
 | `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
-| `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: create an account / log in → their gifts (dashboard links), log out |
+| `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: "Continue with Google" → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content), 3. send it (recipient link + PIN) |
 | `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → items light → listen → finale (blow / throw cap / release lanterns) → keepsake → thank everyone |
@@ -57,25 +58,33 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - All UI text is English. No QR codes.
 
 ## Accounts
-- Email + password, **for everyone** (decided 2026-11-11): making a gift, recording and opening a gift all need one
-  (401 without a session, enforced in `api/`). A logged-out friend or recipient goes to `/signup?next=<their link>` and comes straight back.
+- **"Continue with Google" only, for everyone** (decided 2026-11-12, replacing email + password): making a gift, recording and
+  opening a gift all need an account (401 without a session, enforced in `api/`). A logged-out friend or recipient goes to
+  `/signup?next=<their link>` and comes straight back. No passwords, confirm emails or resets: Google confirmed the email.
+- The page shows Google's button (Google Identity Services, `gsi/client`, loaded only on the login box); the ID token is posted
+  to `POST /api/account {action: "google"}` and checked with Google's tokeninfo (`lib/google.js`, no library: `aud` = our
+  `GOOGLE_CLIENT_ID`, issuer, expiry, `email_verified`). Accounts are found by email, so an account from the email + password
+  days joins its Google account (its password is dropped); sessions without a `googleSub` no longer count.
+- Inside apps' own browsers (Instagram, Line, Facebook, TikTok, Android `; wv)`), Google refuses with "Error 403:
+  disallowed_useragent", so the button is replaced by "open this page in Chrome or Safari" + Copy link (`inAppBrowser()` in
+  `auth.js`). WhatsApp opens links in a real browser. Accepted (2026-11-12): most users share by WhatsApp.
+- `DEV_LOGIN=1` (never on Vercel): a plain email + name form stands in for Google (`dev-login`), for the e2e test and local work.
 - `/new` sends a logged-out visitor to `/login?next=/new`; after logging in, `/login` goes to
   `next` (or `/`). The login page is deliberately simple and wears the picked occasion's colors + emoji
   (`--wash`/`--wash2` per theme in `app.css`). The in-place account step at "Create the gift" stays as a fallback (e.g. an expired session).
-  Browser: `assets/auth.js` (`me()`, the form, the "Your gifts" row). Server: `lib/accounts.js`.
+  Browser: `assets/auth.js` (`me()`, `loginBox()`, the "Your gifts" row). Server: `lib/accounts.js`, `lib/google.js`.
 - Every new message gets the friend's `userId` (also in the export). The name is filled in from the account; the name on the
   message is still the one in the box.
 - Thank-you: after the finale the recipient can "Thank everyone" once. Each friend who recorded gets a note on their home page
   (`users/<id>/thanks/<slug>.json`), marked New until seen. Friends who recorded before accounts were required have no `userId` and get none.
-- Passwords: scrypt (`node:crypto`, no dependency). Sessions: a random token in an HttpOnly, SameSite=Lax cookie
-  (`vg_session`, 30 days); storage keeps only its sha256. 10 wrong passwords in a row → 15 minutes' wait.
+- Sessions: a random token in an HttpOnly, SameSite=Lax cookie (`vg_session`, 30 days); storage keeps only its sha256.
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
-- Not built: password reset and email verification (they need an email service).
+- Limits (`lib/limits.js`, counters in storage): 3 voices per account per gift, 20 recordings + 10 gifts per account per day.
 
 ## API (`api/*.js`)
 - `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
-- `GET /api/account` → {user} or {user: null} (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `signup`, `login`, `logout`, `claim`, `thanks-read`
+- `GET /api/account` → {user} or {user: null}, + `googleClientId`, `devLogin` (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `google` {credential}, `dev-login` {email, name} (local only), `logout`, `claim`, `thanks-read`
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
@@ -88,7 +97,8 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
 
 Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`;
-accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `users/<id>/thanks/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`.
+accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `users/<id>/thanks/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`;
+`limits/<name>/<hash>-<period>.json` (counters).
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
@@ -103,8 +113,8 @@ company API (wins over Groq; adapt `fromProvider()` to its response shape). Loca
   The friend's page promises "Only you and <name> can hear this voice": keep that true. No email delivery.
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
-- Consent checkbox on every recording; store `consentVersion`. Accounts are email + password. No phone numbers.
-- Never send `passwordHash`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
+- Consent checkbox on every recording; store `consentVersion`. Accounts are Google only. No phone numbers.
+- Never send `googleSub`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
 - Mobile first: test at 390×844, and desktop (the app is a phone-sized frame, 420×844 at most, that scrolls inside; no wide layout).
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 

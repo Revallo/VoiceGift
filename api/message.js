@@ -3,9 +3,10 @@
 // PATCH  /api/message   { slug, id, token, text }  → saves the caption the friend corrected + word-level diffs
 // DELETE /api/message   { slug, id, token }        → "record again"
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { loadGift, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
+import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
 import { requireUser } from '../lib/accounts.js';
+import { LIMITS, countRecording } from '../lib/limits.js';
 
 async function authorized(body) {
   if (!isSlug(body.slug)) throw new HttpError(404, 'Gift not found');
@@ -29,6 +30,10 @@ export default route({
     if (durationSec < 0.8) throw new HttpError(400, 'That was too short. Please record again.');
     if (durationSec > 20) throw new HttpError(400, 'Recordings can be up to 15 seconds.');
     if (peak < 0.005) throw new HttpError(400, 'No voice detected. Speak a little louder.');
+    // Limits: a few voices per friend per gift, and a daily cap per account (each recording is an ASR call).
+    const mine = (await loadMessages(gift.slug)).filter((m) => m.userId === user.id).length;
+    if (mine >= LIMITS.recordingsPerGift) throw new HttpError(429, `You’ve already sent ${mine} messages to this gift. That’s the most one person can send.`);
+    await countRecording(user.id);
 
     let asr;
     try {

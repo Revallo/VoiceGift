@@ -1,6 +1,6 @@
-// /signup and /login: the form. /account: layered mobile-app profile & settings (progressive disclosure via bottom sheets).
+// /signup and /login: "Continue with Google". /account: layered mobile-app profile & settings (bottom sheets).
 import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet } from './common.js';
-import { me, logOut, authForm, giftItem } from './auth.js';
+import { me, logOut, loginBox, giftItem } from './auth.js';
 import { applyTheme } from './themes.js';
 
 addStars($('#app'), 20, 40);
@@ -31,23 +31,22 @@ const afterLogin = nextPath.startsWith('/r/') ? 'Then you can open your gift.'
 let currentUser = null;
 let latestStats = {};
 
-function showAuth(mode) {
-  if (picked) {
-    applyTheme(picked); // same colors as the thing they picked
-    $('#authEmoji').textContent = THINGS[picked][1];
-  }
-  const words = (m) => {
-    const w = WORDS[m];
-    history.replaceState(null, '', w.path + location.search); // keeps ?next=
-    document.title = `${w.doc} · Voice Gift`;
-    $('#authTitle').textContent = w.title;
-    $('#authLead').textContent = afterLogin;
-  };
-  words(mode);
+// The simple page around every account form: an emoji, a title, one line, then `box`.
+function showPanel({ path, doc, title, lead = '', emoji, box }) {
+  if (picked) applyTheme(picked); // same colors as the thing they picked
+  $('#authEmoji').textContent = emoji || (picked ? THINGS[picked][1] : '🎁');
+  history.replaceState(null, '', path + location.search); // keeps ?next=
+  document.title = `${doc} · Voice Gift`;
+  $('#authTitle').textContent = title;
+  $('#authLead').textContent = lead;
   $('#authBack').hidden = !picked;
   $('#authBack').href = picked ? `/new?occasion=${picked}` : '/';
-  $('#authBox').replaceChildren(authForm({ mode, onMode: words, onDone: goOn }));
+  if (box) $('#authBox').replaceChildren(box);
   showScreen('auth');
+}
+
+function showAuth(mode) {
+  showPanel({ ...WORDS[mode], lead: afterLogin, box: loginBox({ onDone: () => goOn() }) });
 }
 
 function populateUserUI(user) {
@@ -209,49 +208,10 @@ function openAsrCorpusSheet() {
   });
 }
 
-// 4. Bottom Sheet: Security & Password
-function openSecuritySheet() {
-  const curIn = h('input', { class: 'input', type: 'password', autocomplete: 'current-password', placeholder: 'Current password', required: true });
-  const newIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password', minlength: 8, placeholder: 'At least 8 characters', required: true });
-  const btn = h('button', { type: 'submit', class: 'btn' }, 'Update password');
-
-  const form = h('form', {
-    class: 'stack',
-    style: { gap: '12px' },
-    onsubmit: async (ev) => {
-      ev.preventDefault();
-      btn.disabled = true;
-      try {
-        await api('/api/account', {
-          method: 'PATCH',
-          json: { currentPassword: curIn.value, newPassword: newIn.value }
-        });
-        closeSheet();
-        toast('Password updated');
-      } catch (e) {
-        toast(e.message);
-      } finally {
-        btn.disabled = false;
-      }
-    }
-  },
-    h('div', { class: 'field' }, h('label', {}, 'Current password'), curIn),
-    h('div', { class: 'field' }, h('label', {}, 'New password'), newIn),
-    btn
-  );
-
-  openSheet({
-    title: 'Security & password',
-    subtitle: 'Scrypt N=32768 · HttpOnly encrypted session',
-    content: form
-  });
-}
-
 $('#openProfileSheetBtn')?.addEventListener('click', openEditProfileSheet);
 $('#rowEditProfile')?.addEventListener('click', openEditProfileSheet);
 $('#rowAsrPrefs')?.addEventListener('click', openAsrPrefsSheet);
 $('#rowAsrCorpus')?.addEventListener('click', openAsrCorpusSheet);
-$('#rowSecurity')?.addEventListener('click', openSecuritySheet);
 
 function showAccount(user) {
   const keepHash = location.hash;
@@ -301,7 +261,6 @@ me().then(async (user) => {
 });
 
 // Once logged in, go to ?next= (same site only) or to the home page.
-function goOn() {
-  const next = new URLSearchParams(location.search).get('next') || '';
+function goOn(next = new URLSearchParams(location.search).get('next') || '') {
   location.replace(/^\/(?![/\\])/.test(next) ? next : '/');
 }

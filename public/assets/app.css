@@ -2118,3 +2118,11 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .thanks-new { padding: 2px 8px; border-radius: 999px; background: var(--gold); color: var(--ink); font-size: 11px; font-weight: 700; }
 .thanks-card p { margin: 8px 0 6px; color: var(--soft); font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
 .thanks-card small { color: var(--muted); font-size: 12px; }
+
+/* "Continue with Google" above the email form (auth.js googleBlock) */
+.google-box { display: grid; gap: 14px; }
+.google-btn { display: flex; justify-content: center; min-height: 44px; }
+.or-line { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--muted); font-size: .8rem; }
+.or-line::before, .or-line::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.inapp-hint { display: grid; gap: 8px; justify-items: start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; font-size: .86rem; color: var(--soft); }
+.inapp-hint b { color: var(--text); }

@@ -27,11 +27,12 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - Live: **https://voicegift-one.vercel.app** (production domain — share this one, not the
   per-deployment URLs, which require a Vercel login).
 - Vercel Blob store `voicegift` (Private) is connected; `BLOB_STORE_ID` is set.
-- Not set yet: `ADMIN_KEY` (export + account list), `ASR_URL`/`ASR_API_KEY` (company ASR). Interim ASR: set `GROQ_API_KEY`
+- Not set yet: **`GOOGLE_CLIENT_ID` (without it nobody can log in on the live site)**, `ADMIN_KEY` (export + account list), `ASR_URL`/`ASR_API_KEY` (company ASR). Interim ASR: set `GROQ_API_KEY`
   (Groq Whisper large-v3); without it ASR is the mock. Each message stores `asrProvider`.
 
 ## How we work
-- Local: `npm run dev` → http://localhost:3000 (Windows, PowerShell, VS Code). Keep that terminal
+- Local: `npm run dev` → http://localhost:3000 (Windows, PowerShell, VS Code). Put `GOOGLE_CLIENT_ID` in `.env`, or
+  `DEV_LOGIN=1` to log in with any email locally (the e2e test needs `DEV_LOGIN=1`). Keep that terminal
   for the server; run Claude in a second terminal. Local data is in `.data/`, separate from Vercel.
 - Revallo also asks the claude.ai chat to make changes; it pushes to `main`.
   **Pull before editing** so changes don't collide.
@@ -69,6 +70,11 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - Decision (2026-11-11): no demo voices, demo logins or preview: to test, use three real accounts (organizer, friend, recipient). One colour per occasion, one accent, Fredoka headings.
 - Decision (2026-11-11, same day, after the bright look hurt to look at): **the look is dim**: one dark colour per occasion, one calm accent; the optional backdrops are darkened too.
 - Decision (2026-11-11, later): after the dim look still felt too bright and purple, **the look is quiet**: flat near-neutral pages with no gradients, thin lines instead of coloured blocks, Fraunces headings, colour only as a small muted accent per occasion. To change the feel, start with the design, not just the colours.
+- Decision (2026-11-12): **log in with Google only** (no passwords, no email service, no Brevo). Tried first: email
+  confirmation through Brevo + forgot/reset password, then Google next to it; Revallo chose Google only because it is
+  simpler and most Indonesians share links by WhatsApp, which opens a real browser. Inside Instagram/Line/Facebook's own
+  browsers Google refuses to log in, so the page asks to open it in Chrome/Safari (accepted). Plus limits (`lib/limits.js`):
+  3 voices per account per gift, 20 recordings + 10 gifts per account per day. Fixes known flaws 4–6 in the README.
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)

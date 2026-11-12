@@ -7,7 +7,7 @@ speech with captions the speakers corrected themselves. Works on phones and desk
 
 **Flow**
 1. The organizer creates a gift at `/new`: the occasion, who it's for, decorates the cake / bouquet / lanterns,
-   then creates an account (email + password) or logs in to save it. `/account` lists their gifts on any phone.
+   then logs in with Google to save it. `/account` lists their gifts on any phone.
 2. Friends open `/g/<gift>` from WhatsApp, record up to 15 s, fix the caption, send.
 3. The organizer follows progress at `/m/<gift>?k=<key>` and, when ready (e.g. at 00:00), sends the
    recipient their link `/r/<gift>?k=<key>` + the 4-digit PIN from there.
@@ -18,6 +18,7 @@ speech with captions the speakers corrected themselves. Works on phones and desk
 ```bash
 npm install
 npm run dev          # http://localhost:3000 — data is saved in .data/
+                     # without GOOGLE_CLIENT_ID in .env, add DEV_LOGIN=1 to log in with any email (local only)
 ```
 The microphone needs `localhost` or `https`. To test on your phone over Wi-Fi, deploy to Vercel instead.
 
@@ -36,12 +37,17 @@ Optional environment variables (*Settings → Environment Variables*, then redep
 | `ADMIN_KEY` | Enables `GET /api/export?key=…`, a JSONL file of every message for the ML team, and `GET /api/users?key=…`, the list of accounts |
 | `ASR_URL`, `ASR_API_KEY` | Use the company's speech recognition API instead of the mock (see `lib/asr.js`) |
 | `GROQ_API_KEY` | Use Groq Whisper large-v3 for now, until the company API is ready (`ASR_URL` wins if both are set) |
+| `GOOGLE_CLIENT_ID` | **Required:** logging in is "Continue with Google" only. An OAuth *Web application* client id from Google Cloud Console, with `https://voicegift-one.vercel.app` (and `http://localhost:3000`) as authorized JavaScript origins, and the app **published** (in Testing only 100 accounts can log in) |
+| `DEV_LOGIN` | `1` = a plain email + name login instead of Google, for the e2e test and local work. Ignored on Vercel |
 
 ## Good to know
 - **Recordings are private.** The Blob store is private; audio is only served through `/api/audio`,
   and only with the recipient's link (or to the person who recorded it).
-- **Everyone has an account** (email + password): organizer, friends and recipient. Passwords are stored as
-  scrypt hashes; there is no password reset yet.
+- **Everyone logs in with Google**: organizer, friends and recipient. No passwords, no emails to send. Inside apps' own
+  browsers (Instagram, Line, Facebook…) Google blocks its login, so the page asks to open it in Chrome or Safari;
+  links from WhatsApp open in a real browser and just work.
+- **Limits** (`lib/limits.js`): 3 voices per account per gift, 20 recordings per account per day (each one is an
+  ASR call), 10 gifts per account per day.
 - **Test data only for now.** Until this moves to the company's servers, use it with the team and friends.
 - **Vercel Hobby** is meant for personal, non-commercial projects. For a company pilot, use a
   Pro/Team plan or move it to the company server (see `CLAUDE.md`).
@@ -67,7 +73,7 @@ dev.mjs         local server that mimics Vercel
 ```
 
 ## Known flaws (review 2026-11-12)
-Ten weak spots found in a code + screen review, most important first. Nothing here is fixed yet.
+Ten weak spots found in a code + screen review, most important first. Fixed so far: 4, 5, 6.
 
 1. **Voices past the scene's limit don't show.** The server takes any number of messages, but the lanterns
    draw at most 36 and the bouquet 40 (`MAX` in `lanterns.js`, `flowerSpots` in `bouquet.js`). Voice 37/41 has no item,
@@ -76,11 +82,10 @@ Ten weak spots found in a code + screen review, most important first. Nothing he
    gets a different error than a wrong key, which tells the guesser the key is right. Fix: count wrong PINs per gift and lock for a while, like passwords.
 3. **"The organizer can never open their own gift" only holds per account.** The organizer sees the recipient link + PIN on
    the dashboard, so a second account opens it. Hard to close fully; be honest about it in the pitch.
-4. **No email verification.** Anyone can sign up with someone else's email, and then the real owner can't. Anyone who knows
-   an email can also lock that account for 15 minutes with 10 wrong passwords.
-5. **No password reset.** A forgotten password means the account and its gifts are gone (dashboards still open with the key link).
-6. **No limits on recordings or sign-ups.** One friend can record 50 times into one gift, and a script can make many accounts.
-   That costs storage and ASR quota (Groq free tier) and puts repeated, low-quality samples in the training data.
+4. ~~**No email verification.**~~ *Fixed 2026-11-12:* logging in is Google only, and Google has confirmed every email.
+5. ~~**No password reset.**~~ *Gone 2026-11-12:* there are no passwords any more (Google handles them).
+6. ~~**No limits on recordings or sign-ups.**~~ *Fixed 2026-11-12:* see **Limits** above. New accounts need a Google account, which
+   is hard to make by script. A shared phone (one account for many guests at a wedding table) stops at 3 voices.
 7. **The friend's page promises "Only you and <name> can hear this voice"**, but the consent says the voice is also saved for
    ASR training, so the AI team hears it too. Change the promise to match, e.g. "Only <name> opens this gift".
 8. **The UI is English only**, while the speakers are Indonesian. Some friends may stop at the consent or the caption check.

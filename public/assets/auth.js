@@ -1,16 +1,19 @@
-// Accounts in the browser: who is logged in, the create-account / log-in form (on /signup and /login, and in
-// /new when a new gift needs an account), and the rows of "Your gifts".
+// Accounts in the browser: who is logged in, the log-in box (on /login and /signup, and in /new when a new gift
+// needs an account), and the rows of "Your gifts". Logging in is "Continue with Google" only.
+// Google blocks its login inside apps' own browsers (Instagram, Line, Facebook…: "Error 403: disallowed_useragent"),
+// so there the button is replaced by a hint to open the page in Chrome or Safari. WhatsApp opens a real browser.
 import { h, api, icon, toast, fmtAgo, initials } from './common.js';
 import { theme } from './themes.js';
 
-let current;
+let current, account;
+const askServer = () => (account ||= api('/api/account').catch(() => ({ user: null })));
 // The logged-in account ({ name, email }) or null. Asked once per page.
 export function me() {
-  current ||= api('/api/account').then((d) => d.user, () => null);
+  current ||= askServer().then((d) => d.user || null);
   return current;
 }
 
-// Pages that need an account: a logged-out visitor goes to create one and comes straight back here.
+// Pages that need an account: a logged-out visitor goes to log in and comes straight back here.
 export async function requireLogin() {
   const user = await me();
   if (!user) location.replace('/signup?next=' + encodeURIComponent(location.pathname + location.search));
@@ -37,82 +40,83 @@ async function claimDeviceGifts() {
   } catch {}
 }
 
-const MODES = {
-  signup: { submit: 'Create account', busy: 'Creating your account…', autocomplete: 'new-password', ask: 'Already have an account?', other: 'Log in' },
-  login: { submit: 'Log in', busy: 'Logging in…', autocomplete: 'current-password', ask: 'New here?', other: 'Create an account' }
-};
+// An app's own browser (a WebView), where Google refuses to log in.
+const IN_APP = /FBAN|FBAV|FB_IAB|FBIOS|Instagram|\bLine\/|TikTok|musical_ly|BytedanceWebview|Snapchat|; wv\)/i;
+export const inAppBrowser = () => IN_APP.test(navigator.userAgent);
 
-// mode is 'signup' or 'login'; the person can switch (then onMode(mode) runs). onDone(user) runs once they're logged in.
-export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
-  const box = h('div');
-  let email = '';
+let gsi;
+function loadGoogle() {
+  gsi ||= new Promise((resolve, reject) => {
+    const s = h('script', { src: 'https://accounts.google.com/gsi/client', async: true });
+    s.onload = () => resolve(window.google.accounts.id);
+    s.onerror = () => { gsi = null; reject(new Error('Google didn’t load')); };
+    document.head.append(s);
+  });
+  return gsi;
+}
 
-  function render() {
-    const m = MODES[mode];
-    const nameIn = mode === 'signup' && h('input', { class: 'input', id: 'acName', name: 'name', maxlength: '40', autocomplete: 'name', placeholder: 'e.g. Sari', value: name });
-    const emailIn = h('input', { class: 'input', id: 'acEmail', name: 'email', type: 'email', autocomplete: 'username', autocapitalize: 'none', spellcheck: 'false', maxlength: '254', placeholder: 'you@example.com', value: email });
-    const passIn = h('input', { class: 'input', id: 'acPass', name: 'password', type: 'password', autocomplete: m.autocomplete, maxlength: '200', placeholder: mode === 'signup' ? 'At least 8 characters' : 'Your password' });
-    const show = h('button', { type: 'button', class: 'linkbtn small', onclick: () => {
-      const hidden = passIn.type === 'password';
-      passIn.type = hidden ? 'text' : 'password';
-      show.textContent = hidden ? 'Hide' : 'Show';
-    } }, 'Show');
-    const err = h('p', { class: 'small err', role: 'alert', hidden: true });
-    const fail = (msg) => { err.textContent = msg; err.hidden = !msg; };
-    const submit = h('button', { class: 'btn', type: 'submit' }, m.submit);
+let onGoogle; // the box on screen now; Google's button calls it with the ID token
+let googleReady;
 
-    const switchMode = (targetMode) => {
-      if (targetMode === mode) return;
-      if (nameIn) name = nameIn.value;
-      email = emailIn.value;
-      mode = targetMode;
-      render();
-      onMode?.(mode);
-    };
+// "Continue with Google" (or, inside an app's browser, how to get to it). onDone(user) runs once they're logged in.
+export function loginBox({ onDone }) {
+  const err = h('p', { class: 'small err', role: 'alert', hidden: true });
+  const fail = (msg) => { err.textContent = msg; err.hidden = !msg; };
+  const slot = h('div', { class: 'google-box' }, h('div', { class: 'google-btn' }, h('div', { class: 'spinner' })));
+  const note = h('p', { class: 'small muted center', style: { margin: 0 } }, 'New here? The same button makes your account. We only use your name and email.');
+  const box = h('div', { class: 'card stack', id: 'loginBox', style: { gap: '14px' } }, slot, err, note);
 
-    const tabs = h('div', { class: 'auth-tabs' },
-      h('button', { type: 'button', class: 'auth-tab' + (mode === 'login' ? ' on' : ''), onclick: () => switchMode('login') }, 'Log in'),
-      h('button', { type: 'button', class: 'auth-tab' + (mode === 'signup' ? ' on' : ''), onclick: () => switchMode('signup') }, 'Create account')
-    );
-
-    const other = h('button', { type: 'button', class: 'linkbtn', onclick: () => switchMode(mode === 'signup' ? 'login' : 'signup') }, m.other);
-
-    const form = h('form', { class: 'card stack', style: { gap: '14px' }, novalidate: true },
-      tabs,
-      nameIn && h('div', { class: 'field' }, h('label', { for: 'acName' }, 'Your name'), nameIn),
-      h('div', { class: 'field' }, h('label', { for: 'acEmail' }, 'Email address'), emailIn),
-      h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'Password'), show), passIn),
-      err,
-      submit,
-      h('p', { class: 'small muted center', style: { margin: 0 } }, `${m.ask} `, other));
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const body = { action: mode, name: nameIn ? nameIn.value.trim() : undefined, email: emailIn.value.trim(), password: passIn.value };
-      const problem = nameIn && !body.name ? 'Please enter your name.'
-        : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email) ? 'Please enter a valid email address.'
-        : !body.password ? 'Please enter your password.'
-        : mode === 'signup' && body.password.length < 8 ? 'Use at least 8 characters for your password.' : '';
-      fail(problem);
-      if (problem) return;
-      submit.disabled = true;
-      submit.textContent = m.busy;
-      try {
-        const { user } = await api('/api/account', { method: 'POST', json: body });
-        current = Promise.resolve(user);
-        await claimDeviceGifts();
-        await onDone(user);
-      } catch (e) {
-        fail(e.message);
-      } finally {
-        submit.disabled = false;
-        submit.textContent = m.submit;
-      }
-    });
-    box.replaceChildren(form);
+  async function logIn(json) {
+    fail('');
+    try {
+      const { user } = await api('/api/account', { method: 'POST', json });
+      current = Promise.resolve(user);
+      await claimDeviceGifts();
+      await onDone(user);
+    } catch (e) {
+      fail(e.message);
+    }
   }
+  onGoogle = ({ credential }) => logIn({ action: 'google', credential });
 
-  render();
+  askServer().then(async ({ googleClientId, devLogin }) => {
+    const parts = [];
+    if (googleClientId && inAppBrowser()) {
+      note.hidden = true;
+      const copy = h('button', { type: 'button', class: 'btn ghost sm', onclick: async () => {
+        try { await navigator.clipboard.writeText(location.href); copy.textContent = 'Link copied'; } catch { copy.textContent = 'Use ⋯ → Open in browser'; }
+      } }, 'Copy this page’s link');
+      parts.push(h('div', { class: 'inapp-hint', id: 'inAppHint' },
+        h('b', {}, 'Open this page in Chrome or Safari'),
+        h('span', {}, 'Google login doesn’t work inside this app. Tap ⋯ (top right) and choose “Open in browser”, or copy the link into Chrome or Safari.'),
+        copy));
+    } else if (googleClientId) {
+      const btn = h('div', { class: 'google-btn', id: 'googleBtn' });
+      parts.push(btn);
+      slot.replaceChildren(btn);
+      try {
+        const id = await loadGoogle();
+        if (googleReady !== googleClientId) {
+          id.initialize({ client_id: googleClientId, callback: (r) => onGoogle?.(r), ux_mode: 'popup', context: 'signin' });
+          googleReady = googleClientId;
+        }
+        id.renderButton(btn, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: Math.max(200, Math.min(400, btn.clientWidth || 320)) });
+      } catch {
+        fail('Google didn’t load. Check your connection and reload the page.');
+      }
+    } else if (!devLogin) {
+      parts.push(h('p', { class: 'small', style: { margin: 0, color: 'var(--soft)' } }, 'Logging in isn’t set up yet. Please try again later.'));
+    }
+    if (devLogin) { // local only (DEV_LOGIN=1): stands in for Google, for tests
+      const nameIn = h('input', { class: 'input', id: 'devName', placeholder: 'Name', maxlength: '40' });
+      const emailIn = h('input', { class: 'input', id: 'devEmail', type: 'email', placeholder: 'email@example.com', autocapitalize: 'none' });
+      const go = h('button', { type: 'submit', class: 'btn ghost', id: 'devLoginBtn' }, 'Dev login');
+      const form = h('form', { class: 'stack', style: { gap: '10px' }, onsubmit: (e) => { e.preventDefault(); logIn({ action: 'dev-login', name: nameIn.value, email: emailIn.value }); } },
+        h('p', { class: 'or-line' }, 'local dev login'), nameIn, emailIn, go);
+      parts.push(form);
+    }
+    slot.replaceChildren(...parts);
+  });
   return box;
 }
 

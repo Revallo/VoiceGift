@@ -2,7 +2,7 @@ import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet
 import { BRUSHES, NAME_FONTS, DEFAULT_FONT, BACKDROPS } from './stage.js';
 import { TUNES, playTune } from './music.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
-import { me, forgetMe, authForm } from './auth.js';
+import { me, forgetMe, loginBox } from './auth.js';
 
 addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
@@ -512,16 +512,10 @@ $('#createBtn').addEventListener('click', async () => {
 });
 
 // ---------- account (only when logged out) ----------
-// Create an account or log in, then back to step 2, which creates the gift.
-const ACCOUNT_LEAD = {
-  signup: 'Create a free account to keep it. You’ll find its dashboard on any phone you log in on.',
-  login: 'Log in and it’s saved to your account.'
-};
+// Log in (Google), then back to step 2, which creates the gift.
 function askAccount() {
-  $('#accountLead').textContent = ACCOUNT_LEAD.signup;
-  $('#accountBox').replaceChildren(authForm({
-    name: $('#organizer').value.trim(),
-    onMode: (mode) => ($('#accountLead').textContent = ACCOUNT_LEAD[mode]),
+  $('#accountLead').textContent = 'Log in to keep it. You’ll find its dashboard on any phone you log in on.';
+  $('#accountBox').replaceChildren(loginBox({
     onDone: () => {
       window.addEventListener('popstate', () => $('#createBtn').click(), { once: true });
       history.back();

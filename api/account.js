@@ -1,14 +1,16 @@
-// GET  /api/account               → { user: { name, email } | null }: who is logged in on this browser
+// GET  /api/account               → { user: { name, email } | null, googleClientId, devLogin }: who is logged in on this browser
 // GET  /api/account?gifts=1       → also the gifts they made, each with its dashboard key + ASR stats
-// POST /api/account { action: "signup", name, email, password }  → new account, logged in
-//                   { action: "login", email, password }         → logged in for 30 days (HttpOnly cookie)
+// GET  /api/account?thanks=1      → also the thank-you notes this account received
+// POST /api/account { action: "google", credential }             → "Continue with Google" (an ID token): logged in for 30 days
+//                                                                   (HttpOnly cookie), the account made if new
+//                   { action: "dev-login", email, name }         → the same without Google: only locally with DEV_LOGIN=1 (tests)
 //                   { action: "logout" }
 //                   { action: "claim", gifts: [{ slug, key }] }  → gifts this browser made before accounts join the account
 //                   { action: "thanks-read" }                    → the thank-you notes on the home page have been seen
-// GET  /api/account?thanks=1      → also the thank-you notes this account received
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
-import { signUp, logIn, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead } from '../lib/accounts.js';
+import { startSession, endSession, currentUser, requireUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead, googleSignIn } from '../lib/accounts.js';
+import { googleClientId, verifyGoogleToken, devLogin, devProfile } from '../lib/google.js';
 
 // The account's gifts, newest first. Gifts deleted since are skipped (and forgotten).
 async function giftsAndStatsOf(user) {
@@ -90,7 +92,7 @@ async function claim(user, list) {
 export default route({
   async GET(req, res) {
     const user = await currentUser(req);
-    if (!user) return send(res, 200, { user: null });
+    if (!user) return send(res, 200, { user: null, googleClientId, devLogin });
     const q = query(req);
     if (q.export === '1') {
       const lines = [];
@@ -121,7 +123,7 @@ export default route({
         'Cache-Control': 'no-store'
       });
     }
-    const out = { user: publicUser(user) };
+    const out = { user: publicUser(user), googleClientId, devLogin };
     if (q.gifts) Object.assign(out, await giftsAndStatsOf(user));
     if (q.thanks) out.thanks = (await listThanks(user.id)).map(({ path, ...note }) => note);
     send(res, 200, out);
@@ -137,18 +139,18 @@ export default route({
 
   async POST(req, res) {
     const b = await jsonBody(req);
-    if (b.action === 'signup' || b.action === 'login') {
-      const user = b.action === 'signup' ? await signUp(b) : await logIn(b);
+    if (b.action === 'google' || b.action === 'dev-login') {
+      const profile = b.action === 'google' ? await verifyGoogleToken(b.credential) : devProfile(b);
+      const user = await googleSignIn(profile);
       await startSession(req, res, user);
-      return send(res, b.action === 'signup' ? 201 : 200, { user: publicUser(user) });
+      return send(res, 200, { user: publicUser(user) });
     }
     if (b.action === 'logout') {
       await endSession(req, res);
       return send(res, 200, { ok: true });
     }
     if (b.action === 'claim') {
-      const user = await currentUser(req);
-      if (!user) throw new HttpError(401, 'Please log in first.');
+      const user = await requireUser(req);
       return send(res, 200, { claimed: await claim(user, b.gifts) });
     }
     if (b.action === 'thanks-read') {

@@ -1,8 +1,9 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
 // (create → decorate → sign up → friends sign up + record → dashboard → recipient link → log in → PIN →
-// reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop).
+// reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop),
+// then the limits. Logging in is Google only; the test uses the local stand-in, so start the server with DEV_LOGIN=1.
 // One-time setup:  npm i --no-save playwright && npx playwright install chromium
-// Run:             npm run dev   (in another terminal)
+// Run:             DEV_LOGIN=1 npm run dev   (in another terminal; PowerShell: $env:DEV_LOGIN=1; npm run dev)
 //                  BASE=http://localhost:3000 node tests/e2e.mjs            (all occasions)
 //                  BASE=http://localhost:3000 node tests/e2e.mjs wedding    (just one)
 // Screenshots go to tests/screenshots/. It prints "ERRORS none" when everything passed.
@@ -18,7 +19,6 @@ fs.mkdirSync(OUT, { recursive: true });
 const errors = [];
 const pins = {}; // recipient link → PIN (each gift gets its own)
 const RUN = Date.now().toString(36); // a new organizer account per run
-const PASSWORD = 'candles at midnight';
 const emailFor = (occasion) => `sari.${occasion}.${RUN}@example.com`;
 
 const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
@@ -48,22 +48,38 @@ function wav(sec = 2) {
   for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.sin((i / 16000) * 2 * Math.PI * 330) * 3000), 44 + i * 2);
   return b;
 }
-let guestCookie; // recording needs an account: every API guest shares this one
+const post = (body, cookie) => fetch(`${BASE}/api/account`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(cookie && { Cookie: cookie }) }, body: JSON.stringify(body) });
+const cookieOf = (res) => res.headers.get('set-cookie')?.split(';')[0];
+
+// An account through the API (the dev login stands in for Google): its session cookie.
+async function apiAccount(name, email) {
+  const res = await post({ action: 'dev-login', name, email });
+  if (res.status !== 200) errors.push(`dev login ${email}: ${res.status} (is the server running with DEV_LOGIN=1?)`);
+  return cookieOf(res);
+}
+
+// Guests added straight through the API: one account each (one account can send only a few voices to a gift).
 async function apiGuest(slug, name, text) {
-  guestCookie ||= (await fetch(`${BASE}/api/account`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'signup', name: 'Tamu', email: `tamu.${RUN}@example.com`, password: PASSWORD }) })).headers.get('set-cookie').split(';')[0];
-  const r = await fetch(`${BASE}/api/message?slug=${slug}&name=${encodeURIComponent(name)}&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', Cookie: guestCookie }, body: wav() });
+  const cookie = await apiAccount(name, `tamu.${slug}.${name.replace(/\W/g, '')}.${RUN}@example.com`.toLowerCase());
+  const r = await fetch(`${BASE}/api/message?slug=${slug}&name=${encodeURIComponent(name)}&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', Cookie: cookie }, body: wav() });
   const m = await r.json();
   await fetch(`${BASE}/api/message`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, id: m.id, token: m.token, text }) });
 }
 
-// Friends and the recipient arrive logged out: their link asks for an account, then comes straight back.
-async function signUpHere(p, name, email) {
+// The login box: the dev login stands in for "Continue with Google".
+async function logInHere(p, name, email) {
+  await p.waitForSelector('#devLoginBtn');
+  await p.fill('#devName', name);
+  await p.fill('#devEmail', email);
+  await p.click('#devLoginBtn');
+}
+
+// Friends and the recipient arrive logged out: their link asks them to log in, then comes straight back.
+async function signUpHere(p, name, email, shotName) {
   await p.waitForSelector('[data-screen="auth"]:not([hidden])');
   if (new URL(p.url()).pathname !== '/signup') errors.push(`logged-out link went to ${p.url()}`);
-  await p.fill('#acName', name);
-  await p.fill('#acEmail', email);
-  await p.fill('#acPass', PASSWORD);
-  await p.click('#authBox button[type="submit"]');
+  if (shotName) { await p.waitForSelector('#devLoginBtn'); await shot(p, shotName); }
+  await logInHere(p, name, email);
 }
 
 const CASES = {
@@ -80,13 +96,10 @@ async function runGift(occasion, c) {
   await p.goto(`${BASE}/new`);
   await p.waitForSelector('[data-screen="auth"]:not([hidden])');
   if (!/^\/login\?next=/.test(new URL(p.url()).pathname + new URL(p.url()).search)) errors.push(`${occasion}: logged-out /new went to ${p.url()}`);
-  await p.click('.auth-tab >> text=create account');
-  await p.fill('#acName', 'Sari');
-  await p.fill('#acEmail', emailFor(occasion));
-  await p.fill('#acPass', PASSWORD);
+  await p.waitForSelector('#devLoginBtn');
   await p.waitForTimeout(400);
   await shot(p, P('00-signup'));
-  await p.click('#authBox button[type="submit"]');
+  await logInHere(p, 'Sari', emailFor(occasion));
   await p.waitForURL(/\/new$/);
   await p.waitForSelector('#recipient');
   await p.click(`#occasions [data-v="${occasion}"]`);
@@ -175,7 +188,7 @@ async function runGift(occasion, c) {
   for (const [k, [name, text]] of c.friends.entries()) {
     const f = await page();
     await f.goto(`${BASE}/g/${slug}`);
-    await signUpHere(f, name, `friend.${occasion}.${k}.${RUN}@example.com`);
+    await signUpHere(f, name, `friend.${occasion}.${k}.${RUN}@example.com`, k === 0 && P('03b-login'));
     await f.waitForSelector('[data-screen="invite"]:not([hidden])');
     if ((await f.inputValue('#name')) !== name) errors.push(`${occasion}: the friend's name wasn't filled in: ${await f.inputValue('#name')}`);
     await f.waitForTimeout(400);
@@ -305,9 +318,7 @@ async function runGift(occasion, c) {
   const t = await page();
   await t.goto(`${BASE}/`);
   await t.waitForSelector('[data-screen="auth"]:not([hidden])');
-  await t.fill('#acEmail', `friend.${occasion}.0.${RUN}@example.com`);
-  await t.fill('#acPass', PASSWORD);
-  await t.click('#authBox button[type="submit"]');
+  await logInHere(t, 'Budi', `friend.${occasion}.0.${RUN}@example.com`);
   await t.waitForSelector('.thanks-card.new');
   await t.waitForTimeout(600);
   await shot(t, P('19-home-thanks'));
@@ -321,25 +332,18 @@ async function runGift(occasion, c) {
 }
 
 // Accounts: no gift without one; the organizer logs in on another phone, finds the gift, is recognized on a
-// friends' page, logs out; an email can't sign up twice.
+// friends' page, logs out.
 async function accountFlow(occasion, recipientLink) {
   const slug = new URL(recipientLink).pathname.split('/')[2];
   const email = emailFor(occasion);
   const st = (await fetch(`${BASE}/api/gifts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipient: 'X', organizer: 'Y' }) })).status;
   if (st !== 401) errors.push(`creating a gift without an account: ${st}`);
 
-  const a = await page(phone, /status of (401|409)/); // the wrong password and the taken email
+  const a = await page();
   await a.goto(`${BASE}/`); // the home page needs an account: logged out it goes to log in
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');
   if (new URL(a.url()).pathname !== '/login') errors.push('"Log in" went to ' + a.url());
-  await a.fill('#acEmail', email);
-  await a.fill('#acPass', 'not the password');
-  await a.click('#authBox button[type="submit"]');
-  await a.waitForSelector('#authBox .err:not([hidden])');
-  await a.waitForTimeout(400);
-  await shot(a, 'account-01-login-wrong');
-  await a.fill('#acPass', PASSWORD);
-  await a.click('#authBox button[type="submit"]');
+  await logInHere(a, 'Sari', email); // the same account on another phone
   await a.waitForSelector('[data-screen="home"]:not([hidden])'); // logged in → the home page: make a gift / open your gift
   const own = (await a.context().request.get(`${BASE}/api/reveal?slug=${slug}&k=${new URL(recipientLink).searchParams.get('k')}&pin=${pins[recipientLink]}`)).status();
   if (own !== 403) errors.push(`the organizer opening their own gift: ${own}, expected 403`);
@@ -366,14 +370,6 @@ async function accountFlow(occasion, recipientLink) {
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');
   if (new URL(a.url()).pathname !== '/login') errors.push('after logging out the address is ' + a.url());
 
-  await a.goto(`${BASE}/signup`);
-  await a.fill('#acName', 'Someone else');
-  await a.fill('#acEmail', email);
-  await a.fill('#acPass', 'another password');
-  await a.click('#authBox button[type="submit"]');
-  await a.waitForSelector('#authBox .err:not([hidden])');
-  if (!/already an account/.test(await a.textContent('#authBox .err'))) errors.push('signing up twice: ' + (await a.textContent('#authBox .err')));
-  await shot(a, 'account-05-signup-taken');
   await a.context().close();
 }
 
@@ -401,6 +397,21 @@ await d.click('.pin-digit >> nth=0');
 await d.keyboard.type(pins[Object.values(slugs)[0]]);
 await d.waitForSelector('text=Open your gift');
 await shot(d, 'desktop-ready');
+
+// Limits, and only Google logs in (no more passwords).
+async function limits(slug) {
+  const cookie = await apiAccount('Late', `late.${RUN}@example.com`);
+  let last;
+  for (let i = 0; i < 4; i++) last = (await fetch(`${BASE}/api/message?slug=${slug}&name=Late&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', Cookie: cookie }, body: wav() })).status;
+  if (last !== 429) errors.push(`a 4th voice from one account in one gift: ${last}, expected 429`);
+  for (const action of ['signup', 'login', 'forgot']) {
+    const st = (await post({ action, name: 'X', email: `x.${RUN}@example.com`, password: 'password123' })).status;
+    if (st !== 400) errors.push(`the old "${action}" action: ${st}, expected 400`);
+  }
+  const fake = (await post({ action: 'google', credential: 'not.a.token' })).status;
+  if (![401, 503].includes(fake)) errors.push(`a fake Google token: ${fake}, expected 401 or 503`);
+}
+await limits(Object.keys(slugs).length && new URL(Object.values(slugs)[0]).pathname.split('/')[2]);
 
 console.log('ERRORS', errors.length ? errors : 'none');
 await browser.close();

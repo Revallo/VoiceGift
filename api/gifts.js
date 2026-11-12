@@ -2,7 +2,8 @@
 // PATCH /api/gifts  {slug, key, recipient, organizer, occasion, cake}    → the organizer edits it (back from step 3)
 import { route, send, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { createGift, loadGift, saveGift, OCCASIONS } from '../lib/gifts.js';
-import { sessionUserId, addGift } from '../lib/accounts.js';
+import { requireUser, addGift } from '../lib/accounts.js';
+import { countGift } from '../lib/limits.js';
 
 // cake = the decoration of any scene: { flavor, shape, name, dots: [[x, y, colour]], stickers: [[emoji, x, y]] }
 function cleanCake(cake = {}) {
@@ -40,9 +41,9 @@ function readGift(b) {
 export default route({
   async POST(req, res) {
     // Only with an account: we know who made it, and the account page lists it on any phone.
-    const userId = await sessionUserId(req);
-    if (!userId) throw new HttpError(401, 'Please log in to create a gift.');
+    const { id: userId } = await requireUser(req, 'Please log in to create a gift.');
     const input = readGift(await jsonBody(req));
+    await countGift(userId);
     const gift = await createGift({ ...input, ownerId: userId });
     await addGift(userId, gift.slug);
     send(res, 201, { slug: gift.slug, manageKey: gift.manageKey, openKey: gift.openKey });

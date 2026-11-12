@@ -75,6 +75,10 @@ Claude (claude.ai), so a new session can continue without re-asking.
   simpler and most Indonesians share links by WhatsApp, which opens a real browser. Inside Instagram/Line/Facebook's own
   browsers Google refuses to log in, so the page asks to open it in Chrome/Safari (accepted). Plus limits (`lib/limits.js`):
   3 voices per account per gift, 20 recordings + 10 gifts per account per day. Fixes known flaws 4–6 in the README.
+- Decision (2026-11-12, branch `revallo`): **the Candlelit look**: a warm dark room per occasion (birthday warm ink, graduation
+  midnight blue, wedding soft plum) with ONE bright accent each (candle gold, periwinkle, rose champagne) and dark text on it;
+  the gift sits in its own glow, the friend's mic button breathes, labels and small print are bigger. Tokens are at the top of
+  `app.css`; the component polish is the last block of `app.css` ("Candlelit polish").
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)

@@ -169,7 +169,7 @@ function showReady() {
   scene.setDim(0.7);
   header(t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
   const pile = h('div', { class: 'facepile' });
-  for (let i = 0; i < Math.min(messages.length, 12); i++) pile.append(h('i', {}, '?'));
+  for (let i = 0; i < Math.min(messages.length, 12); i++) pile.append(h('i', { 'aria-hidden': 'true' }, '✦'));
   setPanel(h('div', { class: 'row' }, pile));
   setBottom(btn('Open your gift', { pulse: true, icon: icon.gift(18), onclick: openGift }));
 }

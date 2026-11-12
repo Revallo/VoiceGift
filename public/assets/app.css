@@ -1,67 +1,76 @@
+/* Candlelit (2026-11-12): a warm dark room so the gift and its lights glow, one bright accent per occasion,
+   with dark text on it. --emerald* are the accent's historic names: -light for text/lines, -dark for hover. */
 :root {
-  --fg: 236, 230, 220;
-  --bg: #1C1A18;
-  --bg-outer: #141311;
-  --panel: #242220;
-  --panel-subtle: #201E1C;
-  --panel-hover: #2D2A27;
-  --text: #ECE6DC;
-  --ink: #1A1208;
-  --emerald: #8A6A45;
-  --emerald-light: #D9BC8F;
-  --emerald-dark: #765A3A;
-  --emerald-grad: #8A6A45;
-  --coral: #E89A8E;
-  --coral-soft: rgba(232, 154, 142, 0.12);
-  --green: #8FBF9F;
-  --green-soft: rgba(143, 191, 159, 0.12);
-  --face: #33302C;
-  --stage-bg: #211F1C;
+  --fg: 240, 232, 222;
+  --bg: #17120F;
+  --bg-outer: #0F0C0A;
+  --panel: #221B17;
+  --panel-subtle: #1C1612;
+  --panel-hover: #2C241F;
+  --text: #F2EAE0;
+  --ink: #24170A;
+  --emerald: #F4B860;
+  --emerald-light: #FFD69A;
+  --emerald-dark: #E7A647;
+  --emerald-grad: linear-gradient(180deg, #FFC874, #EFA94A);
+  --on-accent: #2A1A08;
+  --glow: rgba(244, 184, 96, 0.22);
+  --coral: #F39A8B;
+  --coral-soft: rgba(243, 154, 139, 0.12);
+  --green: #93C9A4;
+  --green-soft: rgba(147, 201, 164, 0.12);
+  --face: #352B25;
+  --stage-bg: #1E1713;
   --wash: transparent;
   --wash2: transparent;
   --display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* The quiet look: one flat, near-neutral page per occasion. Colour is only a small accent. */
+/* Graduation: a midnight blue room, a periwinkle accent */
 body[data-theme="graduation"] {
-  --fg: 230, 233, 238;
-  --bg: #191B1F;
-  --bg-outer: #121417;
-  --panel: #212429;
-  --panel-subtle: #1D2024;
-  --panel-hover: #2A2D33;
-  --text: #E6E9EE;
-  --emerald: #56698C;
-  --emerald-light: #A9BAD6;
-  --emerald-dark: #48597A;
-  --emerald-grad: #56698C;
-  --face: #30343B;
-  --stage-bg: #1E2126;
+  --fg: 232, 236, 246;
+  --bg: #10141D;
+  --bg-outer: #0A0D14;
+  --panel: #1A1F2B;
+  --panel-subtle: #151A25;
+  --panel-hover: #232A39;
+  --text: #E8ECF6;
+  --emerald: #9DB4FF;
+  --emerald-light: #C6D3FF;
+  --emerald-dark: #8199EE;
+  --emerald-grad: linear-gradient(180deg, #B4C6FF, #8EA6F5);
+  --on-accent: #0E1530;
+  --glow: rgba(157, 180, 255, 0.2);
+  --face: #2A3142;
+  --stage-bg: #161B27;
 }
 
+/* Wedding: a soft plum room, a rose-champagne accent */
 body[data-theme="wedding"] {
-  --fg: 231, 236, 232;
-  --bg: #191C1A;
-  --bg-outer: #121513;
-  --panel: #212522;
-  --panel-subtle: #1D201E;
-  --panel-hover: #2A2F2B;
-  --text: #E7ECE8;
-  --emerald: #5B7565;
-  --emerald-light: #A9C4B2;
-  --emerald-dark: #4C6255;
-  --emerald-grad: #5B7565;
-  --face: #303632;
-  --stage-bg: #1D2120;
+  --fg: 244, 234, 236;
+  --bg: #171215;
+  --bg-outer: #0F0B0D;
+  --panel: #221A1F;
+  --panel-subtle: #1C1519;
+  --panel-hover: #2D2329;
+  --text: #F4EAEC;
+  --emerald: #F0B9A6;
+  --emerald-light: #FBD7CB;
+  --emerald-dark: #E2A08B;
+  --emerald-grad: linear-gradient(180deg, #F7CBBB, #E8A994);
+  --on-accent: #2B1510;
+  --glow: rgba(240, 185, 166, 0.2);
+  --face: #382A31;
+  --stage-bg: #1E171B;
 }
 
 /* Built from the colours above, so they sit on body, where each occasion sets its own */
 body {
   --line: rgba(var(--fg), 0.09);
   --line-strong: rgba(var(--fg), 0.18);
-  --soft: rgba(var(--fg), 0.74);
-  --muted: rgba(var(--fg), 0.56);
+  --soft: rgba(var(--fg), 0.8);
+  --muted: rgba(var(--fg), 0.62);
   --sep: rgba(var(--fg), 0.18);
   --face-text: var(--text);
   --tint: color-mix(in srgb, var(--emerald) 24%, transparent);
@@ -1979,22 +1988,23 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .hero-menu-ico, .hero-bell { background: var(--panel); }
 .chip.on { background: var(--panel-hover); border-color: var(--emerald-light); color: var(--emerald-light); box-shadow: none; }
 .auth-tab.on { background: var(--panel-hover); color: var(--text); box-shadow: none; }
-.linkbox button span { color: #FFFFFF; }
+.linkbox button span { color: var(--on-accent); }
 .linkbtn, .caption span.now, .badge-pill.gold, .badge-pill.green, .tok.fixed, .typo-pill.applied, .typo-pill.applied .right, .nav-ico, .menu-link i, .list .play-mini, .who-list .play-mini { color: var(--emerald-light); }
 .badge-pill.gold, .badge-pill.green, .tok.fixed, .typo-pill.applied, .nav-ico, .menu-link i, .list .play-mini, .who-list .play-mini, .diff-line { background: var(--tint); }
 .badge-pill.gold, .badge-pill.green, .tok.fixed, .typo-pill.applied, .diff-line { border-color: var(--line-strong); }
 .diff-line.idle { background: var(--panel); border-color: var(--line); }
 .pill-btn.dark { background: transparent; border: 1px solid var(--line-strong); color: var(--text); }
 .pill-btn.dark:hover { background: var(--panel-hover); }
-.pill-btn.light { background: var(--emerald); color: #FFFFFF; }
+.pill-btn.light { background: var(--emerald); color: var(--on-accent); }
 .pill-btn.light:hover { background: var(--emerald-dark); }
-.btn:not(.ghost):not(.emerald-track) { background: var(--emerald); color: #FFFFFF; text-shadow: none; font-weight: 700; }
-.btn:not(.ghost):not(.emerald-track):hover:not(:disabled) { background: var(--emerald-dark); }
+.btn:not(.ghost):not(.emerald-track) { background: var(--emerald-grad); color: var(--on-accent); text-shadow: none; font-weight: 700; box-shadow: 0 8px 24px -10px var(--emerald), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.btn:not(.ghost):not(.emerald-track):hover:not(:disabled) { background: var(--emerald-light); }
 .btn.ghost { background: var(--panel); color: var(--text); border-color: var(--line-strong); }
-.holdbtn > span, .friend.on, .friend.on span, .linkbox button, .avatar, .step-n, .logo { color: #FFFFFF; }
+.avatar { color: #FFFFFF; }
+.holdbtn > span, .friend.on, .friend.on span, .linkbox button, .step-n, .logo { color: var(--on-accent); }
 .logo { background: var(--emerald); }
 .swatch i { box-shadow: inset 0 0 0 1px rgba(var(--fg), 0.1); }
-.mic-big { background: var(--emerald); color: #FFFFFF; border: 0; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 0 0 8px var(--line), 0 0 0 16px rgba(var(--fg), 0.04); }
+.mic-big { position: relative; width: 112px; height: 112px; background: var(--emerald-grad); color: var(--on-accent); border: 0; margin-top: 24px; margin-bottom: 24px; box-shadow: 0 12px 36px -8px var(--emerald), inset 0 2px 0 rgba(255, 255, 255, 0.4); }
 
 /* The back button: the same pill on every page, top left */
 .backbtn[data-icon="back"] { width: auto; height: 44px; padding: 0 18px 0 12px; display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; border-radius: 999px; background: var(--panel); color: var(--text); border: 1.5px solid var(--line-strong); font-weight: 600; font-size: 14.5px; }
@@ -2135,3 +2145,44 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .or-line::before, .or-line::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .inapp-hint { display: grid; gap: 8px; justify-items: start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; font-size: .86rem; color: var(--soft); }
 .inapp-hint b { color: var(--text); }
+
+/* ---------- Candlelit polish (2026-11-12): the room, the gift's light, the one thing to press ---------- */
+/* The room: a soft light from above, like candles on a table. */
+.app { background: radial-gradient(120% 55% at 50% -12%, var(--glow), transparent 62%), var(--bg); }
+
+/* The gift is the star of every page: it sits in its own glow. */
+.stage-wrap {
+  background: radial-gradient(75% 62% at 50% 62%, var(--glow), transparent 74%), var(--stage-bg);
+  border-color: rgba(var(--fg), 0.1);
+  box-shadow: inset 0 1px 0 rgba(var(--fg), 0.08), 0 22px 44px -26px rgba(0, 0, 0, 0.85);
+}
+
+/* Easier to read on a phone: labels and small print a step bigger and brighter. */
+.field > label, .label { font-size: 13px; font-weight: 600; color: var(--soft); letter-spacing: 0.01em; }
+.small { font-size: 13px; }
+.private-note, .seen-hint { font-size: 13px; }
+.input { border-color: rgba(var(--fg), 0.12); }
+.input:focus { border-color: var(--emerald); box-shadow: 0 0 0 4px var(--tint); }
+
+/* The consent box: a clear tick, and the whole card lights up once it's ticked. */
+.check { transition: border-color 0.15s ease, background 0.15s ease; }
+.check input { width: 22px; height: 22px; accent-color: var(--emerald); }
+.check:has(input:checked) { border-color: var(--emerald); background: color-mix(in srgb, var(--emerald) 10%, var(--panel)); color: var(--text); }
+
+/* Chosen chips and cards read as chosen at a glance. */
+.chip.on { background: var(--tint); border-color: var(--emerald); color: var(--emerald-light); }
+
+/* "It's time": the voices waiting are little sealed lights, not question marks. */
+.facepile i { border-radius: 50%; background: var(--emerald-grad); color: var(--on-accent); border-color: var(--bg); box-shadow: 0 0 14px -2px var(--emerald); }
+
+/* The friend's one button: the mic breathes, so it's obvious where to tap. */
+.mic-big { transition: transform 0.14s ease, box-shadow 0.2s ease; }
+.mic-big:hover { box-shadow: 0 14px 44px -6px var(--emerald), inset 0 2px 0 rgba(255, 255, 255, 0.4); }
+@media (prefers-reduced-motion: no-preference) {
+  .mic-big::before, .mic-big::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--emerald); opacity: 0; pointer-events: none; animation: vg-ring 2.6s ease-out infinite; }
+  .mic-big::after { animation-delay: 1.3s; }
+  /* pages fade in instead of snapping */
+  [data-screen]:not([hidden]) { animation: vg-enter 0.22s ease-out both; }
+}
+@keyframes vg-ring { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.75); opacity: 0; } }
+@keyframes vg-enter { from { opacity: 0.45; } to { opacity: 1; } }

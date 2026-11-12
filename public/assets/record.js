@@ -2,8 +2,8 @@ import { $, $$, h, api, icon, showScreen, slugFromPath, copyText, toast, initial
 import { createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { requireLogin } from './auth.js';
+import { loadDraft, clearDraft } from './draft.js';
 
-$$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
 $('#editBadge').innerHTML = `${icon.edit(12)} <span>Edit</span>`;
 
@@ -12,6 +12,7 @@ let gift, t, count = 0, first = '';
 let rec = null, recorded = null, sent = null, sentDone = false; // sent = { id, token, asrText, asrTypos, waveform }
 let lastCorrections = [];
 let speechRec = null, speechHint = '';
+let draft = null; // a voice recorded on the Record tab ("?draft=1"): used instead of recording here
 
 window.addEventListener('pagehide', () => {
   if (sent && !sentDone) {
@@ -32,7 +33,7 @@ async function load() {
   const user = await requireLogin(); // friends log in, then their name is already filled in
   if (!user) return;
   try {
-    const data = await api(`/api/gift?slug=${encodeURIComponent(slug)}`);
+    const data = await api(`/api/gift?slug=${encodeURIComponent(slug)}&invite=1`); // remembered as invited: it shows on their home page
     gift = data.gift;
     count = data.count;
   } catch (e) {
@@ -45,11 +46,21 @@ async function load() {
   $('#invitedBy').textContent = `${gift.organizer} invited you`;
   $('#inviteTitle').textContent = t.inviteTitle(first);
   $('#startBtn').innerHTML = icon.mic(48);
-  $$('[data-private]').forEach((p) => (p.textContent = `🔒 Only you and ${first} can hear this voice.`));
+  $$('[data-private]').forEach((p) => (p.textContent = `Only you and ${first} can hear this voice.`));
   $('#recEyebrow').textContent = `For ${first} · max 15 seconds`;
   $('#name').value = user.name;
   $('#signedIn').textContent = `Logged in as ${user.email}`;
   $('#signedIn').hidden = false;
+  if (new URLSearchParams(location.search).get('draft')) draft = await loadDraft();
+  if (draft) {
+    // the recording is already made: the big button becomes one line of words
+    const b = $('#startBtn');
+    b.className = 'btn';
+    b.removeAttribute('aria-label');
+    b.textContent = 'Add my voice';
+    $('#startHint').textContent = `Your recording (0:${String(Math.round(draft.durationSec)).padStart(2, '0')}) is on this phone. Nothing is sent until you tap.`;
+    $('#startHint').classList.remove('center');
+  }
   showScreen('invite');
 }
 
@@ -60,6 +71,11 @@ $('#inviteForm').addEventListener('submit', async (e) => {
   if (!name) return err($('#inviteError'), 'Please enter your name.');
   if (!$('#consent').checked) return err($('#inviteError'), 'Please tick the box to continue.');
   err($('#inviteError'), '');
+  if (draft) {
+    recorded = { wav: draft.wav, durationSec: draft.durationSec };
+    speechHint = '';
+    return upload();
+  }
   await beginRecording();
 });
 
@@ -143,6 +159,16 @@ async function upload() {
       waveform: Array.isArray(res.waveform) && res.waveform.length ? res.waveform : null
     };
     sentDone = false;
+    if (draft) { // it's with the gift now; from here on, recording happens on this page
+      draft = null;
+      clearDraft();
+      const b = $('#startBtn');
+      b.className = 'mic-big';
+      b.setAttribute('aria-label', 'Start recording');
+      b.innerHTML = icon.mic(48);
+      $('#startHint').textContent = 'Tap to record · up to 15 seconds';
+      $('#startHint').classList.add('center');
+    }
     $('#captionText').value = sent.asrText;
     $('#seenLabel').textContent = `How ${first} will see it`;
     $('#seenHint').textContent = `This is your ${t.item}. Tap it to try what ${first} will hear.`;
@@ -361,6 +387,14 @@ async function showDone() {
   c.lightAll();
   c.mark(n - 1);
   $('#doneCount').textContent = t.doneCount(n);
+  // a gift made from the Record tab: next is its own page, to invite friends
+  let after = '';
+  try { after = sessionStorage.getItem('vg-after-record') || ''; sessionStorage.removeItem('vg-after-record'); } catch {}
+  if (after.startsWith(`/m/${slug}?`)) {
+    $('#doneNext').href = after;
+    $('#doneNext').textContent = 'Invite friends';
+    $('#doneLead').textContent = `Now invite friends to add their voices for ${first}.`;
+  }
   const card = $('#asrThanksCard');
   if (card) {
     if (lastCorrections.length > 0) {

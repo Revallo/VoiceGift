@@ -1,11 +1,9 @@
-import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet, swipeButton } from './common.js';
+import { $, $$, h, api, icon, showScreen, toast, openSheet, closeSheet } from './common.js';
 import { BRUSHES, NAME_FONTS, DEFAULT_FONT, BACKDROPS } from './stage.js';
 import { TUNES, playTune } from './music.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { me, forgetMe, authForm } from './auth.js';
 
-addStars($('#app'), 20, 40);
-$$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const params = new URLSearchParams(location.search);
@@ -23,6 +21,7 @@ const state = {
   sketch: false
 };
 $('#deliverySummaryVal').textContent = state.verifyPin;
+if (params.get('for')) $('#recipient').value = params.get('for').slice(0, 40); // "a new gift for a friend" from the Record tab
 let t = theme(state.occasion);
 const MAX_STICKERS = 30;
 
@@ -36,7 +35,6 @@ window.addEventListener('popstate', (e) => { stopPreview(); showScreen(e.state?.
 $$('[data-back]').forEach((b) => b.addEventListener('click', () => history.back()));
 
 // ---------- step 1 ----------
-swipeButton($('#nextBtn'));
 let whoScene;
 const sampleName = () => (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
 
@@ -311,7 +309,7 @@ $('#musicPlay').addEventListener('click', () => {
 
 $('#sketchToggle').addEventListener('click', () => {
   state.sketch = !state.sketch;
-  $('#sketchToggle').textContent = state.sketch ? '✓ Done' : '✏️ Draw';
+  $('#sketchToggle').textContent = state.sketch ? 'Done' : 'Draw';
   $('#brushes').hidden = $('#clearDraw').hidden = $('#undoDraw').hidden = !state.sketch;
   if (state.hit) state.hit.hidden = !state.sketch;
 });
@@ -500,7 +498,13 @@ $('#createBtn').addEventListener('click', async () => {
       state.created = await api('/api/gifts', { method: 'POST', json: body }); // listed on the account page
     }
     // everything else (invite friends, who recorded, send it) is on the gift's one page
-    return location.replace(`/m/${state.created.slug}?k=${state.created.manageKey}`);
+    const dash = `/m/${state.created.slug}?k=${state.created.manageKey}`;
+    if (params.get('draft') && !params.get('edit')) {
+      // made from the Record tab: the voice recorded there goes in first, then on to the gift's page
+      try { sessionStorage.setItem('vg-after-record', dash); } catch {}
+      return location.replace(`/g/${state.created.slug}?draft=1`);
+    }
+    return location.replace(dash);
   } catch (e) {
     if (e.status === 401) { forgetMe(); return askAccount(); } // logged out in another tab
     err.textContent = e.message;

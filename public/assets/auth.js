@@ -1,12 +1,15 @@
 // Accounts in the browser: who is logged in, the create-account / log-in form (on /signup and /login, and in
 // /new when a new gift needs an account), and the rows of "Your gifts".
-import { h, api, icon, toast, fmtAgo, initials } from './common.js';
+import { h, api, icon, toast, fmtAgo } from './common.js';
 import { theme } from './themes.js';
 
+let asked;
 let current;
-// The logged-in account ({ name, email }) or null. Asked once per page.
+// What the server says about this browser: { user, googleClientId }. Asked once per page.
+const account = () => (asked ||= api('/api/account').catch(() => ({ user: null })));
+// The logged-in account ({ name, email }) or null.
 export function me() {
-  current ||= api('/api/account').then((d) => d.user, () => null);
+  current ||= account().then((d) => d.user);
   return current;
 }
 
@@ -37,9 +40,42 @@ async function claimDeviceGifts() {
   } catch {}
 }
 
+// "Continue with Google": Google draws its own button into `box`. Nothing is shown when the server has no
+// GOOGLE_CLIENT_ID, or when Google's script can't be loaded. onDone(user) runs once they're logged in.
+let gsi;
+export async function googleButton(box, onDone) {
+  const { googleClientId } = await account();
+  if (!googleClientId || !box) return;
+  try {
+    await (gsi ||= new Promise((ok, fail) => {
+      const s = h('script', { src: 'https://accounts.google.com/gsi/client', async: true });
+      s.onload = ok;
+      s.onerror = fail;
+      document.head.append(s);
+    }));
+  } catch {
+    return;
+  }
+  window.google.accounts.id.initialize({
+    client_id: googleClientId,
+    callback: async ({ credential }) => {
+      try {
+        const { user } = await api('/api/account', { method: 'POST', json: { action: 'google', credential } });
+        current = Promise.resolve(user);
+        await claimDeviceGifts();
+        await onDone(user);
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+  });
+  box.hidden = false;
+  window.google.accounts.id.renderButton(box, { theme: 'filled_black', size: 'large', shape: 'rectangular', text: 'continue_with', logo_alignment: 'center', width: Math.min(380, Math.max(240, box.clientWidth)) });
+}
+
 const MODES = {
   signup: { submit: 'Create account', busy: 'Creating your account…', autocomplete: 'new-password', ask: 'Already have an account?', other: 'Log in' },
-  login: { submit: 'Log in', busy: 'Logging in…', autocomplete: 'current-password', ask: 'New here?', other: 'Create an account' }
+  login: { submit: 'Log in', busy: 'Logging in…', autocomplete: 'current-password', ask: 'New here?', other: 'Create account' }
 };
 
 // mode is 'signup' or 'login'; the person can switch (then onMode(mode) runs). onDone(user) runs once they're logged in.
@@ -70,21 +106,18 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
       onMode?.(mode);
     };
 
-    const tabs = h('div', { class: 'auth-tabs' },
-      h('button', { type: 'button', class: 'auth-tab' + (mode === 'login' ? ' on' : ''), onclick: () => switchMode('login') }, 'Log in'),
-      h('button', { type: 'button', class: 'auth-tab' + (mode === 'signup' ? ' on' : ''), onclick: () => switchMode('signup') }, 'Create account')
-    );
+    const other = h('button', { type: 'button', class: 'linkbtn auth-tab', onclick: () => switchMode(mode === 'signup' ? 'login' : 'signup') }, m.other);
 
-    const other = h('button', { type: 'button', class: 'linkbtn', onclick: () => switchMode(mode === 'signup' ? 'login' : 'signup') }, m.other);
-
-    const form = h('form', { class: 'card stack', style: { gap: '14px' }, novalidate: true },
-      tabs,
+    const google = h('div', { class: 'google-box', hidden: true });
+    googleButton(google, onDone);
+    const form = h('form', { class: 'stack', style: { gap: '16px' }, novalidate: true },
+      google,
       nameIn && h('div', { class: 'field' }, h('label', { for: 'acName' }, 'Your name'), nameIn),
       h('div', { class: 'field' }, h('label', { for: 'acEmail' }, 'Email address'), emailIn),
       h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'Password'), show), passIn),
       err,
       submit,
-      h('p', { class: 'small muted center', style: { margin: 0 } }, `${m.ask} `, other));
+      h('p', { class: 'small muted', style: { margin: 0 } }, `${m.ask} `, other));
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -129,17 +162,9 @@ export function giftItem(g, onDeleted) {
     }
     onDeleted(g);
   }
-  const sub = [t.label, g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
   const count = typeof g.count === 'number' ? `${g.count} ${g.count === 1 ? 'voice' : 'voices'}` : '';
+  const sub = [t.label, count, g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
   return h('div', { class: 'gift-item' },
-    h('div', { class: 'gift-item-top' },
-      h('span', { class: 'gift-item-ava' }, t.emoji || initials(g.recipient)),
-      h('div', { class: 'gift-item-meta' }, h('b', {}, g.recipient), h('span', {}, sub)),
-      h('button', { type: 'button', class: 'gift-item-del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(14), onclick: remove })
-    ),
-    h('div', { class: 'gift-item-bottom' },
-      count && h('span', { class: 'gift-item-count' }, count),
-      h('a', { class: 'gift-item-open', href: `/m/${g.slug}?k=${g.key}` }, 'Open dashboard →')
-    )
-  );
+    h('a', { class: 'gift-item-open', href: `/m/${g.slug}?k=${g.key}`, 'aria-label': `Open the gift for ${g.recipient}` }, h('b', {}, g.recipient), h('span', {}, sub)),
+    h('button', { type: 'button', class: 'gift-item-del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(16), onclick: remove }));
 }

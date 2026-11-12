@@ -12,7 +12,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -20,75 +20,119 @@
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
   <section data-screen="home" hidden>
-    <div class="row" style="justify-content:space-between">
-      <span class="brand home-brand"><span class="home-logo" id="homeLogo"></span>Voice Gift</span>
-      <a class="profile-btn" href="/account" id="profileLink"><span class="profile-ava" id="profileAva"></span>Profile</a>
+    <div class="nav-header"><span class="home-brand">Voice Gift</span></div>
+
+    <!-- First time: the three gifts, drawn live (each one starts making that kind of gift), and the question. -->
+    <div id="homeFirst" hidden>
+      <div class="home-hero">
+        <a class="home-gift left" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"></a>
+        <a class="home-gift right" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"></a>
+        <a class="home-gift mid" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"></a>
+      </div>
+      <div class="home-title" style="margin-top:20px">
+        <p id="hello"></p>
+        <h1>What would you like to do?</h1>
+      </div>
     </div>
 
-    <!-- the three gifts, drawn live; each one starts making that kind of gift -->
-    <div class="home-hero">
-      <a class="home-gift left" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"></a>
-      <a class="home-gift right" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"></a>
-      <a class="home-gift mid" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"></a>
+    <!-- Once they've used it: what they sent today, their friends, and the gifts waiting for their voice. -->
+    <div class="stack" id="homeBack" style="gap:26px" hidden>
+      <div>
+        <p class="big-number" id="sentToday">0</p>
+        <p id="sentLine"></p>
+      </div>
+      <div id="peopleBox">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <h2>Friends</h2>
+          <button type="button" class="linkbtn" id="findFriends">Find friends</button>
+        </div>
+        <div class="people" id="people"></div>
+      </div>
+      <div id="waitingBox" hidden>
+        <h2 style="margin-bottom:8px">Waiting for your voice</h2>
+        <div class="nav-list" id="waiting"></div>
+      </div>
     </div>
 
-    <div class="home-title">
-      <p id="hello"></p>
-      <h1>What would you like to do?</h1>
-    </div>
-
-    <div class="stack" id="thanksBox" style="gap:10px" hidden>
-      <div class="eyebrow">Thank-you notes</div>
-      <div class="stack" id="thanksList" style="gap:10px"></div>
-    </div>
-
-    <div class="stack" style="gap:12px">
+    <div class="nav-list">
       <a class="choice" href="/new" id="makeGift">
-        <span class="choice-ico" id="makeIco"></span>
         <span class="choice-text"><b>Make a gift</b><small>Collect your friends’ voices for someone.</small></span>
       </a>
       <button type="button" class="choice" id="openToggle" aria-expanded="false">
-        <span class="choice-ico" id="openIco"></span>
         <span class="choice-text"><b>Open your gift</b><small>Received a link? Paste it here.</small></span>
       </button>
-      <form class="card stack" id="openForm" style="gap:12px" novalidate hidden>
+      <form class="stack" id="openForm" style="padding:4px 0 18px" novalidate hidden>
         <input class="input" id="openLink" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste your gift link" aria-label="Your gift link">
         <p class="small err" id="openError" hidden></p>
         <button class="btn" type="submit">Continue</button>
       </form>
       <a class="choice" href="/account" id="myGifts">
-        <span class="choice-ico" id="mineIco"></span>
         <span class="choice-text"><b>My gifts</b><small>See the gifts you’ve made.</small></span>
       </a>
+    </div>
+
+    <div class="stack" id="thanksBox" style="gap:0" hidden>
+      <h2 style="margin-bottom:10px">Thank-you notes</h2>
+      <div id="thanksList"></div>
     </div>
   </section>
 </main>
 <script type="module">
-import { $, h, api, icon, addStars, showScreen, fmtAgo, initials } from '/assets/common.js';
-$('#homeLogo').innerHTML = icon.mic(15); // static icon markup
+import { $, h, api, showScreen, fmtAgo, tabBar, initials } from '/assets/common.js';
 import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
+import { friendsSheet, profileSheet } from '/assets/friends.js';
 
 const user = await me();
-if (!user) location.replace('/login');
-else {
-  addStars($('#app'), 20, 40);
-  $('#makeIco').innerHTML = icon.plus(22);
-  $('#openIco').innerHTML = icon.gift(22);
-  $('#mineIco').innerHTML = icon.sparkle(22);
-  $('#profileAva').textContent = initials(user.name);
-  $('#hello').textContent = `Hi, ${user.name}`;
+if (!user) {
+  let seen = false;
+  try { seen = Boolean(localStorage.getItem('vg-welcomed')); } catch {}
+  location.replace(seen ? '/login' : '/welcome');
+} else {
+  const { home = {}, thanks = [] } = await api('/api/account?home=1&thanks=1').catch(() => ({}));
+  // "First time" lasts until they have sent a voice, made a gift or followed someone.
+  const used = Boolean(home.sentTotal || home.giftsCount || home.following?.length);
+  if (used) showBack(home);
+  else showFirst();
+  showThanks(thanks);
   showScreen('home');
-  drawGifts(firstName(user.name));
-  showThanks();
+  tabBar('home');
 }
 
-function drawGifts(name) {
+function showFirst() {
+  $('#hello').textContent = `Hi, ${user.name}`;
+  $('#homeFirst').hidden = false;
+  const name = firstName(user.name);
   for (const [occasion, host] of [['birthday', '#heroCake'], ['graduation', '#heroBouquet'], ['wedding', '#heroLanterns']]) {
     const scene = createScene($(host), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
     scene.setCandles(10);
     scene.lightAll();
   }
+}
+
+function showBack(home) {
+  $('#homeBack').hidden = false;
+  $('#myGifts').hidden = true; // they're under Profile, one tap away in the bar
+  // "today" is the phone's own day, so the server sends the times and the page counts
+  const today = new Date().toDateString();
+  const n = (home.sent || []).filter((at) => new Date(at).toDateString() === today).length;
+  $('#sentToday').textContent = String(n);
+  $('#sentLine').textContent = `${n === 1 ? 'voice' : 'voices'} sent today${home.sentTotal > n ? ` · ${home.sentTotal} in all` : ''}`;
+  showPeople(home.following || []);
+  $('#waiting').replaceChildren(...(home.invites || []).map((g) => h('a', { class: 'choice', href: `/g/${g.slug}` },
+    h('span', { class: 'choice-text' }, h('b', {}, `For ${g.recipient}`), h('small', {}, `${g.organizer} invited you · ${theme(g.occasion).label}`)))));
+  $('#waitingBox').hidden = !(home.invites || []).length;
+}
+
+// The people they follow, as a strip to slide. Tapping one opens their profile.
+function showPeople(list) {
+  const refresh = async () => showPeople((await api('/api/account?home=1')).home.following || []);
+  $('#people').replaceChildren(
+    ...list.map((f) => h('button', { type: 'button', class: 'person', onclick: () => profileSheet(f, refresh) },
+      h('span', { class: 'avatar' }, initials(f.name)), h('span', {}, f.name))),
+    h('button', { type: 'button', class: 'person add', 'aria-label': 'Find friends', onclick: () => friendsSheet(refresh) },
+      h('span', { class: 'avatar' }, '+'), h('span', {}, 'Find')));
+  $('#findFriends').onclick = () => friendsSheet(refresh);
 }
 
 $('#openToggle').addEventListener('click', () => {
@@ -110,12 +154,10 @@ $('#openForm').addEventListener('submit', (e) => {
 });
 
 // The notes from people this account recorded for. Unread ones are marked "New" this once.
-async function showThanks() {
-  const { thanks = [] } = await api('/api/account?thanks=1').catch(() => ({}));
+function showThanks(thanks) {
   if (!thanks.length) return;
   $('#thanksList').replaceChildren(...thanks.map((n) => h('article', { class: 'thanks-card' + (n.read ? '' : ' new') },
     h('div', { class: 'thanks-head' },
-      h('span', { class: 'thanks-emoji' }, theme(n.occasion).emoji),
       h('b', {}, `${n.from} says thank you`),
       !n.read && h('span', { class: 'thanks-new' }, 'New')),
     h('p', {}, n.text),

@@ -13,28 +13,43 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Stack (prototype)
 - Vercel: static files in `public/`, serverless functions in `api/` (Node 22, ESM, no framework).
 - Storage: **Vercel Blob, private store**. Locally a `.data/` folder with the same interface (`lib/store.js`).
-- Frontend: plain HTML + ES modules, **no build step, no framework**. Fonts: Fraunces + Plus Jakarta Sans.
-  The `›››` buttons are real sliders (`swipeButton()` in `common.js`); a tap works too.
+- Frontend: plain HTML + ES modules, **no build step, no framework**. Fonts: Newsreader for titles and big actions,
+  the phone's own font for everything else.
 - Audio: the browser records **16 kHz mono 16-bit WAV** (`public/assets/recorder.js`) — playable
   everywhere and ready for ASR, so no ffmpeg/conversion anywhere.
 
 ## Commands
 - `npm run dev` → http://localhost:3000 (`dev.mjs` mimics Vercel rewrites + functions)
-- End-to-end test with a fake mic: see the header of `tests/e2e.mjs`. Run it after UI changes;
-  it must print `ERRORS none` (it also fails if the page can scroll sideways).
+- End-to-end tests with a fake mic: `tests/e2e.mjs` (the gift, start to end, per occasion) and `tests/app.mjs`
+  (bottom bar, Record tab, the two home pages, following); see their headers. Run both after UI changes;
+  each must print `ERRORS none` (they also fail if a page can scroll sideways).
 
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/new`, "Open your gift" (paste the link), "My gifts" |
+| `/welcome` | `welcome.html` | logged out, first visit only: the splash (candles light one by one), then three lines to swipe, with Google / sign up / log in underneath |
+| `/` | `index.html` | home, logged in only (else `/welcome` once, then `/login`). First time: the three gifts drawn live + "What would you like to do?". After they sent a voice, made a gift or followed someone: voices sent today, the strip of friends, gifts waiting for their voice. Always: "Make a gift", "Open your gift" (paste the link), thank-you notes |
+| `/record` | `quick.html` | the Record tab: record first (kept on the phone, `assets/draft.js`), then "Who is this for?": a gift waiting for their voice, a pasted link, or a new gift for a friend → `/g/<slug>?draft=1` |
+| `/u/:handle` | `user.html` | someone's profile link: name, a line about them, Follow, "Make a gift for …" |
 | `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: create an account / log in → their gifts (dashboard links), log out |
-| `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
+| `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done. With `?draft=1` the voice from the Record tab is used instead of recording here ("Add my voice") |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content), 3. send it (recipient link + PIN) |
 | `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → items light → listen → finale (blow / throw cap / release lanterns) → keepsake → thank everyone |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
 Grad* = graduation, Wed* = wedding; Decorate = cake editor).
+
+## The look (decided 2026-11-12; rules at the top of `app.css`)
+Dark and flat. No cards around things and no shadows: groups are made with space and thin lines. You press
+**words or plain icons**: a main action is a big line of text with an arrow (`.btn`), a second action is underlined
+words (`.btn.ghost`, `.linkbtn`), lists are full-width rows between lines (`.nav-row`, `.choice`). Three corner sizes
+only (0, 12px, circle). One accent per screen; red only for recording and errors; the record button is the one filled
+shape. No emoji in the chrome (stickers on a gift and WhatsApp texts keep theirs). Don't add cards, pills, icon tiles,
+gradients or a second accent back: that is what made it look generated.
+- **Bottom bar** on `/`, `/record`, `/account`: Home, Record, Profile (`tabBar()` in `common.js`). Not on the flow
+  pages (`/new`, `/g`, `/m`, `/r`, log in).
+- On anything wider than a phone the app is a plain phone-sized frame (no fake notch).
 
 ## Occasions (themes)
 - `assets/themes.js` holds every occasion's words (one object per occasion) and `createScene()`, which picks
@@ -52,12 +67,12 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   `name` is the text on the cake / wrap / under the lanterns; `stickers` = `[[emoji, x, y]]` (sets in
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
-  phone's back gesture works. No bottom tab bar: the profile button sits top right.
+  phone's back gesture works.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
 
 ## Accounts
-- Email + password, **for everyone** (decided 2026-11-11): making a gift, recording and opening a gift all need one
+- Email + password **or Google**, **for everyone** (decided 2026-11-11; Google added 2026-11-12): making a gift, recording and opening a gift all need one
   (401 without a session, enforced in `api/`). A logged-out friend or recipient goes to `/signup?next=<their link>` and comes straight back.
 - `/new` sends a logged-out visitor to `/login?next=/new`; after logging in, `/login` goes to
   `next` (or `/`). The login page is deliberately simple and wears the picked occasion's colors + emoji
@@ -71,12 +86,22 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   (`vg_session`, 30 days); storage keeps only its sha256. 10 wrong passwords in a row → 15 minutes' wait.
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
+- **Google** (`googleLogIn` in `lib/accounts.js`, `googleButton` in `assets/auth.js`): the button only shows when
+  `GOOGLE_CLIENT_ID` is set (an OAuth client ID whose allowed origins include this site). The server checks the ID
+  token with Google's `tokeninfo` (audience, issuer, expiry, verified email). It logs in the account with that email, or
+  makes one without a password ("Set a password" in the profile). If that email already had a password account, the
+  password is dropped and older sessions end (`user.sessionsFrom`): emails are never verified here, Google's is.
+- **Following** (`lib/follows.js`, `api/follow.js`, `assets/friends.js`): a real follow list, shown as the strip of
+  friends on the home page and on the Record tab. People are found by their exact email, through a gift they share
+  (the organizer of a gift you recorded for, friends who recorded for yours) or a profile link `/u/<handle>`. There is
+  no directory to browse. **Following opens nothing**: it never lets anyone hear a voice.
 - Not built: password reset and email verification (they need an email service).
 
 ## API (`api/*.js`)
 - `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
-- `GET /api/account` → {user} or {user: null} (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `signup`, `login`, `logout`, `claim`, `thanks-read`
-- `GET /api/gift?slug` → public gift + message count (never content)
+- `GET /api/account` → {user, googleClientId} or {user: null, …} (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes; `?home=1`: + {sent: [when…], sentTotal, giftsCount, invites, following}); `POST` actions `signup`, `login`, `google` {credential}, `logout`, `claim`, `thanks-read`
+- `GET /api/follow` → {me, following, suggestions}; `?find=<email>` / `?handle=` → {profile, following, self}; `POST` {action: `follow`|`unfollow`, handle}. Profiles are only ever {handle, name, bio}
+- `GET /api/gift?slug` → public gift + message count (never content); `&invite=1` (the recording page) remembers a logged-in visitor as invited
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
 - `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only for a logged-in account with the recipient's key + PIN** (server-side rule); the organizer's own account gets 403
@@ -88,7 +113,9 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
 
 Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`;
-accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `users/<id>/thanks/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`.
+accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `users/<id>/thanks/<slug>.json`, `users/<id>/invites/<slug>.json`,
+`users/<id>/sent/<ts>-<msg>.json`, `users/<id>/following/<id2>.json`, `users/<id>/followers/<id2>.json`, `handles/<handle>.json`,
+`emails/<sha256>.json`, `sessions/<sha256>.json`.
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
@@ -103,9 +130,12 @@ company API (wins over Groq; adapt `fromProvider()` to its response shape). Loca
   The friend's page promises "Only you and <name> can hear this voice": keep that true. No email delivery.
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
-- Consent checkbox on every recording; store `consentVersion`. Accounts are email + password. No phone numbers.
-- Never send `passwordHash`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
-- Mobile first: test at 390×844, and desktop (the app is a phone-sized frame, 420×844 at most, that scrolls inside; no wide layout).
+- Consent checkbox on every recording; store `consentVersion`. Accounts are email + password or Google. No phone numbers.
+- Never send `passwordHash`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`). Another person's account is only
+  ever sent as `publicProfile` ({handle, name, bio}): never their email, never their id.
+- A voice recorded on the Record tab stays on the phone until a gift is chosen and the consent box is ticked: nothing is
+  uploaded without a gift to belong to.
+- Mobile first: it is a mobile app. Test at 390×844, and desktop (the app is a phone-sized frame, 420×844 at most, that scrolls inside; no wide layout).
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 
 ## Not built yet (designed)

@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -19,7 +19,6 @@
     <div class="nav-header">
       <a class="backbtn small" id="whoBack" href="/" aria-label="Back" data-icon="back"></a>
       <div class="step-dots" style="margin-left:auto"><i class="on"></i><i></i></div>
-      <a class="backbtn" href="/account" aria-label="Profile" data-icon="user"></a>
     </div>
 
     <div class="web-grid">
@@ -35,9 +34,9 @@
       <div class="web-col">
         <form id="whoForm" class="stack" novalidate>
           <div class="picks" id="occasions" role="radiogroup" aria-label="What to make">
-            <button type="button" class="pick" role="radio" data-v="birthday"><span class="em">🎂</span><b>Cake</b><small>Birthday</small></button>
-            <button type="button" class="pick" role="radio" data-v="graduation"><span class="em">💐</span><b>Bouquet</b><small>Graduation</small></button>
-            <button type="button" class="pick" role="radio" data-v="wedding"><span class="em">🏮</span><b>Lanterns</b><small>Wedding</small></button>
+            <button type="button" class="pick" role="radio" data-v="birthday"><b>Cake</b><small>Birthday</small></button>
+            <button type="button" class="pick" role="radio" data-v="graduation"><b>Bouquet</b><small>Graduation</small></button>
+            <button type="button" class="pick" role="radio" data-v="wedding"><b>Lanterns</b><small>Wedding</small></button>
           </div>
           <div class="field">
             <label for="recipient" id="recipientLabel">Their name</label>
@@ -47,19 +46,15 @@
             <label for="organizer">Your name</label>
             <input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required>
           </div>
-          <div class="nav-list">
-            <button type="button" class="nav-row" id="openDeliverySheetBtn">
-              <span class="nav-ico" data-icon="shield"></span>
-              <div class="nav-info">
-                <b>PIN for the gift</b>
-                <small>4 digits · they type it to open the gift</small>
-              </div>
-              <span class="nav-val" id="deliverySummaryVal">1234</span>
-              <span class="nav-chev" data-icon="chevronRight"></span>
-            </button>
-          </div>
+          <button type="button" class="nav-row" id="openDeliverySheetBtn" style="border-top:0">
+            <div class="nav-info">
+              <b>PIN for the gift</b>
+              <small>They type these 4 digits to open it. Tap to change.</small>
+            </div>
+            <span class="nav-val" id="deliverySummaryVal">1234</span>
+          </button>
           <p class="small err" id="whoError" hidden></p>
-          <button class="btn emerald-track" type="submit" id="nextBtn"><span>Next: customize gift</span></button>
+          <button class="btn" type="submit" id="nextBtn"><span>Next: customize gift</span></button>
         </form>
       </div>
     </div>
@@ -100,16 +95,14 @@
             <div class="wheel" id="fonts"></div>
           </div>
           <div class="row" style="justify-content:space-between" id="drawRow">
-            <button type="button" class="btn ghost sm" id="sketchToggle">✏️ Draw</button>
+            <button type="button" class="btn ghost sm" id="sketchToggle">Draw</button>
             <div class="wheel" id="brushes" hidden></div>
-            <button type="button" class="btn ghost sm" id="undoDraw" hidden disabled>↶ Undo</button>
+            <button type="button" class="btn ghost sm" id="undoDraw" hidden disabled>Undo</button>
             <button type="button" class="btn ghost sm" id="clearDraw" hidden>Clear</button>
           </div>
         </div>
         <p class="small err" id="createError" hidden></p>
-        <div class="row">
-          <button type="button" class="btn grow create-btn" id="createBtn">Create the gift</button>
-        </div>
+        <button type="button" class="btn" id="createBtn">Create the gift</button>
       </div>
     </div>
   </section>

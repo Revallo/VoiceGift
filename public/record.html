@@ -11,7 +11,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body class="calm">
@@ -41,7 +41,7 @@
         </label>
         <p class="small err" id="inviteError" hidden></p>
         <button class="mic-big" type="submit" id="startBtn" aria-label="Start recording"></button>
-        <p class="center small muted" style="margin:-4px 0 0">Tap to record · up to 15 seconds</p>
+        <p class="center small muted" id="startHint" style="margin:-4px 0 0">Tap to record · up to 15 seconds</p>
       </form>
 
       <p class="private-note" data-private></p>
@@ -49,13 +49,8 @@
   </section>
 
   <section data-screen="record" hidden>
-    <!-- Purrweb 00:04 Recipient Top Pill + Giant Centered Timer -->
-    <div class="recipient-pill">
-      <span class="sq-avatar" data-icon="mic"></span>
-      <div class="rec-info">
-        <b id="recEyebrow">For Dimas</b>
-      </div>
-    </div>
+    <!-- who it is for, then one big timer -->
+    <p class="calm-from center" id="recEyebrow">For Dimas</p>
 
     <div class="spacer"></div>
     <div class="timer" id="timer">0:00</div>
@@ -69,7 +64,6 @@
   <section data-screen="mic" hidden>
     <a class="backbtn" href="/" aria-label="Back to home" data-icon="back"></a>
     <div class="head">
-      <div class="eyebrow">Microphone</div>
       <h1>Microphone needed</h1>
       <p class="lead" id="micHelp"></p>
     </div>
@@ -123,10 +117,8 @@
 
       <p class="note" id="mockNote" hidden></p>
       <p class="small err" id="capError" hidden></p>
-      <div class="row">
-        <button type="button" class="btn ghost grow" id="againBtn"></button>
-        <button type="button" class="btn grow" id="sendBtn">Send</button>
-      </div>
+      <button type="button" class="btn" id="sendBtn">Send</button>
+      <button type="button" class="btn ghost" id="againBtn" style="align-self:flex-start"></button>
       <p class="private-note" data-private></p>
     </div>
   </section>
@@ -142,7 +134,7 @@
       </div>
       <p class="small muted center" id="doneLead" style="margin:0"></p>
       <p class="private-note" data-private></p>
-      <a class="btn ghost" href="/" style="margin-top:8px">Make your own voice gift</a>
+      <a class="btn" id="doneNext" href="/" style="margin-top:8px">Make your own voice gift</a>
     </div>
   </section>
 </main>

@@ -35,6 +35,7 @@ Optional environment variables (*Settings → Environment Variables*, then redep
 | --- | --- |
 | `ADMIN_KEY` | Enables `GET /api/export?key=…`, a JSONL file of every message for the ML team, and `GET /api/users?key=…`, the list of accounts |
 | `ASR_URL`, `ASR_API_KEY` | Use the company's speech recognition API instead of the mock (see `lib/asr.js`) |
+| `GOOGLE_CLIENT_ID` | Shows "Continue with Google": an OAuth client ID (Web application) whose allowed origins include this site |
 | `GROQ_API_KEY` | Use Groq Whisper large-v3 for now, until the company API is ready (`ASR_URL` wins if both are set) |
 
 ## Good to know

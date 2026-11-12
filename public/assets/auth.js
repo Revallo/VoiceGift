@@ -3,10 +3,13 @@
 import { h, api, icon, toast, fmtAgo } from './common.js';
 import { theme } from './themes.js';
 
+let asked;
 let current;
-// The logged-in account ({ name, email }) or null. Asked once per page.
+// What the server says about this browser: { user, googleClientId }. Asked once per page.
+const account = () => (asked ||= api('/api/account').catch(() => ({ user: null })));
+// The logged-in account ({ name, email }) or null.
 export function me() {
-  current ||= api('/api/account').then((d) => d.user, () => null);
+  current ||= account().then((d) => d.user);
   return current;
 }
 
@@ -35,6 +38,39 @@ async function claimDeviceGifts() {
     const { claimed } = await api('/api/account', { method: 'POST', json: { action: 'claim', gifts: mine.map(({ slug, key }) => ({ slug, key })) } });
     localStorage.setItem('vg-mine', JSON.stringify(mine.filter((g) => !claimed.includes(g.slug))));
   } catch {}
+}
+
+// "Continue with Google": Google draws its own button into `box`. Nothing is shown when the server has no
+// GOOGLE_CLIENT_ID, or when Google's script can't be loaded. onDone(user) runs once they're logged in.
+let gsi;
+export async function googleButton(box, onDone) {
+  const { googleClientId } = await account();
+  if (!googleClientId || !box) return;
+  try {
+    await (gsi ||= new Promise((ok, fail) => {
+      const s = h('script', { src: 'https://accounts.google.com/gsi/client', async: true });
+      s.onload = ok;
+      s.onerror = fail;
+      document.head.append(s);
+    }));
+  } catch {
+    return;
+  }
+  window.google.accounts.id.initialize({
+    client_id: googleClientId,
+    callback: async ({ credential }) => {
+      try {
+        const { user } = await api('/api/account', { method: 'POST', json: { action: 'google', credential } });
+        current = Promise.resolve(user);
+        await claimDeviceGifts();
+        await onDone(user);
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+  });
+  box.hidden = false;
+  window.google.accounts.id.renderButton(box, { theme: 'filled_black', size: 'large', shape: 'rectangular', text: 'continue_with', logo_alignment: 'center', width: Math.min(380, Math.max(240, box.clientWidth)) });
 }
 
 const MODES = {
@@ -72,7 +108,10 @@ export function authForm({ mode = 'signup', name = '', onMode, onDone }) {
 
     const other = h('button', { type: 'button', class: 'linkbtn auth-tab', onclick: () => switchMode(mode === 'signup' ? 'login' : 'signup') }, m.other);
 
+    const google = h('div', { class: 'google-box', hidden: true });
+    googleButton(google, onDone);
     const form = h('form', { class: 'stack', style: { gap: '16px' }, novalidate: true },
+      google,
       nameIn && h('div', { class: 'field' }, h('label', { for: 'acName' }, 'Your name'), nameIn),
       h('div', { class: 'field' }, h('label', { for: 'acEmail' }, 'Email address'), emailIn),
       h('div', { class: 'field' }, h('div', { class: 'row' }, h('label', { class: 'label grow', for: 'acPass' }, 'Password'), show), passIn),

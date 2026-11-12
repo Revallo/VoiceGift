@@ -51,6 +51,7 @@ function populateUserUI(user) {
   $('#hello').textContent = user.name || 'You';
   $('#meEmail').textContent = user.email;
   $('#rowProfileSub').textContent = user.bio || 'Your name and a line about you';
+  $('#rowSecurityTitle').textContent = user.hasPassword === false ? 'Set a password' : 'Change password';
   const prefs = user.prefs || {};
   if ($('#rowPrefsVal')) {
     $('#rowPrefsVal').textContent = `${prefs.asrLang || 'id-ID'} · ${prefs.autoHighlight !== false ? 'auto' : 'off'}`;
@@ -199,9 +200,10 @@ function openAsrCorpusSheet() {
 
 // 4. Bottom Sheet: Security & Password
 function openSecuritySheet() {
-  const curIn = h('input', { class: 'input', type: 'password', autocomplete: 'current-password', placeholder: 'Current password', required: true });
+  const fresh = currentUser?.hasPassword === false; // an account made with Google has no password yet
+  const curIn = h('input', { class: 'input', type: 'password', autocomplete: 'current-password', placeholder: 'Current password', required: !fresh });
   const newIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password', minlength: 8, placeholder: 'At least 8 characters', required: true });
-  const btn = h('button', { type: 'submit', class: 'btn' }, 'Update password');
+  const btn = h('button', { type: 'submit', class: 'btn' }, fresh ? 'Set password' : 'Update password');
 
   const form = h('form', {
     class: 'stack',
@@ -210,12 +212,13 @@ function openSecuritySheet() {
       ev.preventDefault();
       btn.disabled = true;
       try {
-        await api('/api/account', {
+        const { user } = await api('/api/account', {
           method: 'PATCH',
           json: { currentPassword: curIn.value, newPassword: newIn.value }
         });
+        populateUserUI(user);
         closeSheet();
-        toast('Password updated');
+        toast(fresh ? 'Password set' : 'Password updated');
       } catch (e) {
         toast(e.message);
       } finally {
@@ -223,13 +226,13 @@ function openSecuritySheet() {
       }
     }
   },
-    h('div', { class: 'field' }, h('label', {}, 'Current password'), curIn),
+    !fresh && h('div', { class: 'field' }, h('label', {}, 'Current password'), curIn),
     h('div', { class: 'field' }, h('label', {}, 'New password'), newIn),
     btn
   );
 
   openSheet({
-    title: 'Change password',
+    title: fresh ? 'Set a password' : 'Change password',
     content: form
   });
 }

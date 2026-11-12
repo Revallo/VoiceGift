@@ -1,14 +1,15 @@
-// GET  /api/account               → { user: { name, email } | null }: who is logged in on this browser
+// GET  /api/account               → { user: { name, email } | null, googleClientId }: who is logged in on this browser
 // GET  /api/account?gifts=1       → also the gifts they made, each with its dashboard key + ASR stats
 // POST /api/account { action: "signup", name, email, password }  → new account, logged in
 //                   { action: "login", email, password }         → logged in for 30 days (HttpOnly cookie)
+//                   { action: "google", credential }           → logged in with Google (the account is made if it's new)
 //                   { action: "logout" }
 //                   { action: "claim", gifts: [{ slug, key }] }  → gifts this browser made before accounts join the account
 //                   { action: "thanks-read" }                    → the thank-you notes on the home page have been seen
 // GET  /api/account?thanks=1      → also the thank-you notes this account received
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
-import { signUp, logIn, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead } from '../lib/accounts.js';
+import { signUp, logIn, googleLogIn, googleClientId, startSession, endSession, currentUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead } from '../lib/accounts.js';
 
 // The account's gifts, newest first. Gifts deleted since are skipped (and forgotten).
 async function giftsAndStatsOf(user) {
@@ -90,7 +91,7 @@ async function claim(user, list) {
 export default route({
   async GET(req, res) {
     const user = await currentUser(req);
-    if (!user) return send(res, 200, { user: null });
+    if (!user) return send(res, 200, { user: null, googleClientId: googleClientId() });
     const q = query(req);
     if (q.export === '1') {
       const lines = [];
@@ -121,7 +122,7 @@ export default route({
         'Cache-Control': 'no-store'
       });
     }
-    const out = { user: publicUser(user) };
+    const out = { user: publicUser(user), googleClientId: googleClientId() };
     if (q.gifts) Object.assign(out, await giftsAndStatsOf(user));
     if (q.thanks) out.thanks = (await listThanks(user.id)).map(({ path, ...note }) => note);
     send(res, 200, out);
@@ -141,6 +142,11 @@ export default route({
       const user = b.action === 'signup' ? await signUp(b) : await logIn(b);
       await startSession(req, res, user);
       return send(res, b.action === 'signup' ? 201 : 200, { user: publicUser(user) });
+    }
+    if (b.action === 'google') {
+      const { user, created } = await googleLogIn(b.credential);
+      await startSession(req, res, user);
+      return send(res, created ? 201 : 200, { user: publicUser(user) });
     }
     if (b.action === 'logout') {
       await endSession(req, res);

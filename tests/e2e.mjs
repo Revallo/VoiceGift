@@ -303,7 +303,7 @@ async function runGift(occasion, c) {
 
   // the friend's next login: the thank-you is on their home page, "New" only the first time
   const t = await page();
-  await t.goto(`${BASE}/`);
+  await t.goto(`${BASE}/login`);
   await t.waitForSelector('[data-screen="auth"]:not([hidden])');
   await t.fill('#acEmail', `friend.${occasion}.0.${RUN}@example.com`);
   await t.fill('#acPass', PASSWORD);
@@ -329,9 +329,22 @@ async function accountFlow(occasion, recipientLink) {
   if (st !== 401) errors.push(`creating a gift without an account: ${st}`);
 
   const a = await page(phone, /status of (401|409)/); // the wrong password and the taken email
-  await a.goto(`${BASE}/`); // the home page needs an account: logged out it goes to log in
+  // the home page needs an account. A first visit shows the welcome: the splash, then three lines and the ways in
+  await a.goto(`${BASE}/`);
+  await a.waitForURL(/\/welcome$/);
+  await a.waitForSelector('.welcome:not(.splash)', { timeout: 6000 });
+  const line1 = await a.textContent('#line');
+  await a.click('#dots i >> nth=1');
+  if ((await a.textContent('#line')) === line1) errors.push('the welcome did not move to its second line');
+  await a.waitForTimeout(600);
+  await shot(a, 'account-00-welcome');
+  await a.click('#loginLink');
   await a.waitForSelector('[data-screen="auth"]:not([hidden])');
-  if (new URL(a.url()).pathname !== '/login') errors.push('"Log in" went to ' + a.url());
+  if (new URL(a.url()).pathname !== '/login') errors.push('"I already have an account" went to ' + a.url());
+  // …and only once: after that, logged out, the home page goes straight to log in
+  await a.goto(`${BASE}/`);
+  await a.waitForURL(/\/login$/);
+  await a.waitForSelector('[data-screen="auth"]:not([hidden])');
   await a.fill('#acEmail', email);
   await a.fill('#acPass', 'not the password');
   await a.click('#authBox button[type="submit"]');

@@ -367,6 +367,22 @@ textarea.input:focus { border-color: var(--accent); }
 .sheet-close { display: grid; place-items: center; width: 44px; height: 44px; margin: -8px -12px 0 0; border: 0; background: none; color: var(--soft); cursor: pointer; flex-shrink: 0; }
 .sheet-body { display: flex; flex-direction: column; gap: 16px; }
 
+/* ---------- Welcome: the splash, then three lines to swipe ---------- */
+.welcome { gap: 14px; }
+.welcome-scene { width: min(100%, 300px); margin: 4vh auto 0; touch-action: pan-y; cursor: pointer; }
+.welcome-scene .stage, .welcome-scene .stage * { pointer-events: none; }
+.welcome-brand { margin: 0; text-align: center; font: 500 21px/1 var(--display); color: var(--muted); transition: font-size 0.5s ease, color 0.5s ease, margin 0.5s ease; }
+.welcome-words { min-height: 120px; text-align: center; touch-action: pan-y; cursor: pointer; }
+.welcome-words h1 { margin: 6px 0 8px; }
+.welcome-words.in { animation: vg-fadein 0.5s ease both; }
+.welcome .step-dots { align-self: center; }
+.welcome .step-dots i { cursor: pointer; }
+.welcome-actions { display: flex; flex-direction: column; gap: 4px; transition: opacity 0.5s ease; }
+.google-box { display: flex; justify-content: center; min-height: 44px; margin-bottom: 10px; color-scheme: light; }
+/* While the candles light: only the cake and the name */
+.welcome.splash .welcome-brand { margin-top: 14px; font-size: 34px; color: var(--text); }
+.welcome.splash .welcome-words, .welcome.splash .step-dots, .welcome.splash .welcome-actions { opacity: 0; pointer-events: none; }
+
 /* ---------- Home ---------- */
 .home-brand { font: 500 19px/1 var(--display); color: var(--text); text-decoration: none; }
 .home-hero { position: relative; aspect-ratio: 2.4; margin: 6px 0 2px; }

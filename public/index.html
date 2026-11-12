@@ -63,7 +63,11 @@ import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
 
 const user = await me();
-if (!user) location.replace('/login');
+if (!user) {
+  let seen = false;
+  try { seen = Boolean(localStorage.getItem('vg-welcomed')); } catch {}
+  location.replace(seen ? '/login' : '/welcome');
+}
 else {
   $('#hello').textContent = `Hi, ${user.name}`;
   showScreen('home');

@@ -4,6 +4,14 @@
   "outputDirectory": "public",
   "rewrites": [
     {
+      "source": "/welcome",
+      "destination": "/welcome.html"
+    },
+    {
+      "source": "/record",
+      "destination": "/quick.html"
+    },
+    {
       "source": "/start",
       "destination": "/create.html"
     },

@@ -69,6 +69,16 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - Decision (2026-11-11): no demo voices, demo logins or preview: to test, use three real accounts (organizer, friend, recipient). One colour per occasion, one accent, Fredoka headings.
 - Decision (2026-11-11, same day, after the bright look hurt to look at): **the look is dim**: one dark colour per occasion, one calm accent; the optional backdrops are darkened too.
 - Decision (2026-11-11, later): after the dim look still felt too bright and purple, **the look is quiet**: flat near-neutral pages with no gradients, thin lines instead of coloured blocks, Fraunces headings, colour only as a small muted accent per occasion. To change the feel, start with the design, not just the colours.
+- Decision (2026-11-12, daryn, branch `mobile-app`): the quiet look still read as generated, because the stylesheet was a fintech
+  template painted over three times. It was rewritten: **dark and flat, words and plain icons to press**, no cards, no pills, no emoji
+  in the chrome, Newsreader + the phone's own font (rules in `CLAUDE.md` → "The look"). The slide-to-continue button is gone.
+  The screens in `design/screens/` show the old look and no longer match.
+- Decision (2026-11-12): it is a **mobile app**: a bottom bar (Home, Record, Profile), a welcome with a splash before logging in,
+  Continue with Google, a Record tab (record first, choose the gift after), a home page that changes once you've used it
+  (voices sent today, friends, gifts waiting for your voice) and **real following**. This reverses "no tab bar" (2026-11-10).
+- To turn on Google: make an OAuth client ID (Google Cloud Console → Credentials → Web application) with the origins
+  `http://localhost:3000` and `https://voicegift-one.vercel.app`, then set `GOOGLE_CLIENT_ID` in `.env` and on Vercel. Not done yet,
+  so the button is hidden and Google login has only been tested with a faked Google answer.
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)

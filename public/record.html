@@ -33,7 +33,10 @@
       <h1 class="calm-title" id="inviteTitle"></h1>
 
       <form class="stack" id="inviteForm" novalidate>
-        <input class="input" id="name" maxlength="40" autocomplete="given-name" placeholder="Your name" aria-label="Your name" required>
+        <div class="field">
+          <label for="name">Your name, as <span id="nameFor">they</span> will see it</label>
+          <input class="input" id="name" maxlength="40" autocomplete="given-name" placeholder="Your name" required>
+        </div>
         <p class="small muted wrap" id="signedIn" style="margin:-6px 0 0" hidden></p>
         <label class="check">
           <input type="checkbox" id="consent">
@@ -41,8 +44,10 @@
         </label>
         <p class="small err" id="inviteError" hidden></p>
         <button class="mic-big" type="submit" id="startBtn" aria-label="Start recording"></button>
-        <p class="center small muted" style="margin:-4px 0 0">Tap to record · up to 15 seconds</p>
+        <p class="center small muted" id="micHint" style="margin:-4px 0 0">Tap to record · up to 15 seconds</p>
       </form>
+
+      <p class="say-ideas"><b>Not sure what to say?</b> A wish, a memory, an inside joke. In Indonesian, just the way you talk.</p>
 
       <p class="private-note" data-private></p>
     </div>
@@ -59,7 +64,8 @@
 
     <div class="spacer"></div>
     <div class="timer" id="timer">0:00</div>
-    <p class="center small muted" style="margin:-4px 0 0">Up to 15 seconds</p>
+    <div class="rec-progress" aria-hidden="true"><i id="recBar"></i></div>
+    <p class="center small muted" id="recLeft" style="margin:0" aria-live="polite">15 seconds left</p>
     <div class="meter" id="meter" aria-hidden="true"></div>
     <div class="spacer"></div>
     <button type="button" class="recbtn" id="stopBtn" aria-label="Stop recording"></button>
@@ -81,6 +87,7 @@
   <section data-screen="uploading" hidden>
     <div class="loading">
       <div class="spinner"></div>
+      <p class="small muted" style="margin:0">Writing down what you said…</p>
     </div>
   </section>
 

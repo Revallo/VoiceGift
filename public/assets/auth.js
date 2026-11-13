@@ -100,7 +100,7 @@ export function loginBox({ onDone }) {
           id.initialize({ client_id: googleClientId, callback: (r) => onGoogle?.(r), ux_mode: 'popup', context: 'signin' });
           googleReady = googleClientId;
         }
-        id.renderButton(btn, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', width: Math.max(200, Math.min(400, btn.clientWidth || 320)) });
+        id.renderButton(btn, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', locale: 'en', width: Math.max(200, Math.min(400, btn.clientWidth || 320)) });
       } catch {
         fail('Google didn’t load. Check your connection and reload the page.');
       }

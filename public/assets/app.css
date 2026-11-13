@@ -2326,3 +2326,39 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .thanks-friend-state { font-size: 12.5px; color: var(--emerald-light); flex-shrink: 0; }
 .thanks-friend.done { border-color: var(--emerald); background: var(--tint); }
 .thanks-friend.done .thanks-friend-state { color: var(--text); }
+
+/* ---------- A pass as a user (2026-11-13): one bright button per screen, say what to do next, no dead ends ---------- */
+/* Google's button is an iframe: on a dark page it gets a white box around it unless its own box says "light". */
+.google-btn { color-scheme: light; }
+/* Keyboard users see where they are. */
+:is(a, button, .btn, .choice, .chip, .pick, [role="button"]):focus-visible { outline: 2px solid var(--emerald-light); outline-offset: 2px; }
+@keyframes vg-nudge { 0%, 100% { translate: 0 0; } 20% { translate: -6px 0; } 40% { translate: 6px 0; } 60% { translate: -4px 0; } 80% { translate: 4px 0; } }
+
+/* Home: making a gift is the main thing to do. */
+.choice.primary { border-color: var(--emerald); background: color-mix(in srgb, var(--emerald) 9%, var(--panel)); }
+.choice.primary .choice-ico { background: var(--emerald-grad); color: var(--on-accent); }
+
+/* Friend's page: the mic waits for the consent box; the box shakes when the mic is tapped too early. */
+.mic-big.waiting { opacity: 0.42; filter: saturate(0.6); box-shadow: none; }
+.mic-big.waiting::before, .mic-big.waiting::after { animation: none; opacity: 0; }
+.check.nudge { border-color: var(--coral); animation: vg-nudge 0.4s ease; }
+.say-ideas { margin: 0; padding: 12px 14px; border: 1px dashed var(--line-strong); border-radius: 16px; text-align: center; font-size: 13px; line-height: 1.5; color: var(--soft); }
+.say-ideas b { display: block; color: var(--text); font-weight: 600; }
+/* Recording: how much of the 15 seconds is used; the last 3 seconds turn warm. */
+.rec-progress { width: min(220px, 60%); height: 4px; margin: 16px auto 8px; border-radius: 4px; background: var(--line-strong); overflow: hidden; }
+.rec-progress i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--emerald); transition: width 0.25s linear, background 0.2s ease; }
+.ending .timer, .ending #recLeft { color: var(--coral); }
+.ending .rec-progress i { background: var(--coral); }
+
+/* PIN: boxes you can see before typing, a shake when it's wrong. */
+.pin-digit { border-color: rgba(var(--fg), 0.24); }
+.pin-box-row.shake { animation: vg-nudge 0.4s ease; }
+
+/* Listening: a few friends get wide chips with their whole name; the bright button is the next thing to do. */
+.friends.few { display: flex; }
+.friends.few .friend { flex: 1 1 0; max-width: 200px; padding: 10px 6px 9px; }
+.friends.few .friend span { font-size: 12.5px; }
+.row.listen-actions > .btn.ghost { flex: 0 0 auto; }
+.row.even > .btn.ghost:first-child:not(:last-child) { flex: 1 1 0; }
+/* Dashboard: with many voices the list scrolls by itself, so "Send it" stays close. */
+.dash .who-list { max-height: 330px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--gold-border) transparent; }

@@ -129,6 +129,7 @@ async function load() {
   if ($('#verifyPinTitle')) {
     $('#verifyPinTitle').textContent = `Type the 4-digit PIN that ${gift.organizer} sent you`;
   }
+  if ($('#verifyHelp')) $('#verifyHelp').textContent = `It came with the link. No PIN? Ask ${gift.organizer}.`;
   showScreen('verify');
   setTimeout(() => pinBoxes[0]?.focus(), 80);
 }
@@ -150,6 +151,10 @@ $('#verifyForm')?.addEventListener('submit', async (ev) => {
     $('#verifyError').hidden = false;
     pinBoxes.forEach((b) => (b.value = ''));
     syncPinInput();
+    const row = $('#pinBoxRow');
+    row.classList.remove('shake');
+    void row.offsetWidth;
+    row.classList.add('shake');
     pinBoxes[0].focus();
   } finally {
     checkingPin = false;
@@ -253,7 +258,7 @@ function enterScene() {
   scene.setBend(0);
   updateHeader();
   setPanel(idlePanel());
-  const grid = h('div', { class: 'friends' });
+  const grid = h('div', { class: 'friends' + (messages.length <= 4 ? ' few' : '') });
   chips = messages.map((m, i) => {
     const chip = h('button', { type: 'button', class: 'friend', 'aria-label': `Play ${m.sender}'s message`, onclick: () => play(i, false) },
       h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
@@ -268,10 +273,10 @@ function enterScene() {
     queue = q.length ? q : messages.map((m, i) => i);
     play(queue.shift(), true);
   } });
-  playAll.style.width = 'auto';
+  playAll.id = 'playAllBtn';
   const finaleBtn = btn(t.finaleBtn, { onclick: startFinale });
   finaleBtn.id = 'blowBtn';
-  setBottom(grid, heard, h('div', { class: 'row' }, playAll, finaleBtn));
+  setBottom(grid, heard, h('div', { class: 'row listen-actions' }, playAll, finaleBtn));
   updateHeard();
 }
 
@@ -283,7 +288,12 @@ function updateHeard() {
   const heard = $('#heard');
   const more = messages.length > 18 ? ' · scroll for everyone' : '';
   if (heard) heard.textContent = (played.size >= messages.length ? `You heard all ${messages.length} voices` : `${played.size} of ${messages.length} voices heard`) + more;
-  $('#blowBtn')?.classList.toggle('pulse', played.size >= messages.length);
+  const all = played.size >= messages.length;
+  $('#blowBtn')?.classList.toggle('pulse', all);
+  $('#blowBtn')?.classList.toggle('ghost', !all);
+  $('#playAllBtn')?.classList.toggle('ghost', all);
+  const label = $('#playAllBtn span');
+  if (label) label.textContent = all ? 'Play all again' : played.size ? 'Play the rest' : 'Play all';
 }
 
 function idlePanel() {
@@ -555,7 +565,9 @@ function showKeepsake() {
   const again = btn('Listen again', { ghost: true, icon: icon.redo(15), onclick: () => { scene.reset(); enterScene(); } });
   const thank = btn(thanked ? 'Thank-you sent' : 'Thank everyone', { icon: icon.send(16), onclick: () => openThanks(thank) });
   thank.disabled = thanked;
-  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), thank, again);
+  save.classList.add('ghost');
+  if (thanked) thank.classList.add('ghost');
+  setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, thank, h('div', { class: 'row even' }, save, share), again);
 }
 
 // ---------- thank everyone: one voice for everyone, one per friend, or written ----------
@@ -572,6 +584,7 @@ function openThanks(thankBtn) {
   const done = (sent) => {
     thanked = true;
     thankBtn.disabled = true;
+    thankBtn.classList.add('ghost');
     thankBtn.querySelector('span').textContent = 'Thank-you sent';
     closeSheet();
     toast(sent ? `Your thank-you is on its way to ${sent} ${sent === 1 ? 'friend' : 'friends'}` : 'Your thank-you is saved');

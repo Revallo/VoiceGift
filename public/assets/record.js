@@ -50,7 +50,8 @@ async function load() {
   $('#inviteTitle').textContent = t.inviteTitle(first);
   $('#startBtn').innerHTML = icon.mic(48);
   $$('[data-private]').forEach((p) => (p.textContent = `🔒 Only you and ${first} can hear this voice.`));
-  $('#recEyebrow').textContent = `For ${first} · max 15 seconds`;
+  $('#recEyebrow').textContent = `Recording for ${first}`;
+  $('#nameFor').textContent = first;
   $('#name').value = user.name;
   $('#signedIn').textContent = `Logged in as ${user.email}`;
   $('#signedIn').hidden = false;
@@ -62,10 +63,35 @@ $('#inviteForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = $('#name').value.trim();
   if (!name) return err($('#inviteError'), 'Please enter your name.');
-  if (!$('#consent').checked) return err($('#inviteError'), 'Please tick the box to continue.');
+  if (!$('#consent').checked) { // point at the box instead of only saying so
+    const box = $('#consent').closest('.check');
+    box.classList.remove('nudge');
+    void box.offsetWidth;
+    box.classList.add('nudge');
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return err($('#inviteError'), 'Please tick the box to continue.');
+  }
   err($('#inviteError'), '');
   await beginRecording();
 });
+
+// The mic waits for the consent box: dim until it's ticked, and the line under it says what to do.
+function syncConsent() {
+  const ok = $('#consent').checked;
+  $('#startBtn').classList.toggle('waiting', !ok);
+  $('#micHint').textContent = ok ? 'Tap to record · up to 15 seconds' : 'Tick the box above, then tap to record';
+  if (ok) { err($('#inviteError'), ''); $('#consent').closest('.check').classList.remove('nudge'); }
+}
+$('#consent').addEventListener('change', syncConsent);
+syncConsent();
+
+// The recording screen: how much of the 15 seconds is left.
+function showLeft(s) {
+  const left = Math.max(0, 15 - Math.floor(s));
+  $('#recBar').style.width = `${Math.min(100, (s / 15) * 100)}%`;
+  $('#recLeft').textContent = left === 1 ? '1 second left' : `${left} seconds left`;
+  $('[data-screen="record"]').classList.toggle('ending', left <= 3);
+}
 
 const bars = [];
 for (let i = 0; i < 28; i++) { const b = h('i'); bars.push(b); $('#meter').append(b); }
@@ -75,6 +101,7 @@ async function beginRecording() {
   if (!micSupported()) return showMicHelp();
   $('#stopBtn').innerHTML = icon.stop(34);
   $('#timer').textContent = '0:00';
+  showLeft(0);
   bars.forEach((b) => (b.style.height = '6px'));
   speechHint = '';
   let autoStopped = false;
@@ -82,7 +109,7 @@ async function beginRecording() {
     rec = await startRecording({
       maxSec: 15,
       onLevel: (lv) => { bars[levelIdx++ % bars.length].style.height = `${Math.round(6 + lv * 80)}px`; },
-      onTick: (s) => { $('#timer').textContent = `0:${String(Math.min(15, Math.floor(s))).padStart(2, '0')}`; },
+      onTick: (s) => { $('#timer').textContent = `0:${String(Math.min(15, Math.floor(s))).padStart(2, '0')}`; showLeft(s); },
       onAutoStop: () => { if (!autoStopped) { autoStopped = true; finishRecording(); } }
     });
     // Optional browser SpeechRecognition to capture real spoken words when supported
@@ -159,6 +186,7 @@ async function upload() {
     $('#ownDur').textContent = `0:${String(Math.round(recorded.durationSec)).padStart(2, '0')}`;
     $('#againBtn').innerHTML = icon.redo(15);
     $('#againBtn').append(h('span', {}, 'Record again'));
+    $('#sendBtn').textContent = `Send to ${first}`;
     setupPlayer();
     buildTwist();
     refreshTypoStudio();
@@ -436,7 +464,7 @@ $('#sendBtn').addEventListener('click', async () => {
     err($('#capError'), e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Send';
+    btn.textContent = `Send to ${first}`;
   }
 });
 
@@ -459,7 +487,7 @@ async function showDone() {
       card.hidden = false;
       $('#doneCheckIco').innerHTML = icon.check(10, 3.5);
       const examples = lastCorrections.slice(0, 2).map((d) => `“${d.from}” → “${d.to}”`).join(', ');
-      $('#asrThanksText').textContent = `${lastCorrections.length} ASR ${lastCorrections.length === 1 ? 'fix' : 'fixes'} saved (${examples})`;
+      $('#asrThanksText').textContent = `Thanks for fixing ${lastCorrections.length === 1 ? '1 word' : `${lastCorrections.length} words`}: ${examples}. ${first} will read it right.`;
     } else {
       card.hidden = true;
     }

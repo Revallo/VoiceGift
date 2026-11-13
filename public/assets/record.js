@@ -2,8 +2,8 @@ import { $, $$, h, api, icon, showScreen, slugFromPath, copyText, toast, initial
 import { createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { requireLogin } from './auth.js';
-import { MOODS, playVoice } from './voicefx.js';
-import { CANDLES, FLAMES, miniCandle, styleCandle } from './cake.js';
+import { MOODS, playVoice, moodShow } from './voicefx.js';
+import { CANDLES, FLAMES, FLAME_SHAPES, miniCandle, styleCandle } from './cake.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
@@ -15,7 +15,7 @@ let rec = null, recorded = null, sent = null, sentDone = false; // sent = { id, 
 let lastCorrections = [];
 let speechRec = null, speechHint = '';
 // The twist the friend adds after recording (kept when they record again).
-let mood = 'normal', candleStyle = { body: 'stripe', flame: 'classic' };
+let mood = 'normal', candleStyle = { body: 'stripe', flame: 'classic', shape: 'drop' };
 
 window.addEventListener('pagehide', () => {
   if (sent && !sentDone) {
@@ -307,13 +307,15 @@ function showSeenScene() {
 }
 
 function paintSeen(k) {
-  seenWords.forEach((w, i) => w.classList.toggle('done', k < 0 || i < k));
+  // k = -1: all shown (not playing); -2: the intro is playing, no word yet
+  seenWords.forEach((w, i) => w.classList.toggle('done', k === -1 || (k >= 0 && i < k)));
   seenWords.forEach((w, i) => w.classList.toggle('now', i === k));
 }
 
 function stopOwn() {
   if (!playing) return;
   playing.stop();
+  playing.endShow?.();
   playing = null;
   cancelAnimationFrame(raf);
   paintSeen(-1);
@@ -333,15 +335,16 @@ async function playOwn() {
     if (recorded.wav !== wav) return; // recorded again meanwhile
   }
   const startAt = ac.currentTime;
-  const me = playVoice(ac, buffer, mood, { onended: () => { if (playing === me) { playing = null; stopOwn(); } } });
+  const me = playVoice(ac, buffer, mood, { onended: () => { if (playing === me) stopOwn(); } });
   playing = me;
+  me.endShow = moodShow(seenScene?.wrap, mood, me);
   $('#playOwn').innerHTML = icon.pause(16);
   seenScene?.setActive(count, true);
   const paint = () => {
     if (playing !== me) return;
     const n = seenWords.length;
-    const pos = ((ac.currentTime - startAt) * me.rate) / buffer.duration;
-    paintSeen(Math.min(n - 1, Math.floor(pos * n)));
+    const pos = ((ac.currentTime - startAt - me.lead) * me.rate) / buffer.duration;
+    paintSeen(pos < 0 ? -2 : Math.min(n - 1, Math.floor(pos * n)));
     raf = requestAnimationFrame(paint);
   };
   raf = requestAnimationFrame(paint);
@@ -354,11 +357,12 @@ function setupPlayer() {
   $('#playOwn').onclick = () => (playing ? stopOwn() : playOwn());
 }
 
-// ---------- the twist: a mood for the voice, and (on the cake) their own candle + flame ----------
+// ---------- the twist: a mood for the voice, and (on the cake) their own candle: stick, flame colour, flame shape ----------
 function pickRow(row, items, isOn, onPick) {
   row.textContent = '';
   for (const [key, make] of items) {
     const b = h('button', { type: 'button', class: 'pick' + (isOn(key) ? ' on' : ''), 'aria-pressed': String(isOn(key)) });
+    b.dataset.key = key;
     make(b);
     b.addEventListener('click', () => {
       [...row.children].forEach((c) => { c.classList.toggle('on', c === b); c.setAttribute('aria-pressed', String(c === b)); });
@@ -368,12 +372,12 @@ function pickRow(row, items, isOn, onPick) {
   }
 }
 
-// The live minis: each shows the candle body with the current flame (or the flame on the current body).
-function candleMini(b, style) {
+// Each pick shows only its own thing: the stick alone, the flame colour alone, the flame shape alone.
+function putMini(b, style, only) {
   b.querySelector('.mini-candle')?.remove();
-  const label = b.querySelector('span');
-  b.insertBefore(miniCandle(style, colorFor(count), { h: 40 }), label);
+  b.prepend(miniCandle(style, colorFor(count), { h: 40, only }));
 }
+const igniteMini = (b) => { const c = b.querySelector('.candle'); if (c) styleCandle(c, c._style, { ignite: true }); };
 
 function buildTwist() {
   $('#twistSub').textContent = `Optional. Tap one to hear it. Only the sound ${first} hears changes.`;
@@ -382,34 +386,27 @@ function buildTwist() {
     (k) => {
       mood = k;
       if (seenScene?.candles[count]) seenScene.candles[count].dataset.mood = k;
+      $('#seenScene').scrollIntoView({ behavior: 'smooth', block: 'center' });
       playOwn();
     });
 
   $('#candlePicks').hidden = !isCake();
   if (!isCake()) return;
-  const bodyRow = $('#candleRow'), flameRow = $('#flameRow');
-  const relight = (row, key, field) => {
-    // every mini in the other row follows the new pick; the picked mini lights up again with a burst
-    [...row.children].forEach((b, i) => candleMini(b, { ...candleStyle, [field]: Object.keys(field === 'body' ? CANDLES : FLAMES)[i] }));
-    const mine = row.children[Object.keys(field === 'body' ? CANDLES : FLAMES).indexOf(key)]?.querySelector('.candle');
-    if (mine) styleCandle(mine, candleStyle, { ignite: true });
-  };
-  pickRow(bodyRow, Object.entries(CANDLES).map(([k, c]) => [k, (b) => { b.append(h('span', {}, c.label)); candleMini(b, { ...candleStyle, body: k }); }]),
+  const changed = (b) => { seenScene.setCandleStyle(count, candleStyle); igniteMini(b); };
+  pickRow($('#candleRow'), Object.entries(CANDLES).map(([k, c]) => [k, (b) => { b.append(h('span', {}, c.label)); putMini(b, { body: k }, 'stick'); }]),
     (k) => k === candleStyle.body,
-    (k) => {
-      candleStyle = { ...candleStyle, body: k };
-      seenScene.setCandleStyle(count, candleStyle);
-      relight(flameRow, candleStyle.flame, 'flame');
-      relight(bodyRow, k, 'body');
-    });
-  pickRow(flameRow, Object.entries(FLAMES).map(([k, f]) => [k, (b) => { b.append(h('span', {}, f.label)); candleMini(b, { ...candleStyle, flame: k }); }]),
+    (k, b) => { candleStyle = { ...candleStyle, body: k }; changed(b); });
+  pickRow($('#flameRow'), Object.entries(FLAMES).map(([k, f]) => [k, (b) => { b.append(h('span', {}, f.label)); putMini(b, { flame: k, shape: 'drop' }, 'flame'); }]),
     (k) => k === candleStyle.flame,
-    (k) => {
+    (k, b) => {
       candleStyle = { ...candleStyle, flame: k };
-      seenScene.setCandleStyle(count, candleStyle);
-      relight(bodyRow, candleStyle.body, 'body');
-      relight(flameRow, k, 'flame');
+      // the shapes show the picked colour
+      [...$('#shapeRow').children].forEach((s) => putMini(s, { flame: k, shape: s.dataset.key }, 'flame'));
+      changed(b);
     });
+  pickRow($('#shapeRow'), Object.entries(FLAME_SHAPES).map(([k, f]) => [k, (b) => { b.append(h('span', {}, f.label)); putMini(b, { flame: candleStyle.flame, shape: k }, 'flame'); }]),
+    (k) => k === candleStyle.shape,
+    (k, b) => { candleStyle = { ...candleStyle, shape: k }; changed(b); });
 }
 
 $('#againBtn').addEventListener('click', async () => {

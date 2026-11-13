@@ -2,6 +2,7 @@
 import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet } from './common.js';
 import { me, logOut, loginBox, giftItem } from './auth.js';
 import { applyTheme } from './themes.js';
+import { noteCard } from './thanksnote.js';
 
 addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
@@ -219,6 +220,7 @@ function showAccount(user) {
   document.title = 'Your account · Voice Gift';
   populateUserUI(user);
   showScreen('me');
+  loadThanks();
   return loadGifts().then(() => {
     if (keepHash === '#settings') openEditProfileSheet();
     else if (keepHash === '#ASR') openAsrPrefsSheet();
@@ -243,6 +245,13 @@ async function loadGifts() {
   } catch (e) {
     list.replaceChildren(h('div', { class: 'item small muted' }, e.message));
   }
+}
+
+// Thank-yous received: the ones already opened on home, each gone 7 days after that.
+async function loadThanks() {
+  const { thanks = [] } = await api('/api/account?thanks=1').catch(() => ({}));
+  $('#thanksArchive').replaceChildren(...thanks.map((n) => noteCard(n)));
+  $('#thanksSec').hidden = !thanks.length;
 }
 
 $('#logout').addEventListener('click', async () => {

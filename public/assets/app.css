@@ -2187,17 +2187,27 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 @keyframes vg-ring { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.75); opacity: 0; } }
 @keyframes vg-enter { from { opacity: 0.45; } to { opacity: 1; } }
 
-/* ---------- A friend's own candle + flame (cake.js CANDLES / FLAMES), picked after recording ---------- */
-.candle .c-flamewrap.f-blue .c-flame { background: radial-gradient(circle at 50% 72%, #FFFFFF 0%, #CFF3FF 24%, #4FB3FF 58%, #2F5BFF 100%); box-shadow: 0 0 14px 5px rgba(79, 179, 255, 0.55); }
-.candle .c-flamewrap.f-pink .c-flame { background: radial-gradient(circle at 50% 72%, #FFFFFF 0%, #FFD3EC 26%, #FF6FB5 60%, #E0337F 100%); box-shadow: 0 0 14px 5px rgba(255, 111, 181, 0.55); }
-.candle .c-flamewrap.f-green .c-flame { background: radial-gradient(circle at 50% 72%, #FFFFFF 0%, #DDFFD0 24%, #5CE38A 58%, #11A86A 100%); box-shadow: 0 0 14px 5px rgba(92, 227, 138, 0.55); }
-.candle .c-flamewrap.f-rainbow .c-flame { background: radial-gradient(circle at 50% 72%, #FFFFFF 0%, #FFF1B8 22%, #FF7A3D 55%, #FF3D7A 100%); box-shadow: 0 0 14px 5px rgba(255, 122, 61, 0.5); animation: vg-flicker 1.1s ease-in-out infinite alternate, vg-hue 2.4s linear infinite; }
-.candle .c-flamewrap.f-heart { filter: drop-shadow(0 0 6px rgba(255, 90, 120, 0.85)); }
-.candle .c-flamewrap.f-heart .c-flame { inset: 3px -1px 1px; border-radius: 0; box-shadow: none; background: radial-gradient(circle at 50% 70%, #FFFFFF 0%, #FFD0DA 25%, #FF5A78 62%, #D6204A 100%);
-  clip-path: path('M8 20 C 2 15 0 11 0 7 C 0 3 3 1 5 1 C 7 1 8 3 8 4 C 8 3 9 1 11 1 C 13 1 16 3 16 7 C 16 11 14 15 8 20 Z'); }
-.candle .c-flamewrap.f-sparkler .c-flame { inset: 7px 3px 2px; }
+/* ---------- A friend's own candle: stick, flame colour, flame shape (cake.js CANDLES / FLAMES / FLAME_SHAPES) ---------- */
+.c-flamewrap { --f2: #FFF1B8; --f3: #F6B93B; --f4: #FF7A3D; --fg-glow: rgba(246, 185, 59, 0.55); }
+.c-flamewrap.fc-blue { --f2: #CFF3FF; --f3: #4FB3FF; --f4: #2F5BFF; --fg-glow: rgba(79, 179, 255, 0.6); }
+.c-flamewrap.fc-pink { --f2: #FFD3EC; --f3: #FF6FB5; --f4: #E0337F; --fg-glow: rgba(255, 111, 181, 0.6); }
+.c-flamewrap.fc-green { --f2: #DDFFD0; --f3: #5CE38A; --f4: #11A86A; --fg-glow: rgba(92, 227, 138, 0.6); }
+.c-flamewrap.fc-purple { --f2: #EBDDFF; --f3: #A974FF; --f4: #6B2FD6; --fg-glow: rgba(169, 116, 255, 0.6); }
+.c-flamewrap.fc-ice { --f2: #FFFFFF; --f3: #D9F4FF; --f4: #8FD3F0; --fg-glow: rgba(217, 244, 255, 0.7); }
+.candle .c-flamewrap .c-flame { background: radial-gradient(circle at 50% 72%, #FFFFFF 0%, var(--f2) 26%, var(--f3) 58%, var(--f4) 100%); box-shadow: 0 0 14px 5px var(--fg-glow); }
+.candle .c-flamewrap.fc-rainbow .c-flame { animation: vg-flicker 1.1s ease-in-out infinite alternate, vg-hue 2.4s linear infinite; }
+/* shapes */
+.candle .c-flamewrap.fs-tall .c-flame { inset: -9px 3px 0; }
+.candle .c-flamewrap.fs-round .c-flame { inset: 6px -1px 0; border-radius: 50%; }
+.candle .c-flamewrap:is(.fs-heart, .fs-star) { filter: drop-shadow(0 0 5px var(--fg-glow)) drop-shadow(0 0 2px var(--fg-glow)); }
+.candle .c-flamewrap:is(.fs-heart, .fs-star) .c-flame { box-shadow: none; border-radius: 0; }
+.candle .c-flamewrap.fs-heart .c-flame { inset: 3px -1px 1px; clip-path: path('M8 20 C 2 15 0 11 0 7 C 0 3 3 1 5 1 C 7 1 8 3 8 4 C 8 3 9 1 11 1 C 13 1 16 3 16 7 C 16 11 14 15 8 20 Z'); }
+.candle .c-flamewrap.fs-star .c-flame { inset: 1px -3px 1px; clip-path: polygon(50% 0%, 62% 34%, 98% 36%, 69% 57%, 80% 92%, 50% 71%, 20% 92%, 31% 57%, 2% 36%, 38% 34%); }
+.candle .c-flamewrap.fs-twin .c-flame { inset: 4px 6px 0 -3px; }
+.candle .c-flamewrap.fs-twin .c-flame2 { inset: 0 -3px 0 6px; }
+.candle .c-flamewrap.fs-sparkler .c-flame { inset: 7px 3px 2px; }
 .c-sparks { position: absolute; left: 50%; top: 45%; width: 0; height: 0; }
-.c-sparks i { position: absolute; left: -1px; top: -1px; width: 2.5px; height: 2.5px; border-radius: 50%; background: #FFF8D6; box-shadow: 0 0 4px 1.5px #FFD25E; transform: rotate(var(--a)) translateY(0); animation: vg-spark 0.7s linear infinite; }
+.c-sparks i { position: absolute; left: -1px; top: -1px; width: 2.5px; height: 2.5px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 4px 1.5px var(--f3); transform: rotate(var(--a)) translateY(0); animation: vg-spark 0.7s linear infinite; }
 @keyframes vg-spark { 0% { transform: rotate(var(--a)) translateY(-2px) scale(1); opacity: 1; } 100% { transform: rotate(var(--a)) translateY(-17px) scale(0.3); opacity: 0; } }
 @keyframes vg-hue { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
 
@@ -2205,16 +2215,62 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .candle .c-flash { position: absolute; left: 3px; width: 24px; height: 24px; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(circle, #FFFFFF 0%, rgba(255, 230, 150, 0.9) 30%, rgba(255, 200, 80, 0) 70%); }
 .candle.igniting .c-flash { animation: vg-flash 0.55s ease-out; }
 .candle.igniting .c-flamewrap { animation: vg-ignite 0.7s cubic-bezier(0.2, 1.5, 0.4, 1); }
+.candle.igniting:not(.lit) .c-body { animation: vg-pop 0.4s ease-out; }
 @keyframes vg-flash { 0% { opacity: 0; transform: scale(0.2); } 25% { opacity: 1; transform: scale(1.3); } 100% { opacity: 0; transform: scale(2.2); } }
 @keyframes vg-ignite { 0% { transform: scale(0.05, 0.05); opacity: 0; } 35% { transform: scale(0.6, 1.6); opacity: 1; } 65% { transform: scale(1.2, 0.9); } 100% { transform: scale(1, 1); } }
 
-/* The voice's mood shows on its item while it plays. */
-.candle.speaking[data-mood="angry"] .c-flamewrap, .flower.speaking[data-mood="angry"], .lantern.speaking[data-mood="angry"] { animation: vg-shake 0.12s linear infinite; }
-.candle.speaking[data-mood="angry"] .c-flame { filter: hue-rotate(-25deg) saturate(1.6); }
-.candle.speaking[data-mood="sad"] .c-flamewrap { filter: saturate(0.4) brightness(0.85); }
-.candle.speaking[data-mood="chipmunk"] .c-flame { animation-duration: 0.12s; }
-.candle.speaking[data-mood="robot"] .c-flame { filter: hue-rotate(160deg) saturate(1.4); }
-@keyframes vg-shake { 0% { translate: -1.5px 0; } 50% { translate: 1.5px 0.5px; } 100% { translate: -1px -0.5px; } }
+/* ---------- Voice moods on the gift (voicefx.js moodShow): .stage-wrap.mood-<key> + a .moodfx layer ---------- */
+.moodfx { position: absolute; inset: 0; z-index: 6; pointer-events: none; overflow: hidden; transition: opacity 0.3s ease; }
+.moodfx.out { opacity: 0; }
+.moodfx i { position: absolute; font-style: normal; line-height: 1; }
+/* Sinetron: dark edges, three big JENGs, the gift jolts on each */
+.fx-vignette { inset: 0; background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.75) 100%); animation: vg-fadein 0.3s ease-out both; }
+.fx-jeng { left: 0; right: 0; text-align: center; font-family: var(--display); font-weight: 600; font-size: 44px; color: #FFFFFF; letter-spacing: 0.04em; text-shadow: 0 0 18px rgba(255, 60, 60, 0.9), 0 3px 0 #8E1010; opacity: 0; animation: vg-jeng 0.62s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.stage-wrap.mood-sinetron .stage { animation: vg-jolt 1.3s steps(1) both; }
+@keyframes vg-jeng { 0% { opacity: 0; transform: scale(2.6); } 30% { opacity: 1; transform: scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(0.95); } }
+@keyframes vg-jolt { 0% { translate: 6px 0; } 8% { translate: -5px 2px; } 16% { translate: 0 0; } 32% { translate: -6px 0; } 40% { translate: 5px -2px; } 48% { translate: 0 0; } 64% { translate: 8px 2px; } 70% { translate: -8px -2px; } 78% { translate: 4px 0; } 86%, 100% { translate: 0 0; } }
+/* Dangdut: disco lights, two dancers, the gift bounces on the beat */
+.fx-disco { top: -30%; width: 46px; height: 150%; background: linear-gradient(180deg, hsl(var(--h) 95% 65% / 0.55), transparent 80%); mix-blend-mode: screen; transform-origin: 50% 0; animation: vg-disco 0.9s ease-in-out infinite alternate; filter: blur(2px); }
+.fx-emoji { font-size: 34px; animation: vg-dance 0.45s ease-in-out infinite alternate; }
+.fx-emoji.r { animation-delay: -0.22s; }
+.stage-wrap.mood-dangdut .candle.lit, .stage-wrap.mood-dangdut .flower.lit, .stage-wrap.mood-dangdut .lantern.lit { animation: vg-beat 0.454s ease-in-out infinite; }
+@keyframes vg-disco { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
+@keyframes vg-dance { from { transform: translateY(0) rotate(-10deg); } to { transform: translateY(-8px) rotate(10deg); } }
+@keyframes vg-beat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+/* Toa: a loudspeaker, sound rings spreading out */
+.fx-toa { left: 12px; top: 10px; font-size: 38px; transform: scaleX(-1) rotate(-12deg); animation: vg-toa 0.18s linear infinite alternate; }
+.fx-wave { left: 26px; top: 22px; width: 30px; height: 30px; border: 3px solid rgba(255, 255, 255, 0.7); border-radius: 50%; opacity: 0; animation: vg-wave 1.5s ease-out infinite; }
+@keyframes vg-toa { from { translate: 0 0; } to { translate: 1px -1px; } }
+@keyframes vg-wave { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(9); opacity: 0; } }
+/* Horror: the light flickers, the flames go ghostly green, a ghost drifts by */
+.fx-dark { inset: 0; background: rgba(4, 20, 12, 0.55); animation: vg-flick 2.2s steps(1) infinite; }
+.fx-ghost { left: -50px; top: 30%; font-size: 46px; opacity: 0.75; animation: vg-ghost 4s ease-in-out both; filter: drop-shadow(0 0 12px rgba(180, 255, 210, 0.8)); }
+.stage-wrap.mood-horror .c-flame { filter: hue-rotate(75deg) saturate(1.3); }
+@keyframes vg-flick { 0%, 100% { opacity: 1; } 8% { opacity: 0.2; } 10% { opacity: 1; } 47% { opacity: 0.4; } 49% { opacity: 1; } 70% { opacity: 0.1; } 73% { opacity: 1; } }
+@keyframes vg-ghost { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 0.75; } 50% { translate: 230px -24px; } 85% { opacity: 0.6; } 100% { translate: 470px 6px; opacity: 0; } }
+/* Helium: balloons rise, the speaking item floats up */
+.fx-balloon { bottom: -50px; font-size: 30px; animation: vg-balloon 3.2s ease-in both; }
+.stage-wrap.mood-helium .candle.speaking, .stage-wrap.mood-helium .flower.speaking, .stage-wrap.mood-helium .lantern.speaking { translate: 0 -16px; transition: translate 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes vg-balloon { 0% { transform: translate(0, 0) rotate(-6deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--sway, 0px), -420px) rotate(8deg); opacity: 0.9; } }
+/* Alien: a UFO flies in and beams the gift */
+.fx-ufo { left: calc(50% - 22px); top: 6px; font-size: 44px; animation: vg-ufo 1s cubic-bezier(0.3, 1.3, 0.5, 1) both, vg-hover 0.8s ease-in-out 1s infinite alternate; }
+.fx-beam { left: calc(50% - 50px); top: 46px; width: 100px; height: 75%; background: linear-gradient(180deg, rgba(150, 255, 170, 0.55), rgba(150, 255, 170, 0)); clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); opacity: 0; animation: vg-beam 0.9s ease-in-out 0.9s infinite alternate; }
+@keyframes vg-ufo { from { translate: -260px -20px; rotate: -20deg; } to { translate: 0 0; rotate: 0deg; } }
+@keyframes vg-hover { from { margin-top: 0; } to { margin-top: 6px; } }
+@keyframes vg-beam { from { opacity: 0.25; } to { opacity: 0.9; } }
+/* Concert: spotlights sweep, confetti when the voice ends */
+.fx-spot { top: -20%; width: 70px; height: 140%; background: linear-gradient(180deg, rgba(255, 255, 230, 0.5), transparent 85%); mix-blend-mode: screen; transform-origin: 50% 0; filter: blur(3px); animation: vg-sweep 1.6s ease-in-out infinite alternate; }
+.fx-spot.l { left: 12%; }
+.fx-spot.r { right: 12%; animation-delay: -0.8s; }
+.fx-confetti { top: -12px; width: 7px; height: 11px; border-radius: 2px; opacity: 0; animation: vg-confetti 1.8s ease-in both; }
+@keyframes vg-sweep { from { transform: rotate(-30deg); } to { transform: rotate(30deg); } }
+@keyframes vg-confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(380px) rotate(540deg); opacity: 0.8; } }
+/* 8-bit: chunky pixels, a +1 UP */
+.fx-pixels { inset: 0; background-image: linear-gradient(rgba(0, 0, 0, 0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.18) 1px, transparent 1px); background-size: 6px 6px; mix-blend-mode: multiply; }
+.fx-coin { left: 0; right: 0; top: 14%; text-align: center; font-family: ui-monospace, monospace; font-weight: 800; font-size: 22px; color: #FFE45C; text-shadow: 3px 3px 0 #B03A00; animation: vg-coin 1s steps(6) both; }
+.stage-wrap.mood-arcade .stage { filter: contrast(1.25) saturate(1.5); }
+@keyframes vg-coin { 0% { transform: translateY(20px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-16px); opacity: 0; } }
+@keyframes vg-fadein { from { opacity: 0; } to { opacity: 1; } }
 
 /* The "make it yours" step on the friend's page: moods, candles, flames */
 .twist { display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid var(--line-strong); border-radius: 22px; background: var(--panel); }
@@ -2229,4 +2285,31 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .pick-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: -4px; }
 .mini-candle { position: relative; width: 30px; height: 92px; pointer-events: none; }
 .mini-candle .candle { cursor: inherit; }
+.mini-candle.only-stick { height: 66px; }
+.mini-candle.only-stick .c-flash { display: none; }
+.mini-candle.only-flame { height: 46px; width: 34px; }
+.mini-candle.only-flame .candle { left: 2px !important; transform: scale(1.45); transform-origin: 50% 100%; }
+.mini-candle.only-flame :is(.c-body, .c-wick, .c-ring) { display: none; }
 .mood-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--tint); color: var(--emerald-light); font-size: 11.5px; font-weight: 600; }
+
+/* ---------- Thank-you: the recipient's choice (voice for everyone / one by one / write), the pop-up, the archive ---------- */
+.thanks-opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+.thanks-opt:hover:not(:disabled) { border-color: var(--emerald); background: var(--tint); }
+.thanks-opt:disabled { opacity: 0.5; cursor: default; }
+.thanks-opt .grow { display: flex; flex-direction: column; gap: 2px; }
+.thanks-opt b { font-size: 15px; }
+.thanks-opt small { color: var(--soft); font-size: 12.5px; }
+.thanks-opt-emoji { font-size: 26px; width: 34px; text-align: center; }
+.thanks-flow .mic-big { width: 96px; height: 96px; }
+.thanks-words span { color: var(--soft); transition: color 0.15s; }
+.thanks-words span.done { color: var(--text); }
+.thanks-words span.now { color: var(--emerald-light); font-weight: 600; }
+.thanks-voice { gap: 10px; margin: 2px 0 8px; }
+.thanks-card .thanks-meta { display: block; }
+.thanks-card.big { border-color: var(--emerald); background: color-mix(in srgb, var(--emerald) 8%, var(--panel)); padding: 18px; }
+.thanks-card.big .thanks-head b { font-family: var(--display); font-size: 21px; font-weight: 600; }
+.thanks-card.big .thanks-emoji { font-size: 30px; }
+.thanks-card.big p { font-size: 17px; color: var(--text); }
+.thanks-burst { position: relative; height: 64px; margin: 8px 0 -8px; pointer-events: none; }
+.thanks-burst i { position: absolute; left: 50%; top: 50%; font-style: normal; font-size: 22px; translate: -50% -50%; animation: vg-burst 0.9s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+@keyframes vg-burst { 0% { transform: rotate(var(--a)) translateY(0) scale(0.2); opacity: 0; } 30% { opacity: 1; } 100% { transform: rotate(var(--a)) translateY(-40px) rotate(calc(-1 * var(--a))) scale(1); opacity: 0.9; } }

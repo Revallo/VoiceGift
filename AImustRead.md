@@ -32,7 +32,8 @@ because they want it to look right. **The UX is the product; the data is the sid
   (show the caption as the recipient will see it). Don't hide it or make it skippable without thought.
 - Every message needs the **consent checkbox** and its `consentVersion`. Without consent, the data can't be used.
 - `GET /api/export` (admin key) gives the training set as JSONL: audio path, `asrText`, `finalText`, `edited`,
-  consent, `userId`, `mood`.
+  consent, `userId`, `mood`, and `kind` (`message`, or `thanks` for the recipient's thank-you voices, which are
+  recorded with consent and corrected the same way).
 - `lib/asr.js` is the only place that talks to an ASR provider (mock, Groq Whisper, or the company API via `ASR_URL`).
 - **Effects never touch the recording.** Voice moods (`public/assets/voicefx.js`) are applied only while playing, in the
   browser. The message stores `mood` next to the clean WAV. Never bake an effect into the stored audio.

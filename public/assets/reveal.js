@@ -4,7 +4,8 @@ import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFo
 import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
 import { playTune } from './music.js';
-import { MOODS, moodOf, playVoice } from './voicefx.js';
+import { startRecording, micSupported, micErrorHelp } from './recorder.js';
+import { MOODS, moodOf, playVoice, moodShow } from './voicefx.js';
 
 addStars($('#app'), 26, 55);
 if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
@@ -18,7 +19,7 @@ let verifiedAnswer = '';
 const NOTES = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
 const el = { eyebrow: $('#eyebrow'), title: $('#title'), sub: $('#sub'), panel: $('#panel'), bottom: $('#bottom') };
 
-let gift, t, first = '', messages = [], scene, ac, thanked = false, stopMusic = () => {};
+let gift, t, first = '', messages = [], friends = [], scene, ac, thanked = false, stopMusic = () => {};
 let phase = 'loading';
 const buffers = [];
 const bufferJobs = [];
@@ -63,6 +64,7 @@ async function unlockAndShow(pin = '') {
   if (!scene) scene = createScene($('#cake'), gift);
   showScreen('scene');
   messages = data.messages;
+  friends = data.friends || [];
   if (!messages.length) return showEmpty();
   showReady();
 }
@@ -295,6 +297,7 @@ function stopCurrent() {
   if (!current) return;
   cancelAnimationFrame(current.raf);
   if (current.src) current.src.stop();
+  current.endShow?.();
   scene.setActive(current.i, false);
   chips[current.i]?.classList.remove('on');
   current = null;
@@ -338,24 +341,26 @@ async function play(i, chain) {
     if (chain && queue.length) later(() => play(queue.shift(), true), 600);
     else updateHeader();
   };
-  let rate = 1;
+  let rate = 1, lead = 0;
   let dur = m.durationSec;
   const startAt = ac.currentTime;
   if (buf) {
     // the friend's mood is added here, while playing; the recording itself is unchanged
     me.src = playVoice(ac, buf, m.mood, { onended: finish });
     rate = me.src.rate;
+    lead = me.src.lead;
     dur = me.src.duration;
+    me.endShow = moodShow(scene.wrap, m.mood, me.src);
   } else {
     toast('This voice could not be loaded. Showing the words only.');
     later(finish, dur * 1000);
   }
   const paint = () => {
-    const el = (ac.currentTime - startAt) * rate; // seconds into the recording
+    const el = (ac.currentTime - startAt - lead) * rate; // seconds into the recording (after the mood's intro)
     let k = -1;
     m.words.forEach((w, idx) => { if (w.start <= el) k = idx; });
     words.forEach((w, idx) => { w.className = idx < k ? 'done' : idx === k ? 'now' : ''; });
-    if (el < dur * rate + 0.2 && current === me) me.raf = requestAnimationFrame(paint);
+    if (el < dur * rate + 3 && current === me) me.raf = requestAnimationFrame(paint);
   };
   me.raf = requestAnimationFrame(paint);
 }
@@ -553,25 +558,135 @@ function showKeepsake() {
   setBottom(h('div', { class: 'eyebrow' }, 'With love from'), names, h('div', { class: 'row' }, save, share), thank, again);
 }
 
+// ---------- thank everyone: one voice for everyone, one per friend, or written ----------
+// Voices go through ASR and the recipient corrects the words, like the friends did (training data too).
 function openThanks(thankBtn) {
-  const text = h('textarea', { class: 'input', maxlength: '200', 'aria-label': 'Your thank-you' }, t.thanksText);
-  const send = h('button', { type: 'submit', class: 'btn' }, 'Send to everyone');
-  const form = h('form', { class: 'stack', style: { gap: '12px' }, onsubmit: async (ev) => {
-    ev.preventDefault();
-    send.disabled = true;
+  const box = h('div', { class: 'stack thanks-flow', style: { gap: '12px' } });
+  const st = { mode: '', consent: false, targets: [], i: 0, ids: {}, rec: null, take: null, audio: null };
+  const err = h('p', { class: 'small err', hidden: true });
+  const fail = (e) => { err.textContent = e?.message || String(e); err.hidden = false; };
+  const q = () => ({ slug, k: openKey, pin: verifiedAnswer });
+  const stopAudio = () => { if (st.audio) { st.audio.pause(); URL.revokeObjectURL(st.audio.src); st.audio = null; } };
+  const render = (...nodes) => { err.hidden = true; box.replaceChildren(...nodes, err); };
+
+  const done = (sent) => {
+    thanked = true;
+    thankBtn.disabled = true;
+    thankBtn.querySelector('span').textContent = 'Thank-you sent';
+    closeSheet();
+    toast(sent ? `Your thank-you is on its way to ${sent} ${sent === 1 ? 'friend' : 'friends'}` : 'Your thank-you is saved');
+  };
+  const sendAll = async (body, b) => {
+    b.disabled = true;
+    try { done((await api('/api/reveal', { method: 'POST', json: { ...q(), ...body } })).sent); }
+    catch (e) { fail(e); b.disabled = false; }
+  };
+
+  function choose() {
+    const opt = (emoji, title, sub, onclick, disabled) => h('button', { type: 'button', class: 'thanks-opt', onclick, disabled },
+      h('span', { class: 'thanks-opt-emoji' }, emoji), h('span', { class: 'grow' }, h('b', {}, title), h('small', {}, sub)));
+    const n = friends.length;
+    render(
+      opt('🎙️', 'One voice for everyone', 'Record once. Every friend hears it.', () => { st.mode = 'all'; st.i = 0; st.ids = {}; st.targets = [{ key: 'all', name: 'everyone' }]; recordStep(); }),
+      opt('👥', 'One by one', n ? `A voice for each of your ${n} ${n === 1 ? 'friend' : 'friends'}.` : 'No friends with an account yet.', () => { st.mode = 'each'; st.i = 0; st.ids = {}; st.targets = friends.slice(); recordStep(); }, !n),
+      opt('✍️', 'Write it', 'Just a few words.', writeStep),
+      n < messages.length ? h('p', { class: 'small muted', style: { margin: '0' } }, 'Friends who recorded without an account won’t get it.') : ''
+    );
+  }
+
+  function writeStep() {
+    const text = h('textarea', { class: 'input', maxlength: '200', 'aria-label': 'Your thank-you' }, t.thanksText);
+    const b = h('button', { type: 'button', class: 'btn', onclick: () => sendAll({ text: text.value }, b) }, 'Send to everyone');
+    render(text, b, h('button', { type: 'button', class: 'linkbtn small', onclick: choose }, '← Back'));
+  }
+
+  function recordStep() {
+    stopAudio();
+    const target = st.targets[st.i];
+    const title = st.mode === 'all' ? 'For everyone' : `For ${target.name} (${st.i + 1} of ${st.targets.length})`;
+    const consent = h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: st.consent }), h('span', {}, 'Save my voice & caption for this thank-you and ASR training.'));
+    const mic = h('button', { type: 'button', class: 'mic-big', 'aria-label': 'Start recording', html: icon.mic(44), style: { alignSelf: 'center', margin: '6px 0' } });
+    const timer = h('div', { class: 'timer', style: { fontSize: '40px', textAlign: 'center' } }, '0:00');
+    mic.onclick = async () => {
+      st.consent = consent.querySelector('input').checked;
+      if (!st.consent) return fail(new Error('Please tick the box to continue.'));
+      if (!micSupported()) return fail(new Error(micErrorHelp()));
+      try {
+        st.rec = await startRecording({ maxSec: 15, onTick: (s) => { timer.textContent = `0:${String(Math.min(15, Math.floor(s))).padStart(2, '0')}`; }, onAutoStop: () => finish() });
+      } catch (e) { return fail(new Error(micErrorHelp(e))); }
+      const stop = h('button', { type: 'button', class: 'recbtn', 'aria-label': 'Stop recording', html: icon.stop(30), style: { alignSelf: 'center' }, onclick: () => finish() });
+      stop.id = 'thanksStop';
+      render(h('b', {}, title), timer, stop, h('p', { class: 'center small muted', style: { margin: '0' } }, 'Tap to finish · up to 15 seconds'));
+    };
+    mic.id = 'thanksMic';
+    const skip = st.mode === 'each' ? h('button', { type: 'button', class: 'linkbtn small', onclick: next }, `Skip ${target.name}`) : '';
+    render(h('b', {}, title), h('p', { class: 'small muted', style: { margin: '0' } }, 'Say it in your own words. You’ll check the words after.'), consent, mic,
+      h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('button', { type: 'button', class: 'linkbtn small', onclick: choose }, '← Back'), skip));
+  }
+
+  async function finish() {
+    if (!st.rec) return;
+    const r = st.rec;
+    st.rec = null;
+    const take = await r.stop();
+    if (take.durationSec < 1) { recordStep(); return fail(new Error('That was too short. Please record again.')); }
+    render(h('div', { class: 'loading', style: { flex: '0' } }, h('div', { class: 'spinner' })), h('p', { class: 'small muted center', style: { margin: '0' } }, 'Listening to your words…'));
     try {
-      await api('/api/reveal', { method: 'POST', json: { slug, k: openKey, pin: verifiedAnswer, text: text.value } });
-      thanked = true;
-      thankBtn.disabled = true;
-      thankBtn.querySelector('span').textContent = 'Thank-you sent';
-      closeSheet();
-      toast('Your thank-you is on its way');
-    } catch (e) {
-      toast(e.message);
-      send.disabled = false;
-    }
-  } }, text, send);
-  openSheet({ title: 'Thank everyone', subtitle: 'They’ll see this when they next log in.', content: form });
+      const res = await api(`/api/thanks?${new URLSearchParams({ ...q(), consent: '1' })}`, { method: 'POST', body: take.wav });
+      st.take = { ...res, wav: take.wav };
+      checkStep();
+    } catch (e) { recordStep(); fail(e); }
+  }
+
+  function checkStep() {
+    const target = st.targets[st.i];
+    const text = h('textarea', { class: 'input', maxlength: '300', 'aria-label': 'Your words', id: 'thanksWords' }, st.take.asrText || '');
+    const play = h('button', { type: 'button', class: 'seen-play', 'aria-label': 'Play', html: icon.play(16) });
+    play.onclick = () => {
+      if (st.audio && !st.audio.paused) { st.audio.pause(); return; }
+      stopAudio();
+      st.audio = new Audio(URL.createObjectURL(st.take.wav));
+      st.audio.onplay = () => (play.innerHTML = icon.pause(16));
+      st.audio.onpause = st.audio.onended = () => (play.innerHTML = icon.play(16));
+      st.audio.play();
+    };
+    const again = h('button', { type: 'button', class: 'btn ghost grow', onclick: () => {
+      api('/api/thanks', { method: 'DELETE', json: { ...q(), id: st.take.id, token: st.take.token } }).catch(() => {});
+      st.take = null;
+      recordStep();
+    } }, 'Record again');
+    const save = h('button', { type: 'button', class: 'btn grow', id: 'thanksSave' }, st.i + 1 < st.targets.length ? 'Next' : 'Done');
+    save.onclick = async () => {
+      if (!text.value.trim()) return fail(new Error('Please write what you said.'));
+      save.disabled = true;
+      try {
+        await api('/api/thanks', { method: 'PATCH', json: { ...q(), id: st.take.id, token: st.take.token, text: text.value } });
+        st.ids[target.key] = st.take.id;
+        st.take = null;
+        next();
+      } catch (e) { fail(e); save.disabled = false; }
+    };
+    render(h('b', {}, st.mode === 'all' ? 'Check your words' : `Check your words for ${target.name}`),
+      h('p', { class: 'small muted', style: { margin: '0' } }, 'Make them match exactly what you said. Your friends see these words.'),
+      h('div', { class: 'row' }, play, h('span', { class: 'small muted' }, 'Listen to yourself')),
+      text, h('div', { class: 'row' }, again, save));
+  }
+
+  function next() {
+    stopAudio();
+    st.i++;
+    if (st.i < st.targets.length) return recordStep();
+    const count = Object.keys(st.ids).length;
+    if (!count) return choose();
+    const b = h('button', { type: 'button', class: 'btn', id: 'thanksSend' }, st.mode === 'all' ? 'Send to everyone' : `Send ${count} ${count === 1 ? 'voice' : 'voices'}`);
+    b.onclick = () => sendAll({ voices: st.mode === 'all' ? { all: st.ids.all } : { each: st.ids } }, b);
+    render(h('div', { class: 'center', style: { fontSize: '42px' } }, '💌'),
+      h('p', { class: 'center', style: { margin: '0' } }, st.mode === 'all' ? 'Your voice is ready for everyone.' : `${count} ${count === 1 ? 'voice is' : 'voices are'} ready.`),
+      b);
+  }
+
+  choose();
+  openSheet({ title: 'Thank everyone', subtitle: 'They’ll find it when they next open Voice Gift.', content: box, onClose: () => { stopAudio(); const r = st.rec; st.rec = null; if (r) r.stop().catch(() => {}); } });
 }
 
 async function exportKeepsakeVideo(saveBtn) {
@@ -673,7 +788,7 @@ async function exportKeepsakeVideo(saveBtn) {
     for (let i = 0; i < clipCount; i++) {
       const buf = buffers[i] || (await loadBuffer(i).catch(() => null));
       const v = buf ? playVoice(ac, buf, messages[i].mood, { dest }) : null;
-      const dur = Math.min(2.2, v ? v.duration : 1.5);
+      const dur = v ? v.lead + Math.min(2.2, v.duration) : 1.5;
       if (v) setTimeout(() => v.stop(), dur * 1000);
       const steps = Math.max(6, Math.round(dur * 15));
       for (let s = 0; s < steps; s++) {

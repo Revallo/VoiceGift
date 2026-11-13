@@ -297,11 +297,22 @@ async function runGift(occasion, c) {
   await r.waitForSelector('text=With love from', { timeout: 15000 });
   await r.waitForTimeout(1500);
   await shot(r, P('17-keepsake'));
+  // thank everyone with one voice: record → check the words → send
   await r.click('text=Thank everyone');
-  await r.waitForSelector('.bottom-sheet textarea');
+  await r.waitForSelector('.bottom-sheet .thanks-opt');
   await r.waitForTimeout(350);
   await shot(r, P('17a-thanks'));
-  await r.click('text=Send to everyone');
+  await r.click('text=One voice for everyone');
+  await r.check('.bottom-sheet .check input');
+  await r.click('#thanksMic');
+  await r.waitForSelector('#thanksStop');
+  await r.waitForTimeout(2200);
+  await r.click('#thanksStop');
+  await r.waitForSelector('#thanksWords', { timeout: 15000 });
+  await shot(r, P('17a-thanks-words'));
+  await r.fill('#thanksWords', 'Makasih banyak semuanya, aku terharu banget!');
+  await r.click('#thanksSave');
+  await r.click('#thanksSend');
   await r.waitForSelector('text=Thank-you sent');
   if (await r.$('.names .more')) {
     await r.click('.names .more');
@@ -314,17 +325,25 @@ async function runGift(occasion, c) {
   if (!rev.thanked) errors.push(`${occasion}: the thank-you was not saved`);
   await r.context().close();
 
-  // the friend's next login: the thank-you is on their home page, "New" only the first time
+  // the friend's next login: the thank-you pops up once on home (with the voice), then waits in the Dashboard for 7 days
   const t = await page();
   await t.goto(`${BASE}/`);
   await t.waitForSelector('[data-screen="auth"]:not([hidden])');
   await logInHere(t, 'Budi', `friend.${occasion}.0.${RUN}@example.com`);
-  await t.waitForSelector('.thanks-card.new');
-  await t.waitForTimeout(600);
+  await t.waitForSelector('.bottom-sheet .thanks-card.big');
+  if (!(await t.$('.bottom-sheet .thanks-voice'))) errors.push(`${occasion}: the thank-you voice is missing`);
+  await t.waitForTimeout(700);
   await shot(t, P('19-home-thanks'));
+  await t.click('.bottom-sheet .btn');
+  await t.waitForTimeout(600);
   await t.reload();
-  await t.waitForSelector('.thanks-card');
-  if (await t.$('.thanks-card.new')) errors.push(`${occasion}: the thank-you is still new after being seen`);
+  await t.waitForSelector('[data-screen="home"]:not([hidden])');
+  await t.waitForTimeout(800);
+  if (await t.$('.bottom-sheet .thanks-card')) errors.push(`${occasion}: the thank-you popped up again after being seen`);
+  await t.goto(`${BASE}/account`);
+  await t.waitForSelector('#thanksArchive .thanks-card');
+  if (!/disappears in 7 days/.test(await t.textContent('#thanksArchive'))) errors.push(`${occasion}: the archived thank-you has no 7-day note`);
+  await shot(t, P('19b-dashboard-thanks'));
   await t.context().close();
 
   console.log(occasion, 'messages', rev.messages.length, rev.messages.slice(0, 3).map((x) => `${x.sender}: ${x.text} (${x.durationSec}s)`));

@@ -6,7 +6,7 @@
 //                   { action: "dev-login", email, name }         → the same without Google: only locally with DEV_LOGIN=1 (tests)
 //                   { action: "logout" }
 //                   { action: "claim", gifts: [{ slug, key }] }  → gifts this browser made before accounts join the account
-//                   { action: "thanks-read" }                    → the thank-you notes on the home page have been seen
+//                   { action: "thanks-read", slug? }             → a thank-you note was opened (its 7 days start)
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
 import { startSession, endSession, currentUser, requireUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead, googleSignIn } from '../lib/accounts.js';
@@ -156,7 +156,7 @@ export default route({
     if (b.action === 'thanks-read') {
       const user = await currentUser(req);
       if (!user) throw new HttpError(401, 'Please log in first.');
-      await markThanksRead(user.id);
+      await markThanksRead(user.id, typeof b.slug === 'string' ? b.slug : undefined);
       return send(res, 200, { ok: true });
     }
     throw new HttpError(400, 'Unknown action');

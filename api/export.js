@@ -1,7 +1,7 @@
 // GET /api/export?key=ADMIN_KEY  → JSON Lines, one line per sent message, for the ML team.
 // Disabled unless the ADMIN_KEY environment variable is set.
 import { route, send, query, HttpError } from '../lib/http.js';
-import { listAllGiftSlugs, loadMessages } from '../lib/gifts.js';
+import { listAllGiftSlugs, loadMessages, loadThanksVoices } from '../lib/gifts.js';
 
 export default route({
   async GET(req, res) {
@@ -10,10 +10,13 @@ export default route({
     if (key !== process.env.ADMIN_KEY) throw new HttpError(403, 'Wrong key');
     const lines = [];
     for (const slug of await listAllGiftSlugs()) {
-      for (const m of await loadMessages(slug)) {
+      // friends' messages + the recipient's thank-you voices (kind "thanks"), both corrected by the speaker
+      const thanks = await loadThanksVoices(slug).catch(() => []);
+      for (const m of [...await loadMessages(slug), ...thanks]) {
         if (!m.finalText || m.demo) continue; // demo voices are TTS, not training data
         lines.push(JSON.stringify({
           gift: slug,
+          kind: m.kind || 'message',
           id: m.id,
           userId: m.userId, // the speaker's account, when they recorded while logged in (left out otherwise)
           audio: m.audioPath,

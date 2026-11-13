@@ -4,11 +4,14 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
-- ✅ **Voice mood** (2026-11-13): after recording normally, pick Angry / Sad / Chipmunk / Giant / Robot / Old radio / Stadium.
-  Only a playback effect (`voicefx.js`); the stored WAV stays clean.
-- ✅ **Your own candle + flame** (2026-11-13): Stripes / Plain / Dots / Swirl / Gold / Tall / Chunky, flame Classic / Blue /
-  Pink / Magic / Rainbow / Heart / Sparkler. The picker shows live, lit minis; the candle lights again with a burst on a pick.
-- ✅ "My gifts" → "My dashboard" on home, so it isn't mixed up with "Open your gift".
+- ✅ **Voice mood**, festive set (2026-11-13): 🎬 Sinetron (JENG JENG JENG + jolts), 💃 Dangdut (kendang + disco lights),
+  📢 Toa (ding-dong + echo), 👻 Horror (hum, flicker, green flames, ghost), 🎈 Helium (slide whistle, balloons, item floats),
+  👽 Alien (theremin, UFO beam), 🎤 Concert (stadium + crowd cheer + confetti), 👾 8-bit (coin, pixels). Playback only; WAV stays clean.
+- ✅ **Your own candle** in three picks (2026-11-13): stick (7), flame colour (7), flame shape (Classic / Tall / Round / Heart /
+  Star / Twin / Sparkler). Each pick shows only that thing, live; the candle on the cake lights again with a burst.
+- ✅ 🎯 **Thank-you with voice** (2026-11-13): one voice for everyone or one per friend, ASR + corrected words (training data).
+- ✅ **Thank-you pop-up**: pops up once on home, then waits in the Dashboard for 7 days after it was opened.
+- ✅ "My gifts" → "Dashboard" on home, so it isn't mixed up with "Open your gift".
 
 ## Home page
 - ⏳ Make "Open your gift" (paste a link) a small text link at the bottom: recipients usually tap the WhatsApp link.
@@ -21,9 +24,9 @@ Add new ideas here, one line each.
 - ⏳ 🎯 **Challenge cards** when you don't know what to say: "embarrassing moment", "roast in 10 s", "say it in Javanese / Sundanese / Batak / Betawi accent".
 - ⏳ **Time capsule**: one voice locked until next year's birthday.
 - ⏳ **One voice per hour** all through the birthday, instead of all at once.
-- ⏳ 🎯 **Voice reply**: the recipient thanks each friend with a voice, not just text.
 - ⏳ **Story video**: the cake + candles + karaoke caption as a 15 s vertical video for IG Story / TikTok.
-- ⏳ Mood also changes the item (angry = red shaking flame is done; sad flower droops, robot lantern blinks…).
+- ⏳ Moods made for the bouquet and lanterns too (now they get the general show, not item-specific touches).
+- ⏳ Friends reply to the thank-you voice (a voice chain).
 - ⏳ Candle colour picker (now it's the friend's colour by order).
 
 ## More data, still fun (ideas from 2026-11-13)

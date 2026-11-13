@@ -50,7 +50,8 @@ export const TOPPERS = {
 };
 
 // Each friend picks their own candle and flame after recording (message.candle = { body, flame }).
-// Keys must match CANDLE_KEYS / FLAME_KEYS in lib/gifts.js.
+// Three separate picks: the stick, the flame's colour and the flame's shape (message.candle = { body, flame, shape }).
+// Keys must match CANDLE_KEYS / FLAME_KEYS / FLAME_SHAPE_KEYS in lib/gifts.js.
 export const CANDLES = {
   stripe: { label: 'Stripes' },
   plain: { label: 'Plain' },
@@ -60,13 +61,22 @@ export const CANDLES = {
   tall: { label: 'Tall' },
   chunky: { label: 'Chunky' }
 };
-export const FLAMES = {
-  classic: { label: 'Classic' },
+export const FLAMES = { // colours
+  classic: { label: 'Gold' },
   blue: { label: 'Blue' },
   pink: { label: 'Pink' },
   green: { label: 'Magic' },
-  rainbow: { label: 'Rainbow' },
+  purple: { label: 'Purple' },
+  ice: { label: 'Ice' },
+  rainbow: { label: 'Rainbow' }
+};
+export const FLAME_SHAPES = {
+  drop: { label: 'Classic' },
+  tall: { label: 'Tall' },
+  round: { label: 'Round' },
   heart: { label: 'Heart' },
+  star: { label: 'Star' },
+  twin: { label: 'Twin' },
   sparkler: { label: 'Sparkler' }
 };
 
@@ -83,7 +93,10 @@ function candleLook(style, color, w, h) {
     tall: `${shine}, repeating-linear-gradient(0deg, ${color} 0 6px, #FFFFFF 6px 8px)`,
     chunky: `${shine}, repeating-linear-gradient(90deg, ${color} 0 5px, color-mix(in srgb, ${color} 70%, #FFFFFF) 5px 10px)`
   }[body];
-  return { ...size, bg, flame: FLAMES[style?.flame] ? style.flame : 'classic' };
+  // messages from before the shape pick had 'heart' / 'sparkler' as the flame
+  const oldShape = ['heart', 'sparkler'].includes(style?.flame) ? style.flame : null;
+  const shape = FLAME_SHAPES[style?.shape] ? style.shape : oldShape || 'drop';
+  return { ...size, bg, flame: FLAMES[style?.flame] ? style.flame : 'classic', shape };
 }
 
 // One candle (a button: wick, flame, smoke) standing on (p.x, p.base). Also used for the live minis in the picker.
@@ -101,13 +114,15 @@ export function buildCandle(p, color, style) {
 // (Re)draws a candle in a new style; the flame lights again with a little burst.
 export function styleCandle(btn, style, { ignite = false } = {}) {
   const p = btn._p, color = btn._color;
+  btn._style = style;
   const look = candleLook(style, color, p.w, p.h);
   const hitH = look.h + 46;
   Object.assign(btn.style, { left: `${(p.x - 15).toFixed(1)}px`, top: `${Math.round(p.base - hitH)}px`, height: `${hitH}px` });
-  const fw = div(`c-flamewrap f-${look.flame}`, { bottom: `${look.h + 3}px` });
-  const flame = div('c-flame', { animationDuration: `${(0.9 + (p.i % 4) * 0.17).toFixed(2)}s`, animationDelay: `${(-(p.i * 0.21)).toFixed(2)}s` });
-  fw.append(flame);
-  if (look.flame === 'sparkler') {
+  const fw = div(`c-flamewrap fc-${look.flame} fs-${look.shape}`, { bottom: `${look.h + 3}px` });
+  const timing = (k) => ({ animationDuration: `${(0.9 + ((p.i + k) % 4) * 0.17).toFixed(2)}s`, animationDelay: `${(-((p.i + k) * 0.21)).toFixed(2)}s` });
+  fw.append(div('c-flame', timing(0)));
+  if (look.shape === 'twin') fw.append(div('c-flame c-flame2', timing(2)));
+  if (look.shape === 'sparkler') {
     const sparks = div('c-sparks');
     for (let k = 0; k < 8; k++) {
       const s = document.createElement('i');
@@ -126,7 +141,7 @@ export function styleCandle(btn, style, { ignite = false } = {}) {
     div('c-smoke', { bottom: `${look.h + 8}px` }),
     div('c-smoke s2', { bottom: `${look.h + 8}px` })
   );
-  if (ignite && btn.classList.contains('lit')) {
+  if (ignite) {
     btn.classList.remove('igniting');
     void btn.offsetWidth; // restart the animation
     btn.classList.add('igniting');
@@ -135,13 +150,13 @@ export function styleCandle(btn, style, { ignite = false } = {}) {
   }
 }
 
-// A small lit candle on its own (for the picker): returns its holder element.
-export function miniCandle(style, color, { h = 40 } = {}) {
-  const holder = div('mini-candle');
-  const p = { x: 15, base: 92, w: 9, h, i: 1 };
+// A small candle on its own, for the picker. `only`: 'stick' (just the stick, not lit) or 'flame' (just the flame).
+export function miniCandle(style, color, { h = 40, only = '' } = {}) {
+  const holder = div(`mini-candle${only ? ` only-${only}` : ''}`);
+  const p = { x: 15, base: only === 'flame' ? 40 : only === 'stick' ? 62 : 92, w: 9, h: only === 'flame' ? 0 : h, i: 1 };
   const btn = buildCandle(p, color, style);
   btn.tabIndex = -1;
-  btn.classList.add('lit');
+  if (only !== 'stick') btn.classList.add('lit');
   holder.append(btn);
   return holder;
 }

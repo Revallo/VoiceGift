@@ -54,9 +54,11 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
   phone's back gesture works. No bottom tab bar: the profile button sits top right.
-- After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`, played with Web Audio
-  only, never baked into the WAV) and, on the cake, their own **candle + flame** (`CANDLES`/`FLAMES` in `cake.js`, live lit
-  minis in the picker). Saved on the message as `mood` and `candle {body, flame}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
+- After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`: Sinetron, Dangdut, Toa,
+  Horror, Helium, Alien, Concert, 8-bit; each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
+  with Web Audio only, never baked into the WAV) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
+  **flame shape** (`CANDLES`/`FLAMES`/`FLAME_SHAPES` in `cake.js`; each pick shows only that thing, live). Saved on the message as
+  `mood` and `candle {body, flame, shape}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
 
@@ -78,8 +80,11 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   Browser: `assets/auth.js` (`me()`, `loginBox()`, the "Your gifts" row). Server: `lib/accounts.js`, `lib/google.js`.
 - Every new message gets the friend's `userId` (also in the export). The name is filled in from the account; the name on the
   message is still the one in the box.
-- Thank-you: after the finale the recipient can "Thank everyone" once. Each friend who recorded gets a note on their home page
-  (`users/<id>/thanks/<slug>.json`), marked New until seen. Friends who recorded before accounts were required have no `userId` and get none.
+- Thank-you: after the finale the recipient can "Thank everyone" once: **one voice for everyone**, **one voice per friend**, or
+  written. Voices go through ASR and the recipient corrects the words (`api/thanks.js`, stored in `gifts/<slug>/thanks/`,
+  exported with `kind: "thanks"`: training data too). Each friend who recorded gets a note (`users/<id>/thanks/<slug>.json`)
+  that **pops up once** on home; then it waits in the Dashboard and is **deleted 7 days after it was opened** (`listThanks`).
+  Only that friend can play the voice in it, and only until it expires. Friends who recorded before accounts were required have no `userId` and get none.
 - Sessions: a random token in an HttpOnly, SameSite=Lax cookie (`vg_session`, 30 days); storage keeps only its sha256.
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
@@ -92,7 +97,8 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text,mood?,candle?} → final caption (+ the twist); `DELETE` same body → "record again"
 - `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only for a logged-in account with the recipient's key + PIN** (server-side rule); the organizer's own account gets 403
-- `POST /api/reveal` {slug, k, pin, text} → the recipient's thank-you to everyone, once
+- `POST /api/reveal` {slug, k, pin, text?, voices?: {all} | {each: {friendKey: id}}} → the recipient's thank-you, once (GET also returns `friends` [{key, name}])
+- `POST|PATCH|DELETE /api/thanks` → the recipient records / corrects / redoes a thank-you voice; `GET /api/thanks?slug&id` → that WAV, only to the friend whose note holds it
 - `GET /api/audio?slug&id&k=openKey&pin` logged in (or `&token` for your own recording) → WAV with Range support (iOS); never to the organizer
 - `POST /api/manage` action `update-delivery` {verifyPin} → change the 4-digit PIN
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey

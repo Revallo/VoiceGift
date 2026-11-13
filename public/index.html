@@ -37,10 +37,6 @@
       <h1>What would you like to do?</h1>
     </div>
 
-    <div class="stack" id="thanksBox" style="gap:10px" hidden>
-      <div class="eyebrow">Thank-you notes</div>
-      <div class="stack" id="thanksList" style="gap:10px"></div>
-    </div>
 
     <div class="stack" style="gap:12px">
       <a class="choice" href="/new" id="makeGift">
@@ -64,7 +60,8 @@
   </section>
 </main>
 <script type="module">
-import { $, h, api, icon, addStars, showScreen, fmtAgo, initials } from '/assets/common.js';
+import { $, h, api, icon, addStars, showScreen, initials, openSheet, closeSheet } from '/assets/common.js';
+import { noteCard, markRead, stopNoteVoice } from '/assets/thanksnote.js';
 $('#homeLogo').innerHTML = icon.mic(15); // static icon markup
 import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
@@ -109,19 +106,22 @@ $('#openForm').addEventListener('submit', (e) => {
   location.href = `/r/${m[1]}?k=${m[2]}`;
 });
 
-// The notes from people this account recorded for. Unread ones are marked "New" this once.
+// A new thank-you pops up once, here. After it's closed it waits in the Dashboard for 7 days, then it's gone.
 async function showThanks() {
   const { thanks = [] } = await api('/api/account?thanks=1').catch(() => ({}));
-  if (!thanks.length) return;
-  $('#thanksList').replaceChildren(...thanks.map((n) => h('article', { class: 'thanks-card' + (n.read ? '' : ' new') },
-    h('div', { class: 'thanks-head' },
-      h('span', { class: 'thanks-emoji' }, theme(n.occasion).emoji),
-      h('b', {}, `${n.from} says thank you`),
-      !n.read && h('span', { class: 'thanks-new' }, 'New')),
-    h('p', {}, n.text),
-    h('small', {}, fmtAgo(n.at)))));
-  $('#thanksBox').hidden = false;
-  if (thanks.some((n) => !n.read)) api('/api/account', { method: 'POST', json: { action: 'thanks-read' } }).catch(() => {});
+  const fresh = thanks.filter((n) => !n.read).reverse(); // oldest first
+  const next = () => {
+    const n = fresh.shift();
+    if (!n) return;
+    const burst = h('div', { class: 'thanks-burst', 'aria-hidden': 'true' },
+      ...['💛', '✨', '🎉', '💌', '✨', '🎊', '💛', '✨'].map((e, i) => h('i', { style: `--a: ${i * 45}deg; animation-delay: ${i * 0.03}s` }, e)));
+    const ok = h('button', { type: 'button', class: 'btn', onclick: closeSheet }, fresh.length ? 'Next' : 'Close');
+    openSheet({
+      title: '', content: [burst, noteCard(n, { big: true }), h('p', { class: 'small muted center', style: { margin: '0' } }, 'Saved in your Dashboard for 7 days.'), ok],
+      onClose: () => { stopNoteVoice(); markRead(n.slug); setTimeout(next, 350); }
+    });
+  };
+  next();
 }
 </script>
 </body>

@@ -588,7 +588,7 @@ function openThanks(thankBtn) {
     const n = friends.length;
     render(
       opt('🎙️', 'One voice for everyone', 'Record once. Every friend hears it.', () => { st.mode = 'all'; st.i = 0; st.ids = {}; st.targets = [{ key: 'all', name: 'everyone' }]; recordStep(); }),
-      opt('👥', 'One by one', n ? `A voice for each of your ${n} ${n === 1 ? 'friend' : 'friends'}.` : 'No friends with an account yet.', () => { st.mode = 'each'; st.i = 0; st.ids = {}; st.targets = friends.slice(); recordStep(); }, !n),
+      opt('👥', 'One by one', n ? `A voice for each of your ${n} ${n === 1 ? 'friend' : 'friends'}.` : 'No friends with an account yet.', () => { st.mode = 'each'; st.ids = {}; st.targets = friends.slice(); st.note = t.thanksText; listStep(); }, !n),
       opt('✍️', 'Write it', 'Just a few words.', writeStep),
       n < messages.length ? h('p', { class: 'small muted', style: { margin: '0' } }, 'Friends who recorded without an account won’t get it.') : ''
     );
@@ -600,10 +600,43 @@ function openThanks(thankBtn) {
     render(text, b, h('button', { type: 'button', class: 'linkbtn small', onclick: choose }, '← Back'));
   }
 
+  // One by one: the friends as a list. Tap one to record for them; come back here; send whenever you like.
+  // Friends without their own voice get the written note at the bottom (or nothing, if it's empty).
+  function listStep() {
+    stopAudio();
+    const done = Object.keys(st.ids).length, all = st.targets.length;
+    const rows = h('div', { class: 'thanks-list' });
+    const draw = (f = '') => rows.replaceChildren(...st.targets.map((fr, i) => [fr, i])
+      .filter(([fr]) => fr.name.toLowerCase().includes(f.trim().toLowerCase()))
+      .map(([fr, i]) => {
+        const has = Boolean(st.ids[fr.key]);
+        return h('button', { type: 'button', class: 'thanks-friend' + (has ? ' done' : ''), onclick: () => { st.i = i; recordStep(); } },
+          h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(fr.name)),
+          h('span', { class: 'grow' }, fr.name),
+          h('span', { class: 'thanks-friend-state' }, has ? '\u2713 Recorded' : 'Record'));
+      }));
+    draw();
+    const search = all > 6 ? h('input', { class: 'input', placeholder: `Find a friend (${all})`, 'aria-label': 'Find a friend', oninput: (e) => draw(e.target.value) }) : '';
+    const left = all - done;
+    const note = h('textarea', { class: 'input', maxlength: '200', 'aria-label': 'A note for the others', id: 'thanksNote' }, st.note);
+    note.addEventListener('input', () => (st.note = note.value));
+    const b = h('button', { type: 'button', class: 'btn', id: 'thanksSend' }, done ? `Send \u00b7 ${done} ${done === 1 ? 'voice' : 'voices'}` : 'Send');
+    b.onclick = () => {
+      if (!done && !note.value.trim()) return fail(new Error('Record for someone, or write a note.'));
+      sendAll({ voices: { each: st.ids }, text: left ? note.value : '' }, b);
+    };
+    render(h('b', {}, 'Tap a friend to record a voice just for them'),
+      h('p', { class: 'small muted', style: { margin: '0' } }, `${done} of ${all} recorded. You can send any time.`),
+      search, rows,
+      left ? h('span', { class: 'pick-label' }, done ? `The other ${left} get this note instead` : 'Or send everyone this note') : '',
+      left ? note : '', b,
+      h('button', { type: 'button', class: 'linkbtn small', onclick: choose }, '\u2190 Back'));
+  }
+
   function recordStep() {
     stopAudio();
     const target = st.targets[st.i];
-    const title = st.mode === 'all' ? 'For everyone' : `For ${target.name} (${st.i + 1} of ${st.targets.length})`;
+    const title = st.mode === 'all' ? 'For everyone' : `For ${target.name}`;
     const consent = h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: st.consent }), h('span', {}, 'Save my voice & caption for this thank-you and ASR training.'));
     const mic = h('button', { type: 'button', class: 'mic-big', 'aria-label': 'Start recording', html: icon.mic(44), style: { alignSelf: 'center', margin: '6px 0' } });
     const timer = h('div', { class: 'timer', style: { fontSize: '40px', textAlign: 'center' } }, '0:00');
@@ -619,9 +652,8 @@ function openThanks(thankBtn) {
       render(h('b', {}, title), timer, stop, h('p', { class: 'center small muted', style: { margin: '0' } }, 'Tap to finish · up to 15 seconds'));
     };
     mic.id = 'thanksMic';
-    const skip = st.mode === 'each' ? h('button', { type: 'button', class: 'linkbtn small', onclick: next }, `Skip ${target.name}`) : '';
     render(h('b', {}, title), h('p', { class: 'small muted', style: { margin: '0' } }, 'Say it in your own words. You’ll check the words after.'), consent, mic,
-      h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('button', { type: 'button', class: 'linkbtn small', onclick: choose }, '← Back'), skip));
+      h('button', { type: 'button', class: 'linkbtn small', onclick: st.mode === 'each' ? listStep : choose }, st.mode === 'each' ? '← All friends' : '← Back'));
   }
 
   async function finish() {
@@ -655,7 +687,7 @@ function openThanks(thankBtn) {
       st.take = null;
       recordStep();
     } }, 'Record again');
-    const save = h('button', { type: 'button', class: 'btn grow', id: 'thanksSave' }, st.i + 1 < st.targets.length ? 'Next' : 'Done');
+    const save = h('button', { type: 'button', class: 'btn grow', id: 'thanksSave' }, st.mode === 'each' ? 'Save' : 'Done');
     save.onclick = async () => {
       if (!text.value.trim()) return fail(new Error('Please write what you said.'));
       save.disabled = true;
@@ -663,7 +695,8 @@ function openThanks(thankBtn) {
         await api('/api/thanks', { method: 'PATCH', json: { ...q(), id: st.take.id, token: st.take.token, text: text.value } });
         st.ids[target.key] = st.take.id;
         st.take = null;
-        next();
+        if (st.mode === 'each') listStep();
+        else ready();
       } catch (e) { fail(e); save.disabled = false; }
     };
     render(h('b', {}, st.mode === 'all' ? 'Check your words' : `Check your words for ${target.name}`),
@@ -672,17 +705,13 @@ function openThanks(thankBtn) {
       text, h('div', { class: 'row' }, again, save));
   }
 
-  function next() {
+  // One voice for everyone: recorded and checked, ready to send.
+  function ready() {
     stopAudio();
-    st.i++;
-    if (st.i < st.targets.length) return recordStep();
-    const count = Object.keys(st.ids).length;
-    if (!count) return choose();
-    const b = h('button', { type: 'button', class: 'btn', id: 'thanksSend' }, st.mode === 'all' ? 'Send to everyone' : `Send ${count} ${count === 1 ? 'voice' : 'voices'}`);
-    b.onclick = () => sendAll({ voices: st.mode === 'all' ? { all: st.ids.all } : { each: st.ids } }, b);
-    render(h('div', { class: 'center', style: { fontSize: '42px' } }, '💌'),
-      h('p', { class: 'center', style: { margin: '0' } }, st.mode === 'all' ? 'Your voice is ready for everyone.' : `${count} ${count === 1 ? 'voice is' : 'voices are'} ready.`),
-      b);
+    const b = h('button', { type: 'button', class: 'btn', id: 'thanksSend' }, 'Send to everyone');
+    b.onclick = () => sendAll({ voices: { all: st.ids.all } }, b);
+    render(h('div', { class: 'center', style: { fontSize: '42px' } }, '\ud83d\udc8c'),
+      h('p', { class: 'center', style: { margin: '0' } }, 'Your voice is ready for everyone.'), b);
   }
 
   choose();

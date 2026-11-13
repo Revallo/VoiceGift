@@ -4,12 +4,14 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
-- ✅ **Voice mood**, festive set (2026-11-13): 🎬 Sinetron (JENG JENG JENG + jolts), 💃 Dangdut (kendang + disco lights),
-  📢 Toa (ding-dong + echo), 👻 Horror (hum, flicker, green flames, ghost), 🎈 Helium (slide whistle, balloons, item floats),
-  👽 Alien (theremin, UFO beam), 🎤 Concert (stadium + crowd cheer + confetti), 👾 8-bit (coin, pixels). Playback only; WAV stays clean.
+- ✅ **Voice mood**, festive set (2026-11-13): 😭 Sad (sad trombone, rain, flames shrink), 😡 Angry (growl + BRAKK!, red shake,
+  steam), 💃 Dangdut (kendang + disco lights), 📢 Toa (ding-dong + echo), 👻 Horror (hum, flicker, green flames, ghost),
+  🎈 Helium (slide whistle, balloons, item floats), 👽 Alien (theremin, UFO beam), 👾 8-bit (coin, pixels). Playback only; WAV stays clean.
+  (Sinetron and Concert were tried and dropped the same day.)
 - ✅ **Your own candle** in three picks (2026-11-13): stick (7), flame colour (7), flame shape (Classic / Tall / Round / Heart /
   Star / Twin / Sparkler). Each pick shows only that thing, live; the candle on the cake lights again with a burst.
 - ✅ 🎯 **Thank-you with voice** (2026-11-13): one voice for everyone or one per friend, ASR + corrected words (training data).
+  One by one is a friend list (with search): record for whoever you want, the others get a written note.
 - ✅ **Thank-you pop-up**: pops up once on home, then waits in the Dashboard for 7 days after it was opened.
 - ✅ "My gifts" → "Dashboard" on home, so it isn't mixed up with "Open your gift".
 

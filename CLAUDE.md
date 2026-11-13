@@ -54,8 +54,8 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
   phone's back gesture works. No bottom tab bar: the profile button sits top right.
-- After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`: Sinetron, Dangdut, Toa,
-  Horror, Helium, Alien, Concert, 8-bit; each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
+- After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`: Sad, Angry, Dangdut, Toa,
+  Horror, Helium, Alien, 8-bit; each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
   with Web Audio only, never baked into the WAV) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
   **flame shape** (`CANDLES`/`FLAMES`/`FLAME_SHAPES` in `cake.js`; each pick shows only that thing, live). Saved on the message as
   `mood` and `candle {body, flame, shape}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
@@ -81,7 +81,8 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - Every new message gets the friend's `userId` (also in the export). The name is filled in from the account; the name on the
   message is still the one in the box.
 - Thank-you: after the finale the recipient can "Thank everyone" once: **one voice for everyone**, **one voice per friend**, or
-  written. Voices go through ASR and the recipient corrects the words (`api/thanks.js`, stored in `gifts/<slug>/thanks/`,
+  written. One by one = a list of the friends (search when many): tap one to record for them, send any time; the
+  others get the written note. Voices go through ASR and the recipient corrects the words (`api/thanks.js`, stored in `gifts/<slug>/thanks/`,
   exported with `kind: "thanks"`: training data too). Each friend who recorded gets a note (`users/<id>/thanks/<slug>.json`)
   that **pops up once** on home; then it waits in the Dashboard and is **deleted 7 days after it was opened** (`listThanks`).
   Only that friend can play the voice in it, and only until it expires. Friends who recorded before accounts were required have no `userId` and get none.

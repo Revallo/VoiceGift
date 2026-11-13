@@ -1,4 +1,4 @@
-// Voice moods: a friend records normally, then may pick a mood (Sinetron, Dangdut, Toa…).
+// Voice moods: a friend records normally, then may pick a mood (Sad, Angry, Dangdut, Toa…).
 // Each mood is a little show: an intro sound, the voice with an effect, and something happening on the gift.
 // The mood is ONLY applied while playing, in the browser (Web Audio). The stored WAV stays the clean,
 // untouched recording, because it is ASR training data (see AImustRead.md). The message just keeps `mood`.
@@ -6,13 +6,13 @@
 
 export const MOODS = {
   normal: { label: 'Normal', emoji: '🙂' },
-  sinetron: { label: 'Sinetron', emoji: '🎬', lead: 1.55 },
+  sad: { label: 'Sad', emoji: '😭', lead: 1.9, rate: 0.92 },
+  angry: { label: 'Angry', emoji: '😡', lead: 0.9, rate: 0.88 },
   dangdut: { label: 'Dangdut', emoji: '💃', lead: 0.95 },
   toa: { label: 'Toa', emoji: '📢', lead: 1.6 },
   horror: { label: 'Horror', emoji: '👻', lead: 1.2, rate: 0.82 },
   helium: { label: 'Helium', emoji: '🎈', lead: 0.5, rate: 1.55 },
   alien: { label: 'Alien', emoji: '👽', lead: 0.95 },
-  concert: { label: 'Concert', emoji: '🎤', lead: 0.2, tail: 2.6 },
   arcade: { label: '8-bit', emoji: '👾', lead: 0.5 }
 };
 export const DEFAULT_MOOD = 'normal';
@@ -108,22 +108,53 @@ function noiseHit(ac, out, x, t, { freq = 1800, Q = 1, vol = 0.3, dur = 0.08, ty
 const MOOD_GRAPHS = {
   normal(ac, voice, out) { voice.connect(out); },
 
-  // JENG… JENG… JENGGG! then the voice in a big dramatic hall
-  sinetron(ac, voice, out, x, { t0 }) {
-    const bus = gain(ac, 1);
-    bus.connect(filter(ac, 'lowpass', 2200)).connect(out);
-    const chords = [[98, 146.8, 196], [92.5, 138.6, 185], [82.4, 123.5, 164.8, 246.9]];
-    chords.forEach((ch, k) => {
-      const t = t0 + k * 0.42;
-      const len = k === 2 ? 1.25 : 0.38;
-      for (const f of ch) for (const det of [-6, 6]) {
-        const o = note(ac, bus, x, t, { type: 'sawtooth', f, vol: 0.05, dur: len, attack: 0.008 });
-        o.detune.value = det;
+  // the sad trombone (wah… wah… wah… waaah), rain, then a trembling, teary voice
+  sad(ac, voice, out, x, { t0, v1 }) {
+    const horn = gain(ac, 1);
+    horn.connect(filter(ac, 'lowpass', 1100)).connect(out);
+    [[311.1, 0.42], [293.7, 0.42], [277.2, 0.42], [261.6, 1.0]].forEach(([f, len], k) => {
+      const t = t0 + k * 0.44;
+      const o = note(ac, horn, x, t, { type: 'sawtooth', f, vol: 0.13, dur: len, attack: 0.04 });
+      if (k === 3) { // the long last note wobbles
+        const wob = ac.createOscillator(); wob.frequency.value = 6;
+        const amt = gain(ac, 9);
+        wob.connect(amt).connect(o.frequency);
+        wob.start(t); wob.stop(t + len);
+        x.push(wob);
       }
-      note(ac, out, x, t, { f: [70, 40], vol: 0.35, dur: len * 0.9 }); // the boom
     });
-    voice.connect(out);
-    reverb(ac, voice, out, { sec: 2.4, decay: 2.5, wet: 0.35 });
+    const rain = ac.createBufferSource();
+    rain.buffer = noiseBuffer(ac, v1 - t0 + 0.6);
+    const rg = ac.createGain();
+    rg.gain.setValueAtTime(0.0001, t0);
+    rg.gain.exponentialRampToValueAtTime(0.05, t0 + 1.2);
+    rain.connect(filter(ac, 'highpass', 2500)).connect(filter(ac, 'lowpass', 7000)).connect(rg).connect(out);
+    rain.start(t0);
+    x.push(rain);
+    // a trembling voice (vibrato) in a big empty room, a little muffled
+    const delay = ac.createDelay(0.05);
+    delay.delayTime.value = 0.012;
+    const lfo = ac.createOscillator(); lfo.frequency.value = 5.5;
+    const depth = gain(ac, 0.0028);
+    lfo.connect(depth).connect(delay.delayTime);
+    lfo.start(t0); lfo.stop(v1 + 1);
+    x.push(lfo);
+    const lp = filter(ac, 'lowpass', 2600);
+    voice.connect(delay).connect(lp).connect(out);
+    reverb(ac, lp, out, { sec: 2.6, decay: 2.2, wet: 0.45 });
+  },
+
+  // a growl and a fist on the table (BRAKK!), then a deep, hot, distorted voice
+  angry(ac, voice, out, x, { t0 }) {
+    note(ac, out, x, t0, { type: 'sawtooth', f: [70, 52], vol: 0.12, dur: 0.55, attack: 0.05 });
+    const slam = t0 + 0.5;
+    note(ac, out, x, slam, { f: [120, 38], vol: 0.6, dur: 0.35, attack: 0.003 });
+    noiseHit(ac, out, x, slam, { freq: 900, Q: 0.7, vol: 0.5, dur: 0.18 });
+    noiseHit(ac, out, x, slam + 0.02, { freq: 3500, type: 'highpass', vol: 0.18, dur: 0.12 });
+    const comp = ac.createDynamicsCompressor();
+    comp.threshold.value = -26; comp.ratio.value = 8;
+    voice.connect(filter(ac, 'lowshelf', 180, 6)).connect(filter(ac, 'peaking', 1600, 8, 1))
+      .connect(gain(ac, 2)).connect(shaper(ac, drive(22))).connect(comp).connect(gain(ac, 0.7)).connect(out);
   },
 
   // kendang "tak-dung" under the voice, like a stage at a kampung party
@@ -226,25 +257,6 @@ const MOOD_GRAPHS = {
     mix.connect(flange).connect(gain(ac, 0.6)).connect(out);
   },
 
-  // a stadium: the voice echoes, and when it ends the crowd goes wild
-  concert(ac, voice, out, x, { v1 }) {
-    voice.connect(out);
-    echo(ac, voice, out, { time: 0.32, feedback: 0.3, wet: 0.35 });
-    reverb(ac, voice, out, { sec: 3.4, decay: 2, wet: 0.45 });
-    const cheer = ac.createBufferSource();
-    cheer.buffer = noiseBuffer(ac, 2.8);
-    const cg = ac.createGain();
-    cg.gain.setValueAtTime(0.0001, v1);
-    cg.gain.exponentialRampToValueAtTime(0.32, v1 + 0.35);
-    cg.gain.setValueAtTime(0.32, v1 + 1.2);
-    cg.gain.exponentialRampToValueAtTime(0.0001, v1 + 2.6);
-    cheer.connect(filter(ac, 'bandpass', 1100, 0, 0.5)).connect(cg).connect(out);
-    cheer.start(v1);
-    x.push(cheer);
-    for (let k = 0; k < 34; k++) noiseHit(ac, out, x, v1 + 0.1 + Math.random() * 2.2, { freq: 1600 + Math.random() * 1500, Q: 1.5, vol: 0.12 + Math.random() * 0.12, dur: 0.05 });
-    for (let k = 0; k < 4; k++) note(ac, out, x, v1 + 0.2 + k * 0.4 + Math.random() * 0.2, { f: [380 + Math.random() * 120, 760 + Math.random() * 200], vol: 0.035, dur: 0.6, attack: 0.08 }); // "wooo!"
-  },
-
   // a coin "pling!", then a crunchy video-game voice
   arcade(ac, voice, out, x, { t0 }) {
     note(ac, out, x, t0, { type: 'square', f: 987.8, vol: 0.07, dur: 0.09, attack: 0.002 });
@@ -315,13 +327,13 @@ export function moodShow(wrap, mood, { lead = 0, duration = 0 } = {}) {
     fx.append(e);
     return e;
   };
-  if (key === 'sinetron') { add('fx-vignette'); ['JENG', 'JENG', 'JENGGG!'].forEach((w, k) => add('fx-jeng', w, { animationDelay: `${k * 0.42}s`, top: `${18 + k * 22}%` })); }
+  if (key === 'sad') { add('fx-gloom'); for (let k = 0; k < 28; k++) add('fx-rain', '', { left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 0.9}s`, animationDuration: `${0.55 + Math.random() * 0.35}s` }); add('fx-cry', '😭'); }
+  if (key === 'angry') { add('fx-red'); add('fx-steam l', '💢'); add('fx-steam r', '💢', { animationDelay: '0.25s' }); add('fx-mad', '😡'); }
   if (key === 'dangdut') { for (let k = 0; k < 6; k++) add('fx-disco', '', { left: `${8 + k * 16}%`, animationDelay: `${-k * 0.23}s`, '--h': `${k * 60}deg` }); add('fx-emoji', '💃', { left: '6%', bottom: '8%' }); add('fx-emoji r', '🕺', { right: '6%', bottom: '8%' }); }
   if (key === 'toa') { add('fx-toa', '📢'); for (let k = 0; k < 3; k++) add('fx-wave', '', { animationDelay: `${lead + k * 0.5}s` }); }
   if (key === 'horror') { add('fx-dark'); add('fx-ghost', '👻'); }
   if (key === 'helium') { for (let k = 0; k < 7; k++) add('fx-balloon', ['🎈', '🎈', '🎈', '🎉'][k % 4], { left: `${6 + k * 14}%`, animationDelay: `${k * 0.25}s`, '--sway': `${(k % 2 ? 1 : -1) * 18}px` }); }
   if (key === 'alien') { add('fx-ufo', '🛸'); add('fx-beam'); }
-  if (key === 'concert') { add('fx-spot l'); add('fx-spot r'); for (let k = 0; k < 26; k++) add('fx-confetti', '', { left: `${Math.random() * 100}%`, background: ['#FF6B6B', '#F6B93B', '#5CC8A8', '#6FB7FF', '#FF7FB0'][k % 5], animationDelay: `${lead + duration + Math.random() * 0.8}s` }); }
   if (key === 'arcade') { add('fx-pixels'); add('fx-coin', '+1 UP'); }
   wrap.append(fx);
   wrap.classList.add(`mood-${key}`);

@@ -302,7 +302,14 @@ async function runGift(occasion, c) {
   await r.waitForSelector('.bottom-sheet .thanks-opt');
   await r.waitForTimeout(350);
   await shot(r, P('17a-thanks'));
-  await r.click('text=One voice for everyone');
+  // wedding (many guests): one by one from the list, the others get the note; the rest: one voice for everyone
+  const oneByOne = occasion === 'wedding';
+  if (oneByOne) {
+    await r.click('text=One by one');
+    await r.waitForSelector('.thanks-friend');
+    await shot(r, P('17a-thanks-list'));
+    await r.click('.thanks-friend >> nth=0');
+  } else await r.click('text=One voice for everyone');
   await r.check('.bottom-sheet .check input');
   await r.click('#thanksMic');
   await r.waitForSelector('#thanksStop');
@@ -312,6 +319,10 @@ async function runGift(occasion, c) {
   await shot(r, P('17a-thanks-words'));
   await r.fill('#thanksWords', 'Makasih banyak semuanya, aku terharu banget!');
   await r.click('#thanksSave');
+  if (oneByOne) {
+    await r.waitForSelector('.thanks-friend.done');
+    await shot(r, P('17a-thanks-list-done'));
+  }
   await r.click('#thanksSend');
   await r.waitForSelector('text=Thank-you sent');
   if (await r.$('.names .more')) {

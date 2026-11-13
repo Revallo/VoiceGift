@@ -2223,12 +2223,25 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .moodfx { position: absolute; inset: 0; z-index: 6; pointer-events: none; overflow: hidden; transition: opacity 0.3s ease; }
 .moodfx.out { opacity: 0; }
 .moodfx i { position: absolute; font-style: normal; line-height: 1; }
-/* Sinetron: dark edges, three big JENGs, the gift jolts on each */
-.fx-vignette { inset: 0; background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.75) 100%); animation: vg-fadein 0.3s ease-out both; }
-.fx-jeng { left: 0; right: 0; text-align: center; font-family: var(--display); font-weight: 600; font-size: 44px; color: #FFFFFF; letter-spacing: 0.04em; text-shadow: 0 0 18px rgba(255, 60, 60, 0.9), 0 3px 0 #8E1010; opacity: 0; animation: vg-jeng 0.62s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
-.stage-wrap.mood-sinetron .stage { animation: vg-jolt 1.3s steps(1) both; }
-@keyframes vg-jeng { 0% { opacity: 0; transform: scale(2.6); } 30% { opacity: 1; transform: scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(0.95); } }
-@keyframes vg-jolt { 0% { translate: 6px 0; } 8% { translate: -5px 2px; } 16% { translate: 0 0; } 32% { translate: -6px 0; } 40% { translate: 5px -2px; } 48% { translate: 0 0; } 64% { translate: 8px 2px; } 70% { translate: -8px -2px; } 78% { translate: 4px 0; } 86%, 100% { translate: 0 0; } }
+/* Sad: grey-blue gloom, rain, a crying face; the flames shrink */
+.fx-gloom { inset: 0; background: linear-gradient(180deg, rgba(40, 60, 100, 0.55), rgba(20, 30, 60, 0.35)); animation: vg-fadein 0.8s ease-out both; }
+.fx-rain { top: -20px; width: 1.5px; height: 16px; border-radius: 1px; background: linear-gradient(180deg, transparent, rgba(190, 220, 255, 0.85)); animation: vg-rain 0.7s linear infinite; }
+.fx-cry { right: 14px; top: 12px; font-size: 38px; animation: vg-sob 0.5s ease-in-out infinite alternate; }
+.stage-wrap.mood-sad .candle .c-flamewrap { scale: 0.7; filter: saturate(0.5); transition: scale 0.8s ease; }
+.stage-wrap.mood-sad .scenebody { filter: saturate(0.55) brightness(0.85) !important; }
+@keyframes vg-rain { from { transform: translateY(0); } to { transform: translateY(340px); } }
+@keyframes vg-sob { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(3px) rotate(4deg); } }
+/* Angry: the room goes red and shakes, steam puffs, the flames blaze */
+.fx-red { inset: 0; background: radial-gradient(ellipse at center, rgba(255, 40, 20, 0.12), rgba(160, 0, 0, 0.5)); animation: vg-redpulse 0.5s ease-in-out infinite alternate; }
+.fx-mad { left: 12px; top: 10px; font-size: 40px; animation: vg-shake 0.1s linear infinite; }
+.fx-steam { top: 26%; font-size: 26px; opacity: 0; animation: vg-steam 0.9s ease-out infinite; }
+.fx-steam.l { left: 26%; }
+.fx-steam.r { right: 26%; }
+.stage-wrap.mood-angry .stage { animation: vg-shake 0.12s linear 0.5s 6; }
+.stage-wrap.mood-angry .candle .c-flamewrap { scale: 1.45; filter: hue-rotate(-30deg) saturate(1.8); }
+@keyframes vg-redpulse { from { opacity: 0.6; } to { opacity: 1; } }
+@keyframes vg-steam { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-30px) scale(1.2); opacity: 0; } }
+@keyframes vg-shake { 0% { translate: -2px 0; } 50% { translate: 2px 1px; } 100% { translate: -1px -1px; } }
 /* Dangdut: disco lights, two dancers, the gift bounces on the beat */
 .fx-disco { top: -30%; width: 46px; height: 150%; background: linear-gradient(180deg, hsl(var(--h) 95% 65% / 0.55), transparent 80%); mix-blend-mode: screen; transform-origin: 50% 0; animation: vg-disco 0.9s ease-in-out infinite alternate; filter: blur(2px); }
 .fx-emoji { font-size: 34px; animation: vg-dance 0.45s ease-in-out infinite alternate; }
@@ -2258,13 +2271,6 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 @keyframes vg-ufo { from { translate: -260px -20px; rotate: -20deg; } to { translate: 0 0; rotate: 0deg; } }
 @keyframes vg-hover { from { margin-top: 0; } to { margin-top: 6px; } }
 @keyframes vg-beam { from { opacity: 0.25; } to { opacity: 0.9; } }
-/* Concert: spotlights sweep, confetti when the voice ends */
-.fx-spot { top: -20%; width: 70px; height: 140%; background: linear-gradient(180deg, rgba(255, 255, 230, 0.5), transparent 85%); mix-blend-mode: screen; transform-origin: 50% 0; filter: blur(3px); animation: vg-sweep 1.6s ease-in-out infinite alternate; }
-.fx-spot.l { left: 12%; }
-.fx-spot.r { right: 12%; animation-delay: -0.8s; }
-.fx-confetti { top: -12px; width: 7px; height: 11px; border-radius: 2px; opacity: 0; animation: vg-confetti 1.8s ease-in both; }
-@keyframes vg-sweep { from { transform: rotate(-30deg); } to { transform: rotate(30deg); } }
-@keyframes vg-confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(380px) rotate(540deg); opacity: 0.8; } }
 /* 8-bit: chunky pixels, a +1 UP */
 .fx-pixels { inset: 0; background-image: linear-gradient(rgba(0, 0, 0, 0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.18) 1px, transparent 1px); background-size: 6px 6px; mix-blend-mode: multiply; }
 .fx-coin { left: 0; right: 0; top: 14%; text-align: center; font-family: ui-monospace, monospace; font-weight: 800; font-size: 22px; color: #FFE45C; text-shadow: 3px 3px 0 #B03A00; animation: vg-coin 1s steps(6) both; }
@@ -2313,3 +2319,10 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .thanks-burst { position: relative; height: 64px; margin: 8px 0 -8px; pointer-events: none; }
 .thanks-burst i { position: absolute; left: 50%; top: 50%; font-style: normal; font-size: 22px; translate: -50% -50%; animation: vg-burst 0.9s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
 @keyframes vg-burst { 0% { transform: rotate(var(--a)) translateY(0) scale(0.2); opacity: 0; } 30% { opacity: 1; } 100% { transform: rotate(var(--a)) translateY(-40px) rotate(calc(-1 * var(--a))) scale(1); opacity: 0.9; } }
+.thanks-list { display: flex; flex-direction: column; gap: 6px; max-height: 42vh; overflow-y: auto; overscroll-behavior: contain; margin: 0 -2px; padding: 2px; }
+.thanks-friend { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px 8px 8px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); color: var(--text); font: inherit; font-size: 14.5px; font-weight: 600; text-align: left; cursor: pointer; }
+.thanks-friend .avatar { width: 34px; height: 34px; border-radius: 11px; font-size: 12px; flex-shrink: 0; }
+.thanks-friend .grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thanks-friend-state { font-size: 12.5px; color: var(--emerald-light); flex-shrink: 0; }
+.thanks-friend.done { border-color: var(--emerald); background: var(--tint); }
+.thanks-friend.done .thanks-friend-state { color: var(--text); }

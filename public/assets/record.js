@@ -2,6 +2,8 @@ import { $, $$, h, api, icon, showScreen, slugFromPath, copyText, toast, initial
 import { createScene, applyTheme } from './themes.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { requireLogin } from './auth.js';
+import { MOODS, playVoice } from './voicefx.js';
+import { CANDLES, FLAMES, miniCandle, styleCandle } from './cake.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
@@ -12,6 +14,8 @@ let gift, t, count = 0, first = '';
 let rec = null, recorded = null, sent = null, sentDone = false; // sent = { id, token, asrText, asrTypos, waveform }
 let lastCorrections = [];
 let speechRec = null, speechHint = '';
+// The twist the friend adds after recording (kept when they record again).
+let mood = 'normal', candleStyle = { body: 'stripe', flame: 'classic' };
 
 window.addEventListener('pagehide', () => {
   if (sent && !sentDone) {
@@ -156,6 +160,7 @@ async function upload() {
     $('#againBtn').innerHTML = icon.redo(15);
     $('#againBtn').append(h('span', {}, 'Record again'));
     setupPlayer();
+    buildTwist();
     refreshTypoStudio();
     showScreen('caption');
   } catch (e) {
@@ -283,17 +288,22 @@ $('#captionText').addEventListener('input', refreshTypoStudio);
 
 // ---------- Play it the way the recipient will hear it ----------
 // The words light up while the voice plays (spread evenly over the recording, like the reveal page does).
-let audio = null, raf = 0, seenWords = [], seenScene = null;
+// Played with Web Audio, so the picked mood is heard exactly as the recipient will hear it.
+let ac = null, buffer = null, playing = null, raf = 0, seenWords = [], seenScene = null;
+const isCake = () => typeof seenScene?.setCandleStyle === 'function';
 
 // The gift as the recipient will find it, with this friend's item ready to be tapped.
 function showSeenScene() {
   const n = count + 1;
   $('#seenScene').textContent = '';
   seenScene = createScene($('#seenScene'), gift);
-  seenScene.setCandles(n, { spots: Math.max(12, n), onTap: () => $('#playOwn').click() });
+  const styles = [];
+  styles[count] = candleStyle;
+  seenScene.setCandles(n, { spots: Math.max(12, n), styles, onTap: () => $('#playOwn').click() });
   seenScene.stage.classList.add('interactive');
   seenScene.lightAll();
   seenScene.setActive(count);
+  if (seenScene.candles[count]) seenScene.candles[count].dataset.mood = mood;
 }
 
 function paintSeen(k) {
@@ -301,26 +311,109 @@ function paintSeen(k) {
   seenWords.forEach((w, i) => w.classList.toggle('now', i === k));
 }
 
-function setupPlayer() {
-  if (audio) { audio.pause(); URL.revokeObjectURL(audio.src); }
-  audio = new Audio(URL.createObjectURL(recorded.wav));
-  const btn = $('#playOwn');
-  const dur = () => audio.duration || recorded.durationSec || 1;
+function stopOwn() {
+  if (!playing) return;
+  playing.stop();
+  playing = null;
+  cancelAnimationFrame(raf);
+  paintSeen(-1);
+  seenScene?.setActive(count, false);
+  $('#playOwn').innerHTML = icon.play(16);
+}
+
+// Must be called inside a tap (iOS creates the AudioContext only then).
+async function playOwn() {
+  stopOwn();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ac ||= new AC();
+  ac.resume().catch(() => {});
+  const wav = recorded.wav;
+  if (!buffer) {
+    try { buffer = await ac.decodeAudioData(await wav.arrayBuffer()); } catch { return toast('Could not play the recording.'); }
+    if (recorded.wav !== wav) return; // recorded again meanwhile
+  }
+  const startAt = ac.currentTime;
+  const me = playVoice(ac, buffer, mood, { onended: () => { if (playing === me) { playing = null; stopOwn(); } } });
+  playing = me;
+  $('#playOwn').innerHTML = icon.pause(16);
+  seenScene?.setActive(count, true);
   const paint = () => {
+    if (playing !== me) return;
     const n = seenWords.length;
-    paintSeen(Math.min(n - 1, Math.floor((audio.currentTime / dur()) * n)));
-    if (!audio.paused) raf = requestAnimationFrame(paint);
+    const pos = ((ac.currentTime - startAt) * me.rate) / buffer.duration;
+    paintSeen(Math.min(n - 1, Math.floor(pos * n)));
+    raf = requestAnimationFrame(paint);
   };
-  const setIcon = () => (btn.innerHTML = audio.paused ? icon.play(16) : icon.pause(16));
-  setIcon();
-  btn.onclick = () => { if (audio.paused) { audio.currentTime = audio.ended ? 0 : audio.currentTime; audio.play(); raf = requestAnimationFrame(paint); } else audio.pause(); };
-  audio.onplay = () => { setIcon(); seenScene?.setActive(count, true); };
-  audio.onpause = () => { setIcon(); seenScene?.setActive(count, false); };
-  audio.onended = () => { setIcon(); seenScene?.setActive(count, false); cancelAnimationFrame(raf); paintSeen(-1); };
+  raf = requestAnimationFrame(paint);
+}
+
+function setupPlayer() {
+  stopOwn();
+  buffer = null;
+  $('#playOwn').innerHTML = icon.play(16);
+  $('#playOwn').onclick = () => (playing ? stopOwn() : playOwn());
+}
+
+// ---------- the twist: a mood for the voice, and (on the cake) their own candle + flame ----------
+function pickRow(row, items, isOn, onPick) {
+  row.textContent = '';
+  for (const [key, make] of items) {
+    const b = h('button', { type: 'button', class: 'pick' + (isOn(key) ? ' on' : ''), 'aria-pressed': String(isOn(key)) });
+    make(b);
+    b.addEventListener('click', () => {
+      [...row.children].forEach((c) => { c.classList.toggle('on', c === b); c.setAttribute('aria-pressed', String(c === b)); });
+      onPick(key, b);
+    });
+    row.append(b);
+  }
+}
+
+// The live minis: each shows the candle body with the current flame (or the flame on the current body).
+function candleMini(b, style) {
+  b.querySelector('.mini-candle')?.remove();
+  const label = b.querySelector('span');
+  b.insertBefore(miniCandle(style, colorFor(count), { h: 40 }), label);
+}
+
+function buildTwist() {
+  $('#twistSub').textContent = `Optional. Tap one to hear it. Only the sound ${first} hears changes.`;
+  pickRow($('#moodRow'), Object.entries(MOODS).map(([k, m]) => [k, (b) => b.append(h('span', { class: 'pick-emoji' }, m.emoji), h('span', {}, m.label))]),
+    (k) => k === mood,
+    (k) => {
+      mood = k;
+      if (seenScene?.candles[count]) seenScene.candles[count].dataset.mood = k;
+      playOwn();
+    });
+
+  $('#candlePicks').hidden = !isCake();
+  if (!isCake()) return;
+  const bodyRow = $('#candleRow'), flameRow = $('#flameRow');
+  const relight = (row, key, field) => {
+    // every mini in the other row follows the new pick; the picked mini lights up again with a burst
+    [...row.children].forEach((b, i) => candleMini(b, { ...candleStyle, [field]: Object.keys(field === 'body' ? CANDLES : FLAMES)[i] }));
+    const mine = row.children[Object.keys(field === 'body' ? CANDLES : FLAMES).indexOf(key)]?.querySelector('.candle');
+    if (mine) styleCandle(mine, candleStyle, { ignite: true });
+  };
+  pickRow(bodyRow, Object.entries(CANDLES).map(([k, c]) => [k, (b) => { b.append(h('span', {}, c.label)); candleMini(b, { ...candleStyle, body: k }); }]),
+    (k) => k === candleStyle.body,
+    (k) => {
+      candleStyle = { ...candleStyle, body: k };
+      seenScene.setCandleStyle(count, candleStyle);
+      relight(flameRow, candleStyle.flame, 'flame');
+      relight(bodyRow, k, 'body');
+    });
+  pickRow(flameRow, Object.entries(FLAMES).map(([k, f]) => [k, (b) => { b.append(h('span', {}, f.label)); candleMini(b, { ...candleStyle, flame: k }); }]),
+    (k) => k === candleStyle.flame,
+    (k) => {
+      candleStyle = { ...candleStyle, flame: k };
+      seenScene.setCandleStyle(count, candleStyle);
+      relight(bodyRow, candleStyle.body, 'body');
+      relight(flameRow, k, 'flame');
+    });
 }
 
 $('#againBtn').addEventListener('click', async () => {
-  if (audio) audio.pause();
+  stopOwn();
   if (sent) {
     api('/api/message', { method: 'DELETE', json: { slug: slug, id: sent.id, token: sent.token } }).catch(() => {});
     sent = null;
@@ -337,10 +430,10 @@ $('#sendBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Sending…';
   try {
-    const res = await api('/api/message', { method: 'PATCH', json: { slug, id: sent.id, token: sent.token, text } });
+    const res = await api('/api/message', { method: 'PATCH', json: { slug, id: sent.id, token: sent.token, text, mood, candle: isCake() ? candleStyle : null } });
     sentDone = true;
     if (Array.isArray(res.corrections) && res.corrections.length) lastCorrections = res.corrections;
-    if (audio) audio.pause();
+    stopOwn();
     await showDone();
   } catch (e) {
     err($('#capError'), e.message);
@@ -357,7 +450,9 @@ async function showDone() {
   $('#doneTitle').textContent = t.doneTitle;
   $('#doneCake').textContent = '';
   const c = createScene($('#doneCake'), gift);
-  c.setCandles(n, { spots: Math.max(12, n) });
+  const styles = [];
+  styles[n - 1] = candleStyle;
+  c.setCandles(n, { spots: Math.max(12, n), styles });
   c.lightAll();
   c.mark(n - 1);
   $('#doneCount').textContent = t.doneCount(n);

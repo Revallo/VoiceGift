@@ -23,6 +23,7 @@ export default route({
           finalText: m.finalText,
           edited: m.edited,
           corrections: m.corrections || [],
+          mood: m.mood || 'normal', // a playback effect only: the audio file is the clean recording
           consent: m.consent,
           consentVersion: m.consentVersion,
           createdAt: m.createdAt

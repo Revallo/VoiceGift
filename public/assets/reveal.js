@@ -4,6 +4,7 @@ import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFo
 import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
 import { playTune } from './music.js';
+import { MOODS, moodOf, playVoice } from './voicefx.js';
 
 addStars($('#app'), 26, 55);
 if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
@@ -164,7 +165,8 @@ function showEmpty() {
 // ---------- it's time ----------
 function showReady() {
   phase = 'ready';
-  scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), onTap: (i) => phase === 'cake' && play(i, false) });
+  scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), styles: messages.map((m) => m.candle), onTap: (i) => phase === 'cake' && play(i, false) });
+  messages.forEach((m, i) => { if (scene.candles[i]) scene.candles[i].dataset.mood = moodOf(m.mood); });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
   header(t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
@@ -292,7 +294,7 @@ function idlePanel() {
 function stopCurrent() {
   if (!current) return;
   cancelAnimationFrame(current.raf);
-  if (current.src) { current.src.onended = null; try { current.src.stop(); } catch {} }
+  if (current.src) current.src.stop();
   scene.setActive(current.i, false);
   chips[current.i]?.classList.remove('on');
   current = null;
@@ -312,7 +314,8 @@ async function play(i, chain) {
   const bars = h('div', { class: 'bars' }, ...[0, 1, 2, 3, 4].map(() => h('i', { style: { background: colorFor(i) } })));
   setPanel(h('div', { class: 'panel' },
     h('div', { class: 'who' }, h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
-      h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec))), bars),
+      h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec),
+        moodOf(m.mood) !== 'normal' ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, `${MOODS[moodOf(m.mood)].emoji} ${MOODS[moodOf(m.mood)].label}`) : '')), bars),
     h('div', { class: 'caption' }, words)));
   updateHeader();
 
@@ -335,25 +338,24 @@ async function play(i, chain) {
     if (chain && queue.length) later(() => play(queue.shift(), true), 600);
     else updateHeader();
   };
-  const dur = buf ? buf.duration : m.durationSec;
+  let rate = 1;
+  let dur = m.durationSec;
   const startAt = ac.currentTime;
   if (buf) {
-    const src = ac.createBufferSource();
-    src.buffer = buf;
-    src.connect(ac.destination);
-    src.onended = finish;
-    src.start();
-    me.src = src;
+    // the friend's mood is added here, while playing; the recording itself is unchanged
+    me.src = playVoice(ac, buf, m.mood, { onended: finish });
+    rate = me.src.rate;
+    dur = me.src.duration;
   } else {
     toast('This voice could not be loaded. Showing the words only.');
     later(finish, dur * 1000);
   }
   const paint = () => {
-    const el = ac.currentTime - startAt;
+    const el = (ac.currentTime - startAt) * rate; // seconds into the recording
     let k = -1;
     m.words.forEach((w, idx) => { if (w.start <= el) k = idx; });
     words.forEach((w, idx) => { w.className = idx < k ? 'done' : idx === k ? 'now' : ''; });
-    if (el < dur + 0.2 && current === me) me.raf = requestAnimationFrame(paint);
+    if (el < dur * rate + 0.2 && current === me) me.raf = requestAnimationFrame(paint);
   };
   me.raf = requestAnimationFrame(paint);
 }
@@ -670,14 +672,9 @@ async function exportKeepsakeVideo(saveBtn) {
     const clipCount = Math.min(messages.length, 4);
     for (let i = 0; i < clipCount; i++) {
       const buf = buffers[i] || (await loadBuffer(i).catch(() => null));
-      const dur = Math.min(2.2, buf ? buf.duration : 1.5);
-      if (buf) {
-        const src = ac.createBufferSource();
-        src.buffer = buf;
-        src.connect(dest);
-        src.start();
-        src.stop(ac.currentTime + dur);
-      }
+      const v = buf ? playVoice(ac, buf, messages[i].mood, { dest }) : null;
+      const dur = Math.min(2.2, v ? v.duration : 1.5);
+      if (v) setTimeout(() => v.stop(), dur * 1000);
       const steps = Math.max(6, Math.round(dur * 15));
       for (let s = 0; s < steps; s++) {
         drawFrame(i, messages[i].text, (i + s / steps) / clipCount);

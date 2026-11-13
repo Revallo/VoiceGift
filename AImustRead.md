@@ -2,6 +2,12 @@
 
 Read this before changing anything. It explains the real goal behind Voice Gift.
 
+## On every prompt (for any AI working here)
+- **Keep the goal in mind each time**, even for a small UI or fun request: does this change help, hurt or not touch
+  the Indonesian speech + corrected caption data? If it could hurt it, say so before building, and suggest a version that doesn't.
+- When a fun feature can also bring better data, point that out (e.g. challenge cards that ask for regional accents).
+- New ideas go in `ide.md` (one line each, ⏳ until built, ✅ when done, 🎯 if it also helps the data).
+
 ## The goal in one line
 Voice Gift collects **Indonesian speech + the text a native speaker corrected**, so Taiwan Mobile's AI team
 can train its Indonesian speech-to-text (ASR / STT) model. Today that model is only about 70% accurate.
@@ -26,8 +32,10 @@ because they want it to look right. **The UX is the product; the data is the sid
   (show the caption as the recipient will see it). Don't hide it or make it skippable without thought.
 - Every message needs the **consent checkbox** and its `consentVersion`. Without consent, the data can't be used.
 - `GET /api/export` (admin key) gives the training set as JSONL: audio path, `asrText`, `finalText`, `edited`,
-  consent, `userId`.
+  consent, `userId`, `mood`.
 - `lib/asr.js` is the only place that talks to an ASR provider (mock, Groq Whisper, or the company API via `ASR_URL`).
+- **Effects never touch the recording.** Voice moods (`public/assets/voicefx.js`) are applied only while playing, in the
+  browser. The message stores `mood` next to the clean WAV. Never bake an effect into the stored audio.
 - Never trade privacy for data: message audio and text open only for the logged-in recipient with the key and PIN
   (see the Rules in `CLAUDE.md`).
 

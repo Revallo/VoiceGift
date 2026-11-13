@@ -121,6 +121,19 @@
 
       <div class="diff-line" id="diffLine" hidden></div>
 
+      <!-- after recording normally: a mood for the voice (played as an effect, the recording stays as it is) + their own candle -->
+      <div class="twist" id="twist">
+        <div class="twist-head"><b>Add a twist</b><small id="twistSub">Optional. Tap one to hear it.</small></div>
+        <span class="pick-label">Voice mood</span>
+        <div class="pick-row" id="moodRow"></div>
+        <div class="stack" id="candlePicks" style="gap:12px" hidden>
+          <span class="pick-label">Your candle</span>
+          <div class="pick-row" id="candleRow"></div>
+          <span class="pick-label">Flame</span>
+          <div class="pick-row" id="flameRow"></div>
+        </div>
+      </div>
+
       <p class="note" id="mockNote" hidden></p>
       <p class="small err" id="capError" hidden></p>
       <div class="row">

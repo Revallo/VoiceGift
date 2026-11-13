@@ -1,9 +1,10 @@
 // POST   /api/message?slug=…&name=…&consent=1&dur=…   body: WAV (application/octet-stream)
 //        → stores the recording, runs ASR, returns the caption + suspected ASR typos for the friend to check
-// PATCH  /api/message   { slug, id, token, text }  → saves the caption the friend corrected + word-level diffs
+// PATCH  /api/message   { slug, id, token, text, mood?, candle? }  → saves the caption the friend corrected + word-level diffs,
+//        plus the playback mood and their candle (the WAV itself is never changed)
 // DELETE /api/message   { slug, id, token }        → "record again"
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug } from '../lib/gifts.js';
+import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug, cleanMood, cleanCandle } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
 import { requireUser } from '../lib/accounts.js';
 import { LIMITS, countRecording } from '../lib/limits.js';
@@ -93,6 +94,8 @@ export default route({
     msg.finalWords = msg.edited
       ? evenWords(text, msg.durationSec, new Set(), msg.speechStartSec || 0, msg.speechEndSec || null)
       : msg.asrWords;
+    msg.mood = cleanMood(body.mood);
+    msg.candle = cleanCandle(body.candle);
     msg.sentAt = new Date().toISOString();
     await updateMessage(path, msg);
     send(res, 200, { ok: true, edited: msg.edited, corrections: msg.corrections });

@@ -30,7 +30,9 @@ export default route({
           sender: m.sender,
           text,
           words: (m.finalWords && m.finalWords.length ? m.finalWords : null) || evenWords(text, m.durationSec),
-          durationSec: m.durationSec
+          durationSec: m.durationSec,
+          mood: m.mood || 'normal',
+          candle: m.candle || null
         };
       });
     send(res, 200, {

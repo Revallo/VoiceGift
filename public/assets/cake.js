@@ -49,6 +49,103 @@ export const TOPPERS = {
   unicorn: { label: 'Unicorn', emoji: '🦄' }
 };
 
+// Each friend picks their own candle and flame after recording (message.candle = { body, flame }).
+// Keys must match CANDLE_KEYS / FLAME_KEYS in lib/gifts.js.
+export const CANDLES = {
+  stripe: { label: 'Stripes' },
+  plain: { label: 'Plain' },
+  dots: { label: 'Dots' },
+  swirl: { label: 'Swirl' },
+  gold: { label: 'Gold' },
+  tall: { label: 'Tall' },
+  chunky: { label: 'Chunky' }
+};
+export const FLAMES = {
+  classic: { label: 'Classic' },
+  blue: { label: 'Blue' },
+  pink: { label: 'Pink' },
+  green: { label: 'Magic' },
+  rainbow: { label: 'Rainbow' },
+  heart: { label: 'Heart' },
+  sparkler: { label: 'Sparkler' }
+};
+
+function candleLook(style, color, w, h) {
+  const body = CANDLES[style?.body] ? style.body : 'stripe';
+  const size = body === 'tall' ? { w: w * 0.75, h: Math.round(h * 1.3) } : body === 'chunky' ? { w: w * 1.7, h: Math.round(h * 0.7) } : { w, h };
+  const shine = 'linear-gradient(90deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 40%, rgba(0,0,0,0.12))';
+  const bg = {
+    stripe: `repeating-linear-gradient(135deg, ${color} 0px, ${color} 5px, #FFFFFF 5px, #FFFFFF 8px)`,
+    plain: `${shine}, ${color}`,
+    dots: `radial-gradient(circle, #FFFFFF 0 1.6px, transparent 2px) 0 0 / 6px 7px, ${color}`,
+    swirl: `repeating-linear-gradient(160deg, ${color} 0 4px, #FFFFFF 4px 6px, ${color} 6px 10px, #FFD86B 10px 12px)`,
+    gold: 'linear-gradient(90deg, #8A6A1E, #F7E08A 35%, #D4A93A 55%, #FFF3BF 70%, #9C7A22)',
+    tall: `${shine}, repeating-linear-gradient(0deg, ${color} 0 6px, #FFFFFF 6px 8px)`,
+    chunky: `${shine}, repeating-linear-gradient(90deg, ${color} 0 5px, color-mix(in srgb, ${color} 70%, #FFFFFF) 5px 10px)`
+  }[body];
+  return { ...size, bg, flame: FLAMES[style?.flame] ? style.flame : 'classic' };
+}
+
+// One candle (a button: wick, flame, smoke) standing on (p.x, p.base). Also used for the live minis in the picker.
+export function buildCandle(p, color, style) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'candle';
+  btn.dataset.base = p.base;
+  btn._p = p;
+  btn._color = color;
+  styleCandle(btn, style);
+  return btn;
+}
+
+// (Re)draws a candle in a new style; the flame lights again with a little burst.
+export function styleCandle(btn, style, { ignite = false } = {}) {
+  const p = btn._p, color = btn._color;
+  const look = candleLook(style, color, p.w, p.h);
+  const hitH = look.h + 46;
+  Object.assign(btn.style, { left: `${(p.x - 15).toFixed(1)}px`, top: `${Math.round(p.base - hitH)}px`, height: `${hitH}px` });
+  const fw = div(`c-flamewrap f-${look.flame}`, { bottom: `${look.h + 3}px` });
+  const flame = div('c-flame', { animationDuration: `${(0.9 + (p.i % 4) * 0.17).toFixed(2)}s`, animationDelay: `${(-(p.i * 0.21)).toFixed(2)}s` });
+  fw.append(flame);
+  if (look.flame === 'sparkler') {
+    const sparks = div('c-sparks');
+    for (let k = 0; k < 8; k++) {
+      const s = document.createElement('i');
+      s.style.setProperty('--a', `${k * 45 + (p.i % 3) * 13}deg`);
+      s.style.animationDelay = `${(-k * 0.09).toFixed(2)}s`;
+      sparks.append(s);
+    }
+    fw.append(sparks);
+  }
+  btn.replaceChildren(
+    div('c-ring', { background: color }),
+    div('c-body', { left: `${(15 - look.w / 2).toFixed(1)}px`, width: `${look.w.toFixed(1)}px`, height: `${look.h}px`, background: look.bg }),
+    div('c-wick', { bottom: `${look.h}px` }),
+    fw,
+    div('c-flash', { bottom: `${look.h - 6}px` }),
+    div('c-smoke', { bottom: `${look.h + 8}px` }),
+    div('c-smoke s2', { bottom: `${look.h + 8}px` })
+  );
+  if (ignite && btn.classList.contains('lit')) {
+    btn.classList.remove('igniting');
+    void btn.offsetWidth; // restart the animation
+    btn.classList.add('igniting');
+    clearTimeout(btn._ig);
+    btn._ig = setTimeout(() => btn.classList.remove('igniting'), 800);
+  }
+}
+
+// A small lit candle on its own (for the picker): returns its holder element.
+export function miniCandle(style, color, { h = 40 } = {}) {
+  const holder = div('mini-candle');
+  const p = { x: 15, base: 92, w: 9, h, i: 1 };
+  const btn = buildCandle(p, color, style);
+  btn.tabIndex = -1;
+  btn.classList.add('lit');
+  holder.append(btn);
+  return holder;
+}
+
 const W = 390, H = 300;
 const CX = 195, CY = 90; // centre of the top tier's top surface
 
@@ -411,7 +508,8 @@ export function createCake(host, opts = {}) {
     setName: name.setText,
     setFont: name.setFont,
     // Lay out `n` candles (+ empty spots up to `spots`). Returns the candle elements in message order.
-    setCandles(n, { spots = n, colors, onTap } = {}) {
+    // `styles[i]` = that friend's { body, flame } (optional).
+    setCandles(n, { spots = n, colors, styles, onTap } = {}) {
       layer.textContent = '';
       candles.length = 0;
       const total = Math.max(n, spots);
@@ -421,22 +519,9 @@ export function createCake(host, opts = {}) {
       for (const p of order) {
         const isSpot = p.i >= n;
         const color = (colors && colors[p.i]) || colorFor(p.i);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'candle' + (isSpot ? ' spot' : '');
+        const btn = buildCandle(p, color, isSpot ? null : styles?.[p.i]);
+        if (isSpot) btn.classList.add('spot');
         btn.tabIndex = isSpot || !onTap ? -1 : 0;
-        btn.dataset.base = p.base;
-        const hitH = p.h + 46;
-        Object.assign(btn.style, { left: `${(p.x - 15).toFixed(1)}px`, top: `${Math.round(p.base - hitH)}px`, height: `${hitH}px` });
-        const bodyEl = div('c-body', { left: `${(15 - p.w / 2).toFixed(1)}px`, width: `${p.w.toFixed(1)}px`, height: `${p.h}px`, background: `repeating-linear-gradient(135deg, ${color} 0px, ${color} 5px, #FFFFFF 5px, #FFFFFF 8px)` });
-        const ring = div('c-ring', { background: color });
-        const wick = div('c-wick', { bottom: `${p.h}px` });
-        const fw = div('c-flamewrap', { bottom: `${p.h + 3}px` });
-        const flame = div('c-flame', { animationDuration: `${(0.9 + (p.i % 4) * 0.17).toFixed(2)}s`, animationDelay: `${(-(p.i * 0.21)).toFixed(2)}s` });
-        fw.append(flame);
-        const s1 = div('c-smoke', { bottom: `${p.h + 8}px` });
-        const s2 = div('c-smoke s2', { bottom: `${p.h + 8}px` });
-        btn.append(ring, bodyEl, wick, fw, s1, s2);
         if (onTap && !isSpot) btn.addEventListener('click', () => onTap(p.i));
         layer.append(btn);
         els[p.i] = btn;
@@ -445,6 +530,8 @@ export function createCake(host, opts = {}) {
       seatAge();
       return els;
     },
+    // A friend picked another candle / flame: redraw just that one, and light it again.
+    setCandleStyle(i, style) { if (candles[i]) styleCandle(candles[i], style, { ignite: true }); },
     // Finale: candles go out left to right while the flames bend.
     finaleOrder(n) { return candleSpots(Math.min(n, 60)).sort((a, b) => a.x - b.x).map((s) => s.i); },
     finaleOut(i) { st.out(i); },

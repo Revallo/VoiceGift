@@ -8,7 +8,7 @@ Taiwan Mobile's AI team: every message gives **Indonesian speech + the caption t
 corrected** — labeled data for our Indonesian ASR (~70% accurate today). The UX is the product;
 the data is the side effect. This is a **prototype**: keep it simple and readable.
 
-**Start here:** also read `docs/HANDOFF.md` (decisions, live URL, how we work, open ideas).
+**Start here:** read `AImustRead.md` (why the app exists; keep it in mind on every prompt) and `ide.md` (all ideas), and `docs/HANDOFF.md` (decisions, live URL, how we work, open ideas).
 
 ## Stack (prototype)
 - Vercel: static files in `public/`, serverless functions in `api/` (Node 22, ESM, no framework).
@@ -54,6 +54,9 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
   phone's back gesture works. No bottom tab bar: the profile button sits top right.
+- After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`, played with Web Audio
+  only, never baked into the WAV) and, on the cake, their own **candle + flame** (`CANDLES`/`FLAMES` in `cake.js`, live lit
+  minis in the picker). Saved on the message as `mood` and `candle {body, flame}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
 
@@ -87,7 +90,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - `GET /api/account` → {user} or {user: null}, + `googleClientId`, `devLogin` (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `google` {credential}, `dev-login` {email, name} (local only), `logout`, `claim`, `thanks-read`
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}
-- `PATCH /api/message` {slug,id,token,text} → final caption; `DELETE` same body → "record again"
+- `PATCH /api/message` {slug,id,token,text,mood?,candle?} → final caption (+ the twist); `DELETE` same body → "record again"
 - `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only for a logged-in account with the recipient's key + PIN** (server-side rule); the organizer's own account gets 403
 - `POST /api/reveal` {slug, k, pin, text} → the recipient's thank-you to everyone, once
 - `GET /api/audio?slug&id&k=openKey&pin` logged in (or `&token` for your own recording) → WAV with Range support (iOS); never to the organizer

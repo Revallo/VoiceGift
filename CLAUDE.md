@@ -89,6 +89,9 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - Sessions: a random token in an HttpOnly, SameSite=Lax cookie (`vg_session`, 30 days); storage keeps only its sha256.
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
+- **Demo voices** (back 2026-11-13, by Revallo's choice): the gift's page has "+ Add 10 demo voices" / "Remove the demo voices"
+  (`POST /api/manage` `add-demo` / `remove-demo`). TTS audio + scripts in `demo/` (bundled via `includeFiles` in `vercel.json`),
+  each with a mood and a candle. Stored with `demo: true`: never in the export or stats, no ASR call, no thank-you.
 - Limits (`lib/limits.js`, counters in storage): 3 voices per account per gift, 20 recordings + 10 gifts per account per day.
 
 ## API (`api/*.js`)

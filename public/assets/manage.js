@@ -33,7 +33,7 @@ async function load() {
   // the gift: one item per voice so far
   $('#cake').textContent = '';
   const scene = createScene($('#cake'), gift);
-  scene.setCandles(sentMsgs.length, { spots: Math.max(12, sentMsgs.length) });
+  scene.setCandles(sentMsgs.length, { spots: Math.max(12, sentMsgs.length), styles: sentMsgs.map((m) => m.candle) });
   scene.lightAll();
 
   // 1. invite friends
@@ -58,9 +58,15 @@ async function load() {
       h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
       h('div', { class: 'grow', style: { minWidth: 0 } },
         h('b', {}, m.sender),
-        h('div', { class: 'tiny muted' }, `${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)}s${m.sent ? '' : ' · not sent yet'}`)),
+        h('div', { class: 'tiny muted' }, `${m.demo ? 'demo · ' : ''}${fmtAgo(m.createdAt)} · ${Math.round(m.durationSec)}s${m.sent ? '' : ' · not sent yet'}`)),
       h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(12), onclick: () => remove(m) })));
   });
+
+  // demo voices: add 10 (when you don't feel like asking real people), or take them out again
+  const demos = messages.filter((m) => m.demo).length;
+  const demoBtn = $('#demoBtn');
+  demoBtn.textContent = demos ? `Remove the ${demos} demo voices` : '+ Add 10 demo voices';
+  demoBtn.onclick = () => demoAction(demos ? 'remove-demo' : 'add-demo', demoBtn);
 
   // 3. send it to the recipient: their link + the PIN
   const pin = gift.verifyPin || '1234';
@@ -98,6 +104,21 @@ $('#pinRow').addEventListener('click', () => {
   openSheet({ title: 'PIN', subtitle: `${current.gift.recipient} types these 4 digits to open the gift`, content: form });
   setTimeout(() => pinIn.focus(), 60);
 });
+
+async function demoAction(action, btn) {
+  if (action === 'remove-demo' && !confirm('Take the demo voices out of this gift?')) return;
+  btn.disabled = true;
+  btn.textContent = action === 'add-demo' ? 'Adding demo voices…' : 'Removing…';
+  try {
+    const r = await api('/api/manage', { method: 'POST', json: { slug, key, action } });
+    toast(action === 'add-demo' ? `${r.added} demo voices added` : 'Demo voices removed');
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    await load();
+  }
+}
 
 // Gone for good: the server deletes the message and its recording.
 async function remove(m) {

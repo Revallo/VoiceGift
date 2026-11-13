@@ -1,0 +1,219 @@
+{
+  "_about": "Demo voices for showing the app without real people (the dashboard’s \"Add 10 demo voices\"). Audio made once with TTS. Messages added from these are stored with demo: true and left out of the ASR export.",
+  "birthday": [
+    {
+      "name": "Mama",
+      "voice": "F",
+      "pitch": "+0Hz",
+      "rate": "-5%",
+      "text": "Selamat ulang tahun, Nak. Mama bangga sama kamu. Sehat selalu ya."
+    },
+    {
+      "name": "Papa",
+      "voice": "M",
+      "pitch": "-6Hz",
+      "rate": "-5%",
+      "text": "Selamat ulang tahun! Semoga makin dewasa dan sukses terus."
+    },
+    {
+      "name": "Budi",
+      "voice": "M",
+      "pitch": "+4Hz",
+      "rate": "+12%",
+      "text": "Selamat ulang tahun bro! Traktir kita ya malam ini!"
+    },
+    {
+      "name": "Ayu",
+      "voice": "F",
+      "pitch": "+8Hz",
+      "rate": "+10%",
+      "text": "Happy birthday! Semoga semua keinginanmu tercapai tahun ini."
+    },
+    {
+      "name": "Kak Rina",
+      "voice": "F",
+      "pitch": "-4Hz",
+      "rate": "+0%",
+      "text": "Selamat ulang tahun adikku sayang. Jangan lupa makan kue yang banyak."
+    },
+    {
+      "name": "Om Hendra",
+      "voice": "M",
+      "pitch": "-12Hz",
+      "rate": "-10%",
+      "text": "Selamat ulang tahun. Om doakan panjang umur dan banyak rezeki."
+    },
+    {
+      "name": "Dika",
+      "voice": "M",
+      "pitch": "+8Hz",
+      "rate": "+8%",
+      "text": "Selamat ulang tahun! Makasih udah jadi teman terbaik aku."
+    },
+    {
+      "name": "Sinta",
+      "voice": "F",
+      "pitch": "+4Hz",
+      "rate": "+5%",
+      "text": "Selamat ulang tahun! Kangen banget, kapan kita main lagi?"
+    },
+    {
+      "name": "Bu Sri",
+      "voice": "F",
+      "pitch": "-8Hz",
+      "rate": "-12%",
+      "text": "Selamat ulang tahun. Semoga sehat, bahagia, dan selalu dilindungi."
+    },
+    {
+      "name": "Arif",
+      "voice": "M",
+      "pitch": "+0Hz",
+      "rate": "+0%",
+      "text": "Selamat bertambah umur! Tetap semangat kerjanya ya."
+    }
+  ],
+  "graduation": [
+    {
+      "name": "Mama",
+      "voice": "F",
+      "pitch": "+0Hz",
+      "rate": "-5%",
+      "text": "Selamat wisuda, Nak! Mama bangga sekali sama kamu."
+    },
+    {
+      "name": "Papa",
+      "voice": "M",
+      "pitch": "-6Hz",
+      "rate": "-5%",
+      "text": "Selamat ya! Kerja kerasmu selama ini terbayar."
+    },
+    {
+      "name": "Pak Hadi",
+      "voice": "M",
+      "pitch": "-10Hz",
+      "rate": "-8%",
+      "text": "Selamat. Revisinya memang banyak, tapi hasilnya bagus. Sukses di dunia kerja."
+    },
+    {
+      "name": "Rani",
+      "voice": "F",
+      "pitch": "+8Hz",
+      "rate": "+10%",
+      "text": "Akhirnya lulus juga! Selamat wisuda, kita foto bareng ya!"
+    },
+    {
+      "name": "Dika",
+      "voice": "M",
+      "pitch": "+8Hz",
+      "rate": "+8%",
+      "text": "Selamat wisuda! Jangan lupa traktiran sarjananya."
+    },
+    {
+      "name": "Oma",
+      "voice": "F",
+      "pitch": "-14Hz",
+      "rate": "-18%",
+      "text": "Selamat wisuda, cucu Oma. Semoga ilmunya bermanfaat."
+    },
+    {
+      "name": "Bang Yos",
+      "voice": "M",
+      "pitch": "+0Hz",
+      "rate": "+5%",
+      "text": "Mantap, sudah sarjana sekarang! Selamat ya."
+    },
+    {
+      "name": "Citra",
+      "voice": "F",
+      "pitch": "+4Hz",
+      "rate": "+6%",
+      "text": "Selamat wisuda! Begadang ngerjain skripsi akhirnya selesai."
+    },
+    {
+      "name": "Wulan",
+      "voice": "F",
+      "pitch": "-2Hz",
+      "rate": "+0%",
+      "text": "Selamat! Semoga cepat dapat kerja yang kamu impikan."
+    },
+    {
+      "name": "Tante Lis",
+      "voice": "F",
+      "pitch": "+2Hz",
+      "rate": "-2%",
+      "text": "Selamat wisuda! Tante ikut senang dan bangga."
+    }
+  ],
+  "wedding": [
+    {
+      "name": "Ibu Wati",
+      "voice": "F",
+      "pitch": "-6Hz",
+      "rate": "-8%",
+      "text": "Selamat menempuh hidup baru, Nak. Saling sabar dan saling sayang ya."
+    },
+    {
+      "name": "Pak Joko",
+      "voice": "M",
+      "pitch": "-10Hz",
+      "rate": "-8%",
+      "text": "Selamat ya. Semoga jadi keluarga yang sakinah, mawaddah, warahmah."
+    },
+    {
+      "name": "Sinta",
+      "voice": "F",
+      "pitch": "+6Hz",
+      "rate": "+8%",
+      "text": "Selamat menikah! Kalian serasi banget, langgeng terus ya."
+    },
+    {
+      "name": "Andi",
+      "voice": "M",
+      "pitch": "+6Hz",
+      "rate": "+10%",
+      "text": "Selamat bro! Akhirnya sah juga. Bahagia selalu."
+    },
+    {
+      "name": "Bu Ratna",
+      "voice": "F",
+      "pitch": "-8Hz",
+      "rate": "-10%",
+      "text": "Selamat menempuh hidup baru. Saling menjaga dan saling mengerti ya."
+    },
+    {
+      "name": "Om Budi",
+      "voice": "M",
+      "pitch": "-14Hz",
+      "rate": "-5%",
+      "text": "Selamat. Semoga cepat dapat momongan."
+    },
+    {
+      "name": "Tika",
+      "voice": "F",
+      "pitch": "+10Hz",
+      "rate": "+6%",
+      "text": "Selamat menikah! Acaranya cantik banget, aku terharu."
+    },
+    {
+      "name": "Mas Dodi",
+      "voice": "M",
+      "pitch": "+0Hz",
+      "rate": "+0%",
+      "text": "Selamat ya. Rumah tangga itu kerja sama, kalian pasti bisa."
+    },
+    {
+      "name": "Nenek",
+      "voice": "F",
+      "pitch": "-14Hz",
+      "rate": "-18%",
+      "text": "Selamat, cucuku. Nenek doakan bahagia sampai tua."
+    },
+    {
+      "name": "Lala",
+      "voice": "F",
+      "pitch": "+4Hz",
+      "rate": "+4%",
+      "text": "Selamat menikah! Jangan lupa ajak aku main ke rumah baru."
+    }
+  ]
+}

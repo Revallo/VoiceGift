@@ -39,3 +39,14 @@ Add new ideas here, one line each.
 - ⏳ 🎯 **Typo detective badge**: a small badge / streak for friends who fix captions carefully.
 - ⏳ 🎯 **Recipient double-check**: the recipient can tap a wrong word in a caption too, a second check on the label.
 - ⏳ 🎯 **More occasions**: Lebaran (maaf lahir batin, ketupat scene), get well soon, good luck on exams, farewell. More reasons to send = more voices.
+
+## Getting people to really fix the caption (ideas from 2026-11-13)
+- ⏳ 🎯 **The candle burns brighter as the caption gets right**: unchecked words = a dim, flickery flame; each fix brightens it; all checked = a golden sparkle.
+- ⏳ 🎯 **Unlock by checking**: the special flames / moods (Rainbow, Sparkler, Alien…) unlock once every flagged word is fixed or confirmed.
+- ⏳ 🎯 **Tap a word to hear it**: plays just that bit of the recording, then fix that one word in place (no big text box).
+- ⏳ 🎯 **"AI misheard me" card**: after sending, a funny shareable card ("AI heard: 'di hukum' 😭 I said: 'dihukum'"). Only exists if you fixed something.
+- ⏳ 🎯 **Nudge before Send**: "3 words may be wrong. Dimas will read this 👀". Shown once, not blocking.
+- ⏳ 🎯 **"Caption checked ✓" next to the name** on the recipient's side; friends see others did it.
+- ⏳ 🎯 **Mission line**: "AI understands only 70% of Indonesian. Every fix teaches it our language, slang and accents."
+- ⏳ 🎯 **Recipient typo patrol**: the recipient can tap a wrong word too; the friend gets "Dimas fixed your caption 😂".
+- ⚠️ Guard the label: fix to what was *said*, not a nicer sentence. If the edit changes most words, suggest "Record again" instead.

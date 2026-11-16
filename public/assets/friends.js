@@ -1,6 +1,6 @@
 // /friends: my friend link and my friends.  /u/<code>: someone's friend link ("Add Sari as a friend").
 // Friends are only made through a link someone gave you: no search, no phone numbers.
-import { $, h, api, icon, showScreen, toast, copyText, waShare, initials, colorFor } from './common.js';
+import { $, h, api, showScreen, toast, copyText, waShare } from './common.js';
 import { requireLogin } from './auth.js';
 import { tabBar } from './tabbar.js';
 
@@ -11,8 +11,6 @@ if (user) (code ? showAdd() : showFriends()).catch((e) => { $('#errorText').text
 async function showAdd() {
   const who = await api(`/api/friends?code=${encodeURIComponent(code)}`);
   if (who.mine) return location.replace('/friends');
-  $('#addFace').textContent = initials(who.name);
-  $('#addFace').style.background = colorFor(who.name.length);
   $('#addTitle').textContent = who.already ? `You and ${who.name} are friends` : `Add ${who.name} as a friend?`;
   $('#addLead').textContent = who.already ? 'You can send each other voices.' : `Then you and ${who.name} can send each other voices. Only friends hear them.`;
   const btn = $('#addBtn');
@@ -40,8 +38,7 @@ async function showFriends() {
   const link = `${location.origin}/u/${data.code}`;
   $('#myLink').textContent = link.replace(/^https?:\/\//, '');
   const copy = $('#copyLink');
-  copy.innerHTML = icon.copy(14);
-  copy.append(h('span', {}, 'Copy'));
+  copy.textContent = 'Copy';
   copy.onclick = () => copyText(link);
   $('#waLink').href = waShare(`Add me on Voice Gift, so we can send each other voices 🎙️ ${link}`);
   draw(data.friends);
@@ -49,14 +46,14 @@ async function showFriends() {
 }
 
 function draw(friends) {
-  $('#friendsTitle').textContent = `Your friends (${friends.length})`;
-  $('#friendList').replaceChildren(...(friends.length ? friends.map((f, i) => {
-    const remove = h('button', { type: 'button', class: 'linkbtn small', 'aria-label': `Remove ${f.name}` }, 'Remove');
+  $('#friendsTitle').textContent = friends.length ? `${friends.length} ${friends.length === 1 ? 'friend' : 'friends'}` : 'No friends yet';
+  $('#friendList').replaceChildren(...(friends.length ? friends.map((f) => {
+    const remove = h('button', { type: 'button', class: 'linkbtn quiet', 'aria-label': `Remove ${f.name}` }, 'Remove');
     remove.onclick = async () => {
       if (!confirm(`Remove ${f.name}? You won’t be able to send each other voices.`)) return;
       await api('/api/friends', { method: 'POST', json: { action: 'remove', id: f.id } }).catch((e) => toast(e.message));
       draw(friends.filter((x) => x !== f));
     };
-    return h('div', { class: 'friend-row' }, h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(f.name)), h('b', { class: 'grow' }, f.name), remove);
-  }) : [h('p', { class: 'small muted', style: { margin: '0' } }, 'Nobody yet. Send your link to a friend.')]));
+    return h('div', { class: 'friend-row' }, h('b', {}, f.name), remove);
+  }) : [h('p', { class: 'hint' }, 'Send your link to someone you know.')]));
 }

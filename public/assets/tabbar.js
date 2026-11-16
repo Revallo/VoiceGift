@@ -15,7 +15,7 @@ export function tabBar({ onMic } = {}) {
   const here = location.pathname;
   const bar = h('nav', { class: 'tabbar', 'aria-label': 'Main' }, TABS.map(([href, label, ico]) => {
     const mic = ico === 'mic';
-    const a = h('a', { href, class: mic ? 'tab-mic' : 'tab' + (href === here ? ' on' : ''), 'aria-label': mic ? label : null, 'aria-current': href === here ? 'page' : null, html: icon[ico](mic ? 26 : 20) });
+    const a = h('a', { href, class: mic ? 'tab-mic' : 'tab' + (href === here ? ' on' : ''), 'aria-label': mic ? label : null, 'aria-current': href === here ? 'page' : null, html: icon[ico](mic ? 24 : 20) });
     if (!mic) a.append(h('span', {}, label));
     if (mic && onMic) a.addEventListener('click', (e) => { e.preventDefault(); onMic(); });
     return a;

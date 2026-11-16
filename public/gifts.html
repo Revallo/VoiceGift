@@ -15,64 +15,40 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body>
+<body class="clean">
 <main class="app" id="app">
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
   <section data-screen="home" hidden>
-    <div class="row" style="justify-content:space-between">
-      <span class="brand home-brand"><span class="home-logo" id="homeLogo"></span>Voice Gift</span>
-      
-    </div>
-
+    <h1 class="page-title">Gifts</h1>
     <!-- the three gifts, drawn live; each one starts making that kind of gift -->
     <div class="home-hero">
       <a class="home-gift left" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"></a>
       <a class="home-gift right" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"></a>
       <a class="home-gift mid" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"></a>
     </div>
-
-    <div class="home-title">
-      <p>For a birthday, a graduation or a wedding</p>
-      <h1>A gift made of voices</h1>
-    </div>
-
-
-    <div class="stack" style="gap:12px">
-      <a class="choice primary" href="/new" id="makeGift">
-        <span class="choice-ico" id="makeIco"></span>
-        <span class="choice-text"><b>Make a gift</b><small>Collect your friends’ voices for someone.</small></span>
-      </a>
-      <button type="button" class="choice" id="openToggle" aria-expanded="false">
-        <span class="choice-ico" id="openIco"></span>
-        <span class="choice-text"><b>Open your gift</b><small>Received a link? Paste it here.</small></span>
-      </button>
-      <form class="card stack" id="openForm" style="gap:12px" novalidate hidden>
+    <p class="hint center">Everyone’s voices, collected in secret and opened together.</p>
+    <a class="btn" href="/new" id="makeGift">Make a gift</a>
+    <div class="rows">
+      <button type="button" class="nav-line" id="openToggle" aria-expanded="false"><b>Open a gift</b><small>Paste the link you received</small></button>
+      <form class="stack" id="openForm" style="gap:10px;padding:4px 0 16px" novalidate hidden>
         <input class="input" id="openLink" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste your gift link" aria-label="Your gift link">
         <p class="small err" id="openError" hidden></p>
-        <button class="btn" type="submit">Continue</button>
+        <button class="btn ghost" type="submit">Continue</button>
       </form>
-      <a class="choice" href="/account" id="myGifts">
-        <span class="choice-ico" id="mineIco"></span>
-        <span class="choice-text"><b>Dashboard</b><small>The gifts you’re making for others.</small></span>
-      </a>
+      <a class="nav-line" href="/account" id="myGifts"><b>Your gifts</b><small>The ones you’re making</small></a>
     </div>
   </section>
 </main>
 <script type="module">
-import { $, icon, addStars, showScreen } from '/assets/common.js';
+import { $, showScreen } from '/assets/common.js';
 import { tabBar } from '/assets/tabbar.js';
-$('#homeLogo').innerHTML = icon.mic(15); // static icon markup
 import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
 
 const user = await me();
 if (!user) location.replace('/login?next=/gifts');
 else {
-  addStars($('#app'), 20, 40);
-  $('#makeIco').innerHTML = icon.plus(22);
-  $('#openIco').innerHTML = icon.gift(22);
-  $('#mineIco').innerHTML = icon.sparkle(22);
   showScreen('home');
   drawGifts(firstName(user.name));
   tabBar();

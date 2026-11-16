@@ -20,7 +20,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body>
+<body class="clean">
 <main class="app" id="app">
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
@@ -30,29 +30,24 @@
 
   <!-- /u/<code>: someone's friend link -->
   <section data-screen="add" hidden>
-    <div class="stack center" style="gap:10px;margin-top:48px">
-      <span class="avatar friend-face" id="addFace"></span>
-      <h1 id="addTitle" style="margin:8px 0 0"></h1>
-      <p class="lead" id="addLead"></p>
-      <button type="button" class="btn" id="addBtn" style="margin-top:10px"></button>
-      <a class="btn ghost" href="/" id="addSkip">Not now</a>
+    <div class="empty" style="margin-top:18vh">
+      <h1 class="page-title" id="addTitle"></h1>
+      <p id="addLead"></p>
+      <button type="button" class="btn" id="addBtn"></button>
+      <a class="linkbtn" href="/" id="addSkip">Not now</a>
     </div>
   </section>
 
   <!-- /friends: my link, my friends -->
   <section data-screen="friends" hidden>
-    <div class="home-title">
-      <p>Only friends hear your voices</p>
-      <h1>Friends</h1>
-    </div>
-    <div class="card stack">
-      <div><b>Your friend link</b>
-        <p class="small muted" style="margin:4px 0 0">Send it to someone you know. When they open it, you’re friends and can send each other voices.</p></div>
+    <h1 class="page-title">Friends</h1>
+    <div class="field">
+      <label>Your friend link. Whoever opens it becomes your friend.</label>
       <div class="linkbox"><span id="myLink"></span><button type="button" id="copyLink"></button></div>
-      <a class="btn" id="waLink" target="_blank" rel="noopener">Send on WhatsApp</a>
+      <a class="linkbtn" id="waLink" target="_blank" rel="noopener">Send on WhatsApp</a>
     </div>
-    <div class="sec-bar"><h2 id="friendsTitle">Your friends</h2></div>
-    <div class="stack" id="friendList" style="gap:8px"></div>
+    <h2 class="list-title" id="friendsTitle">Your friends</h2>
+    <div class="rows" id="friendList"></div>
   </section>
 </main>
 <script type="module" src="/assets/friends.js"></script>

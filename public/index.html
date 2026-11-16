@@ -20,34 +20,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body>
+<body class="clean">
 <main class="app" id="app">
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
-  <!-- Home: the voices your friends sent you, each with its words. Sending one is the main thing to do. -->
+  <!-- Home: the voices your friends sent you, each with its words. The mic in the bar sends one. -->
   <section data-screen="home" hidden>
-    <div class="row" style="justify-content:space-between">
-      <span class="brand home-brand"><span class="home-logo" id="homeLogo"></span>Voice Gift</span>
-    </div>
-    <div class="home-title">
-      <p id="hello"></p>
-      <h1>Voices from your friends</h1>
-    </div>
-
-    <button type="button" class="choice primary" id="sendVoice">
-      <span class="choice-ico" id="sendIco"></span>
-      <span class="choice-text"><b>Send a voice</b><small>15 seconds, with its words. To one friend or all.</small></span>
-    </button>
-
-    <div class="seg" role="tablist">
+    <h1 class="page-title">Voices</h1>
+    <div class="tabs" role="tablist">
       <button type="button" role="tab" class="on" data-box="inbox" id="tabInbox">Inbox</button>
       <button type="button" role="tab" data-box="sent" id="tabSent">Sent</button>
     </div>
-    <div class="stack" id="voices" style="gap:10px"></div>
+    <div class="rows" id="voices"></div>
   </section>
 </main>
 <script type="module">
-import { $, $$, h, api, icon, showScreen, openSheet, closeSheet } from '/assets/common.js';
+import { $, $$, h, api, showScreen, openSheet, closeSheet } from '/assets/common.js';
 import { noteCard, markRead, stopNoteVoice } from '/assets/thanksnote.js';
 import { me } from '/assets/auth.js';
 import { tabBar } from '/assets/tabbar.js';
@@ -57,12 +45,8 @@ let friends = [], boxes = { inbox: [], sent: [] }, box = 'inbox';
 const user = await me();
 if (!user) location.replace('/login');
 else {
-  $('#homeLogo').innerHTML = icon.mic(15); // static icon markup
-  $('#sendIco').innerHTML = icon.mic(24);
-  $('#hello').textContent = `Hi, ${user.name}`;
   tabBar({ onMic: send });
-  $('#sendVoice').onclick = () => send();
-  $$('.seg button').forEach((b) => (b.onclick = () => { box = b.dataset.box; draw(); }));
+  $$('.tabs button').forEach((b) => (b.onclick = () => { box = b.dataset.box; draw(); }));
   await load();
   showScreen('home');
   if (new URLSearchParams(location.search).has('send')) { history.replaceState(null, '', '/'); send(); }
@@ -82,16 +66,16 @@ function send(reply) {
 
 function draw() {
   stopVoices();
-  $$('.seg button').forEach((b) => { b.classList.toggle('on', b.dataset.box === box); b.setAttribute('aria-selected', String(b.dataset.box === box)); });
+  $$('.tabs button').forEach((b) => { b.classList.toggle('on', b.dataset.box === box); b.setAttribute('aria-selected', String(b.dataset.box === box)); });
   const fresh = boxes.inbox.filter((v) => !v.heard).length;
-  $('#tabInbox').textContent = fresh ? `Inbox · ${fresh} new` : 'Inbox';
+  $('#tabInbox').replaceChildren('Inbox', fresh ? h('i', {}, String(fresh)) : '');
   const list = boxes[box];
   const empty = !friends.length
-    ? h('div', { class: 'card stack center', id: 'noFriends' }, h('div', { style: { fontSize: '40px' } }, '👋'),
-        h('b', {}, 'Add your first friend'),
-        h('p', { class: 'small muted', style: { margin: '0' } }, 'Send them your friend link. Then you can send each other voices.'),
+    ? h('div', { class: 'empty', id: 'noFriends' }, h('b', {}, 'No friends yet'),
+        h('p', {}, 'Send someone your friend link. Then you can send each other voices.'),
         h('a', { class: 'btn', href: '/friends' }, 'Get my friend link'))
-    : h('p', { class: 'small muted center', style: { margin: '18px 0' } }, box === 'inbox' ? 'No voices yet. Send the first one!' : 'You haven’t sent a voice yet.');
+    : h('div', { class: 'empty' }, h('p', {}, box === 'inbox' ? 'Nothing here yet.' : 'You haven’t sent a voice yet.'),
+        h('button', { type: 'button', class: 'btn', onclick: () => send() }, 'Send a voice'));
   $('#voices').replaceChildren(...(list.length ? list.map((v) => voiceCard(v, { onReply: send })) : [empty]));
 }
 

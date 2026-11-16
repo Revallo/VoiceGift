@@ -4,6 +4,10 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
+- ✅ 🎯 **Voices between friends** (2026-11-16): friends by link, send a voice to one friend or all, inbox + sent on home,
+  reply. Every voice shows its words; the speaker checks them first (ASR + corrected caption = training data, far more often than gifts).
+- ✅ **Feels like an app** (2026-11-16): bottom tab bar (Home · Friends · mic · Gifts · Profile), add to home screen.
+- ✅ **The organizer records too** + **"Record another"** on the friend's done screen (2026-11-16).
 - ✅ **Voice mood**, festive set (2026-11-13): 😭 Sad (sad trombone, rain, flames shrink), 😡 Angry (growl + BRAKK!, red shake,
   steam), 💃 Dangdut (kendang + disco lights), 📢 Toa (ding-dong + echo), 👻 Horror (hum, flicker, green flames, ghost),
   🎈 Helium (slide whistle, balloons, item floats), 👽 Alien (theremin, UFO beam), 👾 8-bit (coin, pixels). Playback only; WAV stays clean.
@@ -14,6 +18,14 @@ Add new ideas here, one line each.
   One by one is a friend list (with search): record for whoever you want, the others get a written note.
 - ✅ **Thank-you pop-up**: pops up once on home, then waits in the Dashboard for 7 days after it was opened.
 - ✅ "My gifts" → "Dashboard" on home, so it isn't mixed up with "Open your gift".
+
+## Voices between friends: next
+- ⏳ Invite friends to a gift straight into their inbox (now it's a link to share).
+- ⏳ A gift you received shows in your inbox (now it's the link + PIN from the organizer).
+- ⏳ Notifications (a new voice, a reply). Needs push or email.
+- ⏳ 🎯 Tap a word on a card to hear just that bit; the listener flags a wrong word (a second check on the label).
+- ⏳ Small groups (family, class) besides "all friends". Profile photo. Block.
+- ⏳ 🎯 Daily prompt on home ("tell a friend what you ate today"): a reason to record every day.
 
 ## Home page
 - ⏳ Make "Open your gift" (paste a link) a small text link at the bottom: recipients usually tap the WhatsApp link.
@@ -28,7 +40,7 @@ Add new ideas here, one line each.
 - ⏳ **One voice per hour** all through the birthday, instead of all at once.
 - ⏳ **Story video**: the cake + candles + karaoke caption as a 15 s vertical video for IG Story / TikTok.
 - ⏳ Moods made for the bouquet and lanterns too (now they get the general show, not item-specific touches).
-- ⏳ Friends reply to the thank-you voice (a voice chain).
+- ✅ Voice chains: any voice between friends can be replied to (2026-11-16). ⏳ Replying to the thank-you itself.
 - ⏳ Candle colour picker (now it's the friend's colour by order).
 
 ## More data, still fun (ideas from 2026-11-13)

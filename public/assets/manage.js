@@ -46,6 +46,7 @@ async function load() {
   b.innerHTML = icon.copy(14);
   b.append(h('span', {}, 'Copy'));
   b.onclick = () => copyText(friend);
+  $('#recordOwn').href = `/g/${encodeURIComponent(slug)}`;
   $('#waBtn').replaceWith(Object.assign(shareRow(t.waFriends(name), friend), { id: 'waBtn' }));
 
   // 2. who recorded (names only: what they said is for the recipient)

@@ -5,7 +5,12 @@ Friends record secret voice messages. When you send the gift, each one lights a 
 A web app (no install) for group voice gifts, built as a prototype for collecting real Indonesian
 speech with captions the speakers corrected themselves. Works on phones and desktop.
 
-**Flow**
+**Two things to do** (since 2026-11-16)
+- **Send a voice to a friend**: add friends with your friend link (`/friends`), record up to 15 s, check its words, send.
+  It lands on their home page, always with its words; they can reply. Friends only, nothing public.
+- **Make a gift** (`/gifts`): everyone's voices collected in secret for one person, opened together. The flow below.
+
+**Gift flow**
 1. The organizer creates a gift at `/new`: the occasion, who it's for, decorates the cake / bouquet / lanterns,
    then logs in with Google to save it. `/account` lists their gifts on any phone.
 2. Friends open `/g/<gift>` from WhatsApp, record up to 15 s, fix the caption, send.
@@ -47,7 +52,8 @@ Optional environment variables (*Settings → Environment Variables*, then redep
   browsers (Instagram, Line, Facebook…) Google blocks its login, so the page asks to open it in Chrome or Safari;
   links from WhatsApp open in a real browser and just work.
 - **Limits** (`lib/limits.js`): 3 voices per account per gift, 20 recordings per account per day (each one is an
-  ASR call), 10 gifts per account per day.
+  ASR call; gift messages and voices to friends together), 10 gifts per account per day, 150 friends.
+- **Vercel Hobby allows 12 serverless functions** and `api/` has exactly 12.
 - **Test data only for now.** Until this moves to the company's servers, use it with the team and friends.
 - **Vercel Hobby** is meant for personal, non-commercial projects. For a company pilot, use a
   Pro/Team plan or move it to the company server (see `CLAUDE.md`).
@@ -60,6 +66,8 @@ Optional environment variables (*Settings → Environment Variables*, then redep
 api/            serverless functions (one file per endpoint)
 lib/            storage (Vercel Blob / local folder), ASR seam, gift + account model, HTTP helpers
 public/         the website: plain HTML + ES modules, no build step
+  assets/voicebox.js  a voice between friends: its card (words + play) and the send sheet
+  assets/tabbar.js    the bottom tab bar of the main pages
   assets/themes.js    words per occasion + picks the scene
   assets/cake.js      birthday: the cake + candles
   assets/bouquet.js   graduation: the bouquet + flowers

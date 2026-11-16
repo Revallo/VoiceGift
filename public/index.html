@@ -4,12 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1C1A18">
-<title>Voice Gift — a surprise made of your friends' voices</title>
+<title>Voice Gift — voices from your friends, with their words</title>
 <meta name="description" content="Friends record short voice wishes. They open as one surprise: a cake, a bouquet or lanterns. No app to install.">
 <meta property="og:title" content="Voice Gift">
 <meta property="og:description" content="Friends record short voice wishes. Each voice lights a candle.">
 <meta property="og:image" content="/og.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Voice Gift">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,94 +24,78 @@
 <main class="app" id="app">
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
+  <!-- Home: the voices your friends sent you, each with its words. Sending one is the main thing to do. -->
   <section data-screen="home" hidden>
     <div class="row" style="justify-content:space-between">
       <span class="brand home-brand"><span class="home-logo" id="homeLogo"></span>Voice Gift</span>
-      <a class="profile-btn" href="/account" id="profileLink"><span class="profile-ava" id="profileAva"></span>Profile</a>
     </div>
-
-    <!-- the three gifts, drawn live; each one starts making that kind of gift -->
-    <div class="home-hero">
-      <a class="home-gift left" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"></a>
-      <a class="home-gift right" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"></a>
-      <a class="home-gift mid" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"></a>
-    </div>
-
     <div class="home-title">
       <p id="hello"></p>
-      <h1>What would you like to do?</h1>
+      <h1>Voices from your friends</h1>
     </div>
 
+    <button type="button" class="choice primary" id="sendVoice">
+      <span class="choice-ico" id="sendIco"></span>
+      <span class="choice-text"><b>Send a voice</b><small>15 seconds, with its words. To one friend or all.</small></span>
+    </button>
 
-    <div class="stack" style="gap:12px">
-      <a class="choice primary" href="/new" id="makeGift">
-        <span class="choice-ico" id="makeIco"></span>
-        <span class="choice-text"><b>Make a gift</b><small>Collect your friends’ voices for someone.</small></span>
-      </a>
-      <button type="button" class="choice" id="openToggle" aria-expanded="false">
-        <span class="choice-ico" id="openIco"></span>
-        <span class="choice-text"><b>Open your gift</b><small>Received a link? Paste it here.</small></span>
-      </button>
-      <form class="card stack" id="openForm" style="gap:12px" novalidate hidden>
-        <input class="input" id="openLink" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste your gift link" aria-label="Your gift link">
-        <p class="small err" id="openError" hidden></p>
-        <button class="btn" type="submit">Continue</button>
-      </form>
-      <a class="choice" href="/account" id="myGifts">
-        <span class="choice-ico" id="mineIco"></span>
-        <span class="choice-text"><b>Dashboard</b><small>The gifts you’re making for others.</small></span>
-      </a>
+    <div class="seg" role="tablist">
+      <button type="button" role="tab" class="on" data-box="inbox" id="tabInbox">Inbox</button>
+      <button type="button" role="tab" data-box="sent" id="tabSent">Sent</button>
     </div>
+    <div class="stack" id="voices" style="gap:10px"></div>
   </section>
 </main>
 <script type="module">
-import { $, h, api, icon, addStars, showScreen, initials, openSheet, closeSheet } from '/assets/common.js';
+import { $, $$, h, api, icon, showScreen, openSheet, closeSheet } from '/assets/common.js';
 import { noteCard, markRead, stopNoteVoice } from '/assets/thanksnote.js';
-$('#homeLogo').innerHTML = icon.mic(15); // static icon markup
 import { me } from '/assets/auth.js';
-import { theme, createScene, firstName } from '/assets/themes.js';
+import { tabBar } from '/assets/tabbar.js';
+import { voiceCard, openSend, stopVoices } from '/assets/voicebox.js';
 
+let friends = [], boxes = { inbox: [], sent: [] }, box = 'inbox';
 const user = await me();
 if (!user) location.replace('/login');
 else {
-  addStars($('#app'), 20, 40);
-  $('#makeIco').innerHTML = icon.plus(22);
-  $('#openIco').innerHTML = icon.gift(22);
-  $('#mineIco').innerHTML = icon.sparkle(22);
-  $('#profileAva').textContent = initials(user.name);
+  $('#homeLogo').innerHTML = icon.mic(15); // static icon markup
+  $('#sendIco').innerHTML = icon.mic(24);
   $('#hello').textContent = `Hi, ${user.name}`;
+  tabBar({ onMic: send });
+  $('#sendVoice').onclick = () => send();
+  $$('.seg button').forEach((b) => (b.onclick = () => { box = b.dataset.box; draw(); }));
+  await load();
   showScreen('home');
-  drawGifts(firstName(user.name));
-  showThanks();
+  if (new URLSearchParams(location.search).has('send')) { history.replaceState(null, '', '/'); send(); }
+  else showThanks();
 }
 
-function drawGifts(name) {
-  for (const [occasion, host] of [['birthday', '#heroCake'], ['graduation', '#heroBouquet'], ['wedding', '#heroLanterns']]) {
-    const scene = createScene($(host), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
-    scene.setCandles(10);
-    scene.lightAll();
-  }
+async function load() {
+  [{ friends }, boxes] = await Promise.all([api('/api/friends'), api('/api/voice')]).catch(() => [{ friends: [] }, { inbox: [], sent: [] }]);
+  draw();
 }
 
-$('#openToggle').addEventListener('click', () => {
-  const form = $('#openForm');
-  form.hidden = !form.hidden;
-  $('#openToggle').setAttribute('aria-expanded', String(!form.hidden));
-  if (!form.hidden) $('#openLink').focus();
-});
+// A voice needs a friend to go to: without one, the button leads to the friend link.
+function send(reply) {
+  if (!reply && !friends.length) return (location.href = '/friends');
+  openSend({ friends, reply, onSent: () => { if (!reply) box = 'sent'; load(); } });
+}
 
-$('#openForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const m = /\/r\/([a-z0-9-]{3,40})\/?\?(?:.*&)?k=([\w-]+)/.exec($('#openLink').value.trim());
-  $('#openError').hidden = Boolean(m);
-  if (!m) {
-    $('#openError').textContent = 'That doesn’t look like a gift link. Copy the whole link and try again.';
-    return;
-  }
-  location.href = `/r/${m[1]}?k=${m[2]}`;
-});
+function draw() {
+  stopVoices();
+  $$('.seg button').forEach((b) => { b.classList.toggle('on', b.dataset.box === box); b.setAttribute('aria-selected', String(b.dataset.box === box)); });
+  const fresh = boxes.inbox.filter((v) => !v.heard).length;
+  $('#tabInbox').textContent = fresh ? `Inbox · ${fresh} new` : 'Inbox';
+  const list = boxes[box];
+  const empty = !friends.length
+    ? h('div', { class: 'card stack center', id: 'noFriends' }, h('div', { style: { fontSize: '40px' } }, '👋'),
+        h('b', {}, 'Add your first friend'),
+        h('p', { class: 'small muted', style: { margin: '0' } }, 'Send them your friend link. Then you can send each other voices.'),
+        h('a', { class: 'btn', href: '/friends' }, 'Get my friend link'))
+    : h('p', { class: 'small muted center', style: { margin: '18px 0' } }, box === 'inbox' ? 'No voices yet. Send the first one!' : 'You haven’t sent a voice yet.');
+  $('#voices').replaceChildren(...(list.length ? list.map((v) => voiceCard(v, { onReply: send })) : [empty]));
+}
 
-// A new thank-you pops up once, here. After it's closed it waits in the Dashboard for 7 days, then it's gone.
+// A new thank-you pops up once, here. After it's closed it waits in the Profile for 7 days, then it's gone.
 async function showThanks() {
   const { thanks = [] } = await api('/api/account?thanks=1').catch(() => ({}));
   const fresh = thanks.filter((n) => !n.read).reverse(); // oldest first
@@ -117,7 +106,7 @@ async function showThanks() {
       ...['💛', '✨', '🎉', '💌', '✨', '🎊', '💛', '✨'].map((e, i) => h('i', { style: `--a: ${i * 45}deg; animation-delay: ${i * 0.03}s` }, e)));
     const ok = h('button', { type: 'button', class: 'btn', onclick: closeSheet }, fresh.length ? 'Next' : 'Close');
     openSheet({
-      title: '', content: [burst, noteCard(n, { big: true }), h('p', { class: 'small muted center', style: { margin: '0' } }, 'Saved in your Dashboard for 7 days.'), ok],
+      title: '', content: [burst, noteCard(n, { big: true }), h('p', { class: 'small muted center', style: { margin: '0' } }, 'Saved in your Profile for 7 days.'), ok],
       onClose: () => { stopNoteVoice(); markRead(n.slug); setTimeout(next, 350); }
     });
   };

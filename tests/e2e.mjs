@@ -1,7 +1,7 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
 // (create → decorate → sign up → friends sign up + record → dashboard → recipient link → log in → PIN →
 // reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop),
-// then the limits. Logging in is Google only; the test uses the local stand-in, so start the server with DEV_LOGIN=1.
+// then the limits, then voices between friends (friend link → send a voice with its words → inbox → reply). Logging in is Google only; the test uses the local stand-in, so start the server with DEV_LOGIN=1.
 // One-time setup:  npm i --no-save playwright && npx playwright install chromium
 // Run:             DEV_LOGIN=1 npm run dev   (in another terminal; PowerShell: $env:DEV_LOGIN=1; npm run dev)
 //                  BASE=http://localhost:3000 node tests/e2e.mjs            (all occasions)
@@ -206,6 +206,7 @@ async function runGift(occasion, c) {
     await f.click('#sendBtn');
     await f.waitForSelector('[data-screen="done"]:not([hidden])', { timeout: 15000 });
     await f.waitForTimeout(400);
+    if (!/Record another \(2 left\)/.test(await f.textContent('#anotherBtn'))) errors.push(`${occasion}: no "Record another" after sending`);
     if (k === c.friends.length - 1) await shot(f, P('07-done'));
     await f.context().close();
   }
@@ -378,15 +379,21 @@ async function accountFlow(occasion, recipientLink) {
   const own = (await a.context().request.get(`${BASE}/api/reveal?slug=${slug}&k=${new URL(recipientLink).searchParams.get('k')}&pin=${pins[recipientLink]}`)).status();
   if (own !== 403) errors.push(`the organizer opening their own gift: ${own}, expected 403`);
   await shot(a, 'account-01b-home');
+  await a.click('.tabbar a[href="/gifts"]'); // gifts are a tab now: make one, open one, the dashboard
+  await a.waitForSelector('#openToggle');
+  await a.waitForTimeout(500);
+  await shot(a, 'account-01c-gifts');
   await a.click('#openToggle');
   await a.fill('#openLink', recipientLink);
   await a.click('#openForm button[type="submit"]');
   await a.waitForURL(/\/r\/.+\?k=/); // pasting the link opens the gift's PIN page
   await a.goto(`${BASE}/`);
-  await a.click('#profileLink');
+  await a.click('.tabbar a[href="/account"]');
   await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
   await a.waitForTimeout(400);
   await shot(a, 'account-02-me', true);
+  await a.click(`#gifts a[href^="/m/${slug}?k="]`); // the organizer can record on their own gift too
+  await a.waitForSelector(`#recordOwn[href="/g/${slug}"]`);
 
   await a.goto(`${BASE}/g/${slug}`);
   await a.waitForSelector('#signedIn:not([hidden])');
@@ -442,6 +449,94 @@ async function limits(slug) {
   if (![401, 503].includes(fake)) errors.push(`a fake Google token: ${fake}, expected 401 or 503`);
 }
 await limits(Object.keys(slugs).length && new URL(Object.values(slugs)[0]).pathname.split('/')[2]);
+
+// Voices between friends: Budi opens Sari's friend link → friends → sends her a voice (fixes a word, picks a mood) →
+// Sari reads + plays it on home and replies → Budi gets the reply. A stranger never hears it.
+async function voices() {
+  const sari = await page(), budi = await page();
+  await sari.goto(`${BASE}/friends`);
+  await signUpHere(sari, 'Sari', `sari.voice.${RUN}@example.com`);
+  await sari.waitForSelector('[data-screen="friends"]:not([hidden])');
+  const link = 'http://' + (await sari.textContent('#myLink'));
+  await shot(sari, 'voice-01-friends');
+
+  await budi.goto(link); // logged out: log in, then straight back to the link
+  await signUpHere(budi, 'Budi', `budi.voice.${RUN}@example.com`);
+  await budi.waitForSelector('[data-screen="add"]:not([hidden])');
+  await shot(budi, 'voice-02-add');
+  await budi.click('#addBtn');
+  await budi.waitForSelector('#addBtn:has-text("Send Sari a voice")');
+  await budi.click('#addBtn');
+  // one friend: the sheet starts at the recording step
+  await budi.waitForSelector('#voiceMic');
+  await budi.click('#voiceMic'); // the box isn't ticked yet
+  await budi.waitForSelector('.voice-flow .err:not([hidden])');
+  await budi.check('.voice-flow .check input');
+  await budi.click('#voiceMic');
+  await budi.waitForSelector('#voiceStop');
+  await budi.waitForTimeout(2200);
+  await budi.click('#voiceStop');
+  await budi.waitForSelector('#voiceWords', { timeout: 15000 });
+  const heard = await budi.inputValue('#voiceWords');
+  await shot(budi, 'voice-03-check-words');
+  await budi.click('.typo-pill >> nth=0');
+  await budi.click('#voiceMoods [data-key="helium"]');
+  await budi.waitForTimeout(600);
+  await budi.click('#voiceSend');
+  await budi.waitForSelector('#voices .voice-card');
+  if (!/To Sari/.test(await budi.textContent('#voices .voice-card'))) errors.push('voices: the sent voice is not under Sent');
+  await shot(budi, 'voice-04-sent');
+
+  await sari.goto(`${BASE}/`);
+  await sari.waitForSelector('#voices .voice-card.new');
+  const words = (await sari.textContent('#voices .voice-words')).trim();
+  if (!words || words === heard.trim()) errors.push(`voices: the words shown are not the corrected ones: "${words}"`);
+  if (!/Helium/.test(await sari.textContent('#voices .voice-card'))) errors.push('voices: the mood is missing on the card');
+  await sari.waitForTimeout(400);
+  await shot(sari, 'voice-05-inbox');
+  await sari.click('#voices .seen-play');
+  await sari.waitForSelector('#voices .voice-words.playing span.now', { timeout: 8000 }); // the words light up as they are spoken
+  await sari.waitForSelector('#voices .voice-card:not(.new)');
+  await sari.click('#voices .voice-reply');
+  await sari.waitForSelector('.voice-flow .voice-quote');
+  await sari.check('.voice-flow .check input');
+  await sari.click('#voiceMic');
+  await sari.waitForSelector('#voiceStop');
+  await sari.waitForTimeout(1800);
+  await sari.click('#voiceStop');
+  await sari.waitForSelector('#voiceWords', { timeout: 15000 });
+  await sari.fill('#voiceWords', 'Halo Budi! Makasih ya, kangen juga.');
+  await sari.click('#voiceSend');
+  await sari.waitForSelector('.toast');
+
+  await budi.goto(`${BASE}/`);
+  await budi.waitForSelector('#voices .voice-card.new .voice-quote');
+  if (!/Makasih ya/.test(await budi.textContent('#voices .voice-words'))) errors.push('voices: the reply’s words are missing');
+  await shot(budi, 'voice-06-reply');
+
+  // the rules, straight on the API
+  const { inbox } = await (await budi.context().request.get(`${BASE}/api/voice`)).json();
+  const id = inbox[0].id;
+  if (JSON.stringify(inbox).match(/token|asrText|fromId|"userId"/)) errors.push('voices: the inbox leaks private fields');
+  const stranger = await apiAccount('Orang', `orang.${RUN}@example.com`);
+  const get = async (cookie) => (await fetch(`${BASE}/api/voice?id=${id}`, { headers: cookie ? { Cookie: cookie } : {} })).status;
+  if ((await get()) !== 401) errors.push(`voices: logged out got ${await get()}, expected 401`);
+  if ((await get(stranger)) !== 403) errors.push(`voices: a stranger got ${await get(stranger)}, expected 403`);
+  const send = async (to) => (await fetch(`${BASE}/api/voice?to=${to}&consent=1`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', Cookie: stranger }, body: wav() })).status;
+  if ((await send('all')) !== 403) errors.push('voices: sending with no friends was allowed');
+  if ((await send(`reply&replyTo=${id}`)) !== 403) errors.push('voices: a stranger could reply to a voice');
+  const ok = await budi.context().request.get(`${BASE}/api/voice?id=${id}`, { headers: { Range: 'bytes=0-99' } });
+  if (ok.status() !== 206) errors.push(`voices: the friend's own audio (Range): ${ok.status()}`);
+
+  const d = await page({ viewport: { width: 1280, height: 800 } });
+  await d.goto(`${BASE}/`);
+  await logInHere(d, 'Budi', `budi.voice.${RUN}@example.com`);
+  await d.waitForSelector('#voices .voice-card');
+  await d.waitForTimeout(500);
+  await shot(d, 'voice-07-desktop');
+  for (const p of [sari, budi, d]) await p.context().close();
+}
+if (!only) await voices();
 
 console.log('ERRORS', errors.length ? errors : 'none');
 await browser.close();

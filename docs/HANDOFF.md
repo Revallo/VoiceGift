@@ -80,7 +80,28 @@ Claude (claude.ai), so a new session can continue without re-asking.
   midnight blue, wedding soft plum) with ONE bright accent each (candle gold, periwinkle, rose champagne) and dark text on it;
   the gift sits in its own glow, the friend's mic button breathes, labels and small print are bigger. Tokens are at the top of
   `app.css`; the component polish is the last block of `app.css` ("Candlelit polish").
+- Decision (2026-11-16): **Voice Gift becomes a voice social app, friends only; the gift stays as the special thing to send.**
+  Why: the gift alone was a dead end (no friends list, one voice needed a whole occasion, the organizer wasn't offered to
+  record, nothing after the thank-you), so people came once or twice a year and little data came in. Now: friends by link
+  (`/u/<code>`), send a voice to one friend or all, an inbox on home, replies. **Every voice is shown with its words** and
+  the speaker checks them before sending: that is the product's point and the label. This replaces "no feature that doesn't
+  serve the surprise or the keepsake" above. Not public: no feed of strangers, no search (no moderation needed).
+- It stays a **web prototype that feels like an app** (bottom tab bar, phone frame, add-to-home-screen manifest): the
+  goal is a proposal to Taiwan Mobile for a server + ASR API, not scale. Not checked yet: Google login inside an
+  installed (standalone) iOS web app; if it fails there, don't promote "Add to Home Screen".
 - Not yet tested on real iPhone/Android microphones.
+
+## What we ask from Taiwan Mobile (for the proposal)
+- **An ASR endpoint**: takes a 16 kHz mono 16-bit WAV (≤ 15 s), returns `{ text, words: [{ w, start, end, conf }] }`
+  (words optional). Set as `ASR_URL` (+ `ASR_API_KEY`); only `lib/asr.js` talks to it.
+- **Storage** for small objects (JSON + WAV, about 0.5 MB per 15 s voice) with put / get / list by prefix / delete:
+  it replaces `lib/store.js` (5 functions). A real database later, when inboxes grow (they are file lists now).
+- **A place to run the API** (Node 22, the handlers in `api/`); the frontend is static files and doesn't change.
+- Load to plan for: each recording = 1 ASR call; today's limit is 20 recordings per account per day.
+- What they get back: `GET /api/export` → audio + `asrText` + `finalText` + corrections, with consent, for gift
+  messages, thank-yous and voices between friends.
+- Before real users: the consent wording must name ASR training, and the "why not a WhatsApp voice note?" answer is
+  now: the words under every voice (readable anywhere, fixed by the speaker), moods, and the shared gift.
 
 ## Ideas offered, not started (ask Revallo before building)
 - Indonesian UI language (target users are Indonesian).

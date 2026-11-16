@@ -11,6 +11,7 @@ $('#editBadge').innerHTML = `${icon.edit(12)} <span>Edit</span>`;
 
 const slug = slugFromPath();
 let gift, t, count = 0, first = '';
+let mineSent = 0, maxMine = 3; // voices this account already sent to this gift, and the most it may send
 let rec = null, recorded = null, sent = null, sentDone = false; // sent = { id, token, asrText, asrTypos, waveform }
 let lastCorrections = [];
 let speechRec = null, speechHint = '';
@@ -39,6 +40,8 @@ async function load() {
     const data = await api(`/api/gift?slug=${encodeURIComponent(slug)}`);
     gift = data.gift;
     count = data.count;
+    mineSent = data.mine || 0;
+    maxMine = data.max || 3;
   } catch (e) {
     $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
     return showScreen('error');
@@ -71,6 +74,7 @@ $('#inviteForm').addEventListener('submit', async (e) => {
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return err($('#inviteError'), 'Please tick the box to continue.');
   }
+  if (mineSent >= maxMine) return err($('#inviteError'), `You’ve already sent ${mineSent} voices to this gift. That’s the most one person can send.`);
   err($('#inviteError'), '');
   await beginRecording();
 });
@@ -492,7 +496,19 @@ async function showDone() {
       card.hidden = true;
     }
   }
+  // up to 3 voices per person in one gift: the button is there while one is left
+  mineSent++;
+  count = n; // the next voice from this person is the next item on the gift
+  const left = maxMine - mineSent;
+  $('#anotherBtn').hidden = left <= 0;
+  $('#anotherBtn').textContent = `Record another (${left} left)`;
   showScreen('done');
 }
+
+$('#anotherBtn').addEventListener('click', async () => {
+  sent = null;
+  recorded = null;
+  await beginRecording();
+});
 
 load();

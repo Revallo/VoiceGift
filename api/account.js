@@ -10,6 +10,7 @@
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
 import { startSession, endSession, currentUser, requireUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead, googleSignIn } from '../lib/accounts.js';
+import { voiceStatsOf } from '../lib/voices.js';
 import { googleClientId, verifyGoogleToken, devLogin, devProfile } from '../lib/google.js';
 
 // The account's gifts, newest first. Gifts deleted since are skipped (and forgotten).
@@ -51,6 +52,12 @@ async function giftsAndStatsOf(user) {
       editedCount: edited.length
     };
   }));
+  // voices sent to friends count too: they are corrected the same way
+  const v = await voiceStatsOf(user.id);
+  totalRecordings += v.recordings;
+  totalAudioSec += v.audioSec;
+  captionsImproved += v.improved;
+  wordsCorrected += v.words;
   const sorted = gifts.filter(Boolean).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   return {

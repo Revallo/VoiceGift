@@ -3,11 +3,12 @@
 // PATCH  /api/message   { slug, id, token, text, mood?, candle? }  → saves the caption the friend corrected + word-level diffs,
 //        plus the playback mood and their candle (the WAV itself is never changed)
 // DELETE /api/message   { slug, id, token }        → "record again"
-import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug, cleanMood, cleanCandle } from '../lib/gifts.js';
-import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
+import { route, send, query, jsonBody, cleanText, HttpError } from '../lib/http.js';
+import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, isSlug, cleanMood, cleanCandle } from '../lib/gifts.js';
+import { asrProvider } from '../lib/asr.js';
+import { readWav, asrFields, applyCaption } from '../lib/voices.js';
 import { requireUser } from '../lib/accounts.js';
-import { LIMITS, countRecording } from '../lib/limits.js';
+import { LIMITS } from '../lib/limits.js';
 
 async function authorized(body) {
   if (!isSlug(body.slug)) throw new HttpError(404, 'Gift not found');
@@ -23,53 +24,12 @@ export default route({
     const gift = await loadGift(q.slug);
     const name = cleanText(q.name, 40);
     if (!name) throw new HttpError(400, 'Please enter your name.');
-    if (q.consent !== '1') throw new HttpError(400, 'Please allow saving your voice first.');
-    const wav = await rawBody(req);
-    const info = analyzeWav(wav);
-    if (!info) throw new HttpError(400, 'The recording could not be read. Please record again.');
-    const { durationSec, peak, waveform, speechStartSec, speechEndSec } = info;
-    if (durationSec < 0.8) throw new HttpError(400, 'That was too short. Please record again.');
-    if (durationSec > 20) throw new HttpError(400, 'Recordings can be up to 15 seconds.');
-    if (peak < 0.005) throw new HttpError(400, 'No voice detected. Speak a little louder.');
+    const rec = await readWav(req, q);
     // Limits: a few voices per friend per gift, and a daily cap per account (each recording is an ASR call).
     const mine = (await loadMessages(gift.slug)).filter((m) => m.userId === user.id).length;
     if (mine >= LIMITS.recordingsPerGift) throw new HttpError(429, `You’ve already sent ${mine} messages to this gift. That’s the most one person can send.`);
-    await countRecording(user.id);
-
-    let asr;
-    try {
-      asr = await transcribe({
-        wav,
-        durationSec,
-        recipient: gift.recipient,
-        occasion: gift.occasion,
-        speechStartSec,
-        speechEndSec,
-        clientHint: cleanText(q.hint, 300)
-      });
-    } catch (e) {
-      console.error(e);
-      asr = { text: '', words: [], typos: [] }; // never lose the recording because ASR failed
-    }
-
-    const msg = await createMessage(gift.slug, {
-      sender: name,
-      userId: user.id,
-      durationSec: +durationSec.toFixed(2),
-      speechStartSec,
-      speechEndSec,
-      waveform,
-      asrProvider,
-      asrText: asr.text,
-      asrWords: asr.words,
-      asrTypos: asr.typos || [],
-      finalText: null,
-      edited: false,
-      corrections: [],
-      consent: true,
-      consentVersion: CONSENT_VERSION,
-      userAgent: cleanText(req.headers['user-agent'], 300)
-    }, wav);
+    const fields = await asrFields(req, user, rec, { recipient: gift.recipient, occasion: gift.occasion, hint: q.hint });
+    const msg = await createMessage(gift.slug, { sender: name, ...fields }, rec.wav);
 
     send(res, 201, {
       id: msg.id,
@@ -86,14 +46,7 @@ export default route({
   async PATCH(req, res) {
     const body = await jsonBody(req);
     const { msg, path } = await authorized(body);
-    const text = cleanText(body.text, 400);
-    if (!text) throw new HttpError(400, 'The caption is empty.');
-    msg.finalText = text;
-    msg.edited = text !== (msg.asrText || '').trim();
-    msg.corrections = computeCorrections(msg.asrText, text, msg.asrTypos);
-    msg.finalWords = msg.edited
-      ? evenWords(text, msg.durationSec, new Set(), msg.speechStartSec || 0, msg.speechEndSec || null)
-      : msg.asrWords;
+    applyCaption(msg, body.text, 400);
     msg.mood = cleanMood(body.mood);
     msg.candle = cleanCandle(body.candle);
     msg.sentAt = new Date().toISOString();

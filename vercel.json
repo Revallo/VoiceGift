@@ -34,6 +34,18 @@
     {
       "source": "/account",
       "destination": "/account.html"
+    },
+    {
+      "source": "/friends",
+      "destination": "/friends.html"
+    },
+    {
+      "source": "/u/:code",
+      "destination": "/friends.html"
+    },
+    {
+      "source": "/gifts",
+      "destination": "/gifts.html"
     }
   ],
   "functions": {

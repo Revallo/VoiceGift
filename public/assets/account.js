@@ -3,6 +3,7 @@ import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet
 import { me, logOut, loginBox, giftItem } from './auth.js';
 import { applyTheme } from './themes.js';
 import { noteCard } from './thanksnote.js';
+import { tabBar } from './tabbar.js';
 
 addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
@@ -220,6 +221,7 @@ function showAccount(user) {
   document.title = 'Your account · Voice Gift';
   populateUserUI(user);
   showScreen('me');
+  if (!document.querySelector('.tabbar')) tabBar();
   loadThanks();
   return loadGifts().then(() => {
     if (keepHash === '#settings') openEditProfileSheet();
@@ -261,6 +263,7 @@ $('#logout').addEventListener('click', async () => {
     return toast(e.message);
   }
   toast('Logged out');
+  document.querySelector('.tabbar')?.remove();
   showAuth('login');
 });
 

@@ -2362,3 +2362,33 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .row.even > .btn.ghost:first-child:not(:last-child) { flex: 1 1 0; }
 /* Dashboard: with many voices the list scrolls by itself, so "Send it" stays close. */
 .dash .who-list { max-height: 330px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--gold-border) transparent; }
+
+/* ---------- Voices between friends (2026-11-16): the tab bar, a voice with its words, friends ---------- */
+/* The tab bar: stays at the bottom of the phone while the page scrolls under it. The mic in the middle is the one bright thing. */
+.tabbar { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 20; margin-top: auto; display: grid; grid-template-columns: 1fr 1fr 64px 1fr 1fr; align-items: center; padding: 6px; border: 1px solid var(--line-strong); border-radius: 24px; background: color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
+.app:has(> .tabbar) > section { padding-bottom: 22px; }
+.tabbar .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px; border-radius: 16px; color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 600; }
+.tabbar .tab.on { color: var(--emerald-light); }
+.tabbar .tab-mic { width: 56px; height: 56px; margin: -18px auto 0; border-radius: 50%; display: grid; place-items: center; background: var(--emerald-grad); color: var(--on-accent); box-shadow: 0 8px 22px -6px var(--emerald), inset 0 2px 0 rgba(255, 255, 255, 0.4); }
+/* Inbox / Sent */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel-subtle); }
+.seg button { min-height: 38px; border: 0; border-radius: 12px; background: none; color: var(--muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.seg button.on { background: var(--panel-hover); color: var(--text); }
+/* A voice: its words are always readable; while it plays, the spoken word is bright and the rest waits. */
+.voice-card { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--panel); }
+.voice-card.new { border-color: var(--emerald); }
+.voice-head { display: flex; align-items: center; gap: 10px; }
+.voice-head .grow { display: flex; flex-direction: column; }
+.voice-head b { font-size: 14.5px; overflow-wrap: anywhere; }
+.voice-head small { color: var(--muted); font-size: 12px; }
+.voice-words { margin: 0; font-size: 17px; line-height: 1.5; color: var(--text); overflow-wrap: anywhere; }
+.voice-words span { transition: color 0.12s ease; }
+.voice-words.playing span { color: var(--muted); }
+.voice-words.playing span.done { color: var(--text); }
+.voice-words.playing span.now { color: var(--emerald); font-weight: 600; }
+.voice-quote { margin: 0; padding-left: 10px; border-left: 2px solid var(--line-strong); color: var(--muted); font-size: 13px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.voice-flow .mic-big { width: 96px; height: 96px; }
+.voice-flow textarea.input { font-size: 16px; }
+.friend-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+.friend-row b { overflow-wrap: anywhere; }
+.avatar.friend-face { width: 84px; height: 84px; border-radius: 28px; font-size: 34px; margin: 0 auto; }

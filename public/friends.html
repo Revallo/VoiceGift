@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1C1A18">
+<title>Friends · Voice Gift</title>
+<meta name="description" content="Friends record short voice wishes. They open as one surprise: a cake, a bouquet or lanterns. No app to install.">
+<meta property="og:title" content="Voice Gift">
+<meta property="og:description" content="Friends record short voice wishes. Each voice lights a candle.">
+<meta property="og:image" content="/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Voice Gift">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<main class="app" id="app">
+  <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
+
+  <section data-screen="error" hidden>
+    <div class="loading"><h1>Hmm.</h1><p class="lead" id="errorText"></p><a class="btn ghost" href="/" style="max-width:240px">Go to Voice Gift</a></div>
+  </section>
+
+  <!-- /u/<code>: someone's friend link -->
+  <section data-screen="add" hidden>
+    <div class="stack center" style="gap:10px;margin-top:48px">
+      <span class="avatar friend-face" id="addFace"></span>
+      <h1 id="addTitle" style="margin:8px 0 0"></h1>
+      <p class="lead" id="addLead"></p>
+      <button type="button" class="btn" id="addBtn" style="margin-top:10px"></button>
+      <a class="btn ghost" href="/" id="addSkip">Not now</a>
+    </div>
+  </section>
+
+  <!-- /friends: my link, my friends -->
+  <section data-screen="friends" hidden>
+    <div class="home-title">
+      <p>Only friends hear your voices</p>
+      <h1>Friends</h1>
+    </div>
+    <div class="card stack">
+      <div><b>Your friend link</b>
+        <p class="small muted" style="margin:4px 0 0">Send it to someone you know. When they open it, you’re friends and can send each other voices.</p></div>
+      <div class="linkbox"><span id="myLink"></span><button type="button" id="copyLink"></button></div>
+      <a class="btn" id="waLink" target="_blank" rel="noopener">Send on WhatsApp</a>
+    </div>
+    <div class="sec-bar"><h2 id="friendsTitle">Your friends</h2></div>
+    <div class="stack" id="friendList" style="gap:8px"></div>
+  </section>
+</main>
+<script type="module" src="/assets/friends.js"></script>
+</body>
+</html>

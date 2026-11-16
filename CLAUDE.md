@@ -1,7 +1,11 @@
 # Voice Gift — guide for Claude Code
 
 ## What this is
-A web app where friends record short voice messages for someone. The organizer sends the recipient
+Since 2026-11-16 the app is a small **voice social app, friends only**: you send a friend (or all your friends) a
+15-second voice, **always shown with its words**, and they reply. The **gift** (below) is the special thing to send
+for an occasion. It is a web prototype that should feel like a phone app, made to ask Taiwan Mobile for a server + ASR API.
+
+The gift: friends record short voice messages for someone. The organizer sends the recipient
 their link when they want the surprise to start (e.g. at 00:00 on a birthday); it opens as a scene where every voice is one item: a cake with
 candles (birthday), a bouquet of flowers (graduation) or lanterns (wedding). Built for
 Taiwan Mobile's AI team: every message gives **Indonesian speech + the caption the speaker
@@ -27,7 +31,9 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/new`, "Open your gift" (paste the link), "Dashboard" (→ `/account`) |
+| `/` | `index.html` + `assets/voicebox.js` | home, logged in only (else `/login`): the voices friends sent you (Inbox / Sent), each a card with its words, play (words light up, mood) and Reply; "Send a voice"; the thank-you pop-up. `/?send=1` opens the send sheet |
+| `/friends`, `/u/:code` | `friends.html` + `assets/friends.js` | my friend link (Copy / WhatsApp) + my friends (Remove); `/u/<code>` = someone's link: "Add Sari as a friend" (logged out → log in → straight back) |
+| `/gifts` | `gifts.html` | the old home: the three gifts drawn live, "Make a gift" → `/new`, "Open your gift" (paste the link), "Dashboard" (→ `/account`) |
 | `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: "Continue with Google" → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
@@ -53,7 +59,9 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   `name` is the text on the cake / wrap / under the lanterns; `stickers` = `[[emoji, x, y]]` (sets in
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
-  phone's back gesture works. No bottom tab bar: the profile button sits top right.
+  phone's back gesture works.
+- A bottom tab bar (`assets/tabbar.js`: Home · Friends · mic · Gifts · Profile) is on the four main pages only; focused
+  pages (recording, opening a gift, decorating) don't have it. `manifest.webmanifest` lets a phone add the site to its home screen.
 - After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`: Sad, Angry, Dangdut, Toa,
   Horror, Helium, Alien, 8-bit; each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
   with Web Audio only, never baked into the WAV) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
@@ -61,6 +69,23 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   `mood` and `candle {body, flame, shape}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
+
+## Voices between friends (2026-11-16)
+- **A voice is never without its words.** Every card shows the whole caption, readable without pressing play; while it
+  plays, the words light up as spoken. The speaker must check the words before sending (the step can't be skipped,
+  an empty caption is refused), and the voice reaches a friend only when that caption is saved (`sendVoice` in the `PATCH`).
+- Friends are made **only by opening someone's friend link** (`/u/<code>`), always mutual (`lib/accounts.js`:
+  `inviteCodeOf`, `addFriends`, `listFriends`, `removeFriend`). No search, no phone numbers, no public feed.
+- A voice goes to one friend, to all friends (the list at that moment), or back to a voice's sender (`to=reply`).
+  `canHear()` in `lib/voices.js` is the only door to its audio and words: the sender and the friends it was sent to.
+- Same data as a gift message: clean WAV, `asrText` + `finalText` kept apart, consent box on every recording, mood is
+  playback only. Exported with `kind: "voice"`. The three steps every recording shares live in `lib/voices.js`:
+  `readWav` → `asrFields` → `applyCaption` (used by `api/message.js`, `api/thanks.js`, `api/voice.js`).
+- The send sheet is `openSend()` in `assets/voicebox.js` (pick who → record → check words, tap the words the ASR
+  wasn't sure about → mood → send); `voiceCard()` draws a voice.
+- On a gift the organizer can record too ("Record your own voice" on `/m/…`), and a friend's done screen has
+  "Record another (n left)" (`GET /api/gift` returns `mine` + `max`).
+- Vercel Hobby allows 12 functions and `api/` has 12 now: add to an existing file before adding a new one.
 
 ## Accounts
 - **"Continue with Google" only, for everyone** (decided 2026-11-12, replacing email + password): making a gift, recording and
@@ -97,7 +122,11 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 ## API (`api/*.js`)
 - `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
 - `GET /api/account` → {user} or {user: null}, + `googleClientId`, `devLogin` (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `google` {credential}, `dev-login` {email, name} (local only), `logout`, `claim`, `thanks-read`
-- `GET /api/gift?slug` → public gift + message count (never content)
+- `GET /api/gift?slug` → public gift + message count (never content) + `mine`, `max` (the logged-in account's voices in it)
+- `GET /api/friends` → {friends [{id, name}], code}; `?code=` → {name, mine, already}; `POST` {action: "add", code} | {action: "remove", id}
+- `GET /api/voice` → {inbox, sent} (each: id, from / to, text, words, mood, replyTo, heard; never tokens or `asrText`); `GET ?id` → the WAV (Range), only if `canHear`
+- `POST /api/voice?to=<friendId|all|reply>&consent=1[&replyTo]` body = WAV → draft {id, token, asrText, asrWords, asrTypos}; `POST` JSON {action: "heard", id}
+- `PATCH /api/voice` {id, token, text, mood?} → the corrected caption, **now it is sent**; `DELETE` {id, token} → "record again" (drafts only)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}
 - `PATCH /api/message` {slug,id,token,text,mood?,candle?} → final caption (+ the twist); `DELETE` same body → "record again"
 - `GET /api/reveal?slug&k=openKey&pin=1234` → messages **only for a logged-in account with the recipient's key + PIN** (server-side rule); the organizer's own account gets 403
@@ -111,7 +140,9 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 
 Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`;
 accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `users/<id>/thanks/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`;
-`limits/<name>/<hash>-<period>.json` (counters).
+`limits/<name>/<hash>-<period>.json` (counters);
+friends + voices: `invites/<code>.json`, `users/<id>/friends/<friendId>.json`, `voices/<id>/voice.json`, `voices/<id>/audio.wav`,
+`users/<id>/inbox/<ts>-<voiceId>.json`, `users/<id>/sent/<ts>-<voiceId>.json`.
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
@@ -126,6 +157,8 @@ company API (wins over Groq; adapt `fromProvider()` to its response shape). Loca
   The friend's page promises "Only you and <name> can hear this voice": keep that true. No email delivery.
   Friends know the slug (`/g/<slug>`), so the slug alone must never be enough. No unlock time: the
   organizer decides when to send the link. (Old gifts without `openKey` fall back to their `unlockAt`.)
+- A voice between friends opens only for its sender and the friends it was sent to (`canHear`, enforced in `api/voice.js`).
+  Being logged in alone never opens one; you can only send to a friend. Never show a voice without its words.
 - Consent checkbox on every recording; store `consentVersion`. Accounts are Google only. No phone numbers.
 - Never send `googleSub`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
 - Mobile first: test at 390×844, and desktop (the app is a phone-sized frame, 420×844 at most, that scrolls inside; no wide layout).

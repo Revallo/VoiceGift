@@ -4,6 +4,7 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
+- ✅ 🎯 **Birthday recipient as a personal letter** (2026-11-18): quiet warm opening, real sender initials, integrated personalized cake, large cream caption card, pause/resume/replay/next controls, and readable sender names. Hearing and reading the exact message is the focus; no rewards. Implemented locally; publication is separate.
 - ✅ **Voice mood**, festive set (2026-11-13): 😭 Sad (sad trombone, rain, flames shrink), 😡 Angry (growl + BRAKK!, red shake,
   steam), 💃 Dangdut (kendang + disco lights), 📢 Toa (ding-dong + echo), 👻 Horror (hum, flicker, green flames, ghost),
   🎈 Helium (slide whistle, balloons, item floats), 👽 Alien (theremin, UFO beam), 👾 8-bit (coin, pixels). Playback only; WAV stays clean.
@@ -50,3 +51,11 @@ Add new ideas here, one line each.
 - ⏳ 🎯 **Mission line**: "AI understands only 70% of Indonesian. Every fix teaches it our language, slang and accents."
 - ⏳ 🎯 **Recipient typo patrol**: the recipient can tap a wrong word too; the friend gets "Dimas fixed your caption 😂".
 - ⚠️ Guard the label: fix to what was *said*, not a nicer sentence. If the edit changes most words, suggest "Record again" instead.
+
+## Natural caption checking, no rewards (proposed 2026-11-18)
+- ⏳ 🎯 **Recipient preview before recording**: show a small example of the recipient tapping your item and reading your caption; clearly label example content, never expose other friends' voices.
+- ⏳ 🎯 **Edit the preview itself**: one caption surface using the recipient's presentation; tap any word or phrase to edit, with an accessible full-caption editor as a fallback, instead of showing duplicate text boxes.
+- ⏳ 🎯 **Listen, decide, correct**: tapping a suspect phrase offers its audio context, manual editing and "that's what I said"; suggestions never silently replace speech or normalize slang.
+- ⏳ 🎯 **Words first, decoration second**: keep moods and candle choices collapsed until the caption review is finished, without making effects a reward for editing.
+- ⏳ 🎯 **Measure verified accuracy**: compare sampled audio-caption accuracy and recording-to-send completion for the old and proposed flows; edit count alone is not success, and unchanged captions are not automatically verified.
+- ⏳ 🎯 **Separate simulation from real collection**: clearly identify mock transcripts and artificially inserted errors; exclude simulated recognition from real-ASR correction metrics and training exports by default.

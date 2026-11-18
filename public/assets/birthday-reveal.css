@@ -1,0 +1,275 @@
+/* A birthday letter: the personalized gift first, then the voices behind it.
+   Deliberately scoped: sender previews and the other occasions keep their own UI. */
+.birthday-only { display: none; }
+
+body.reveal-page[data-theme="birthday"] {
+  --bg: #191510;
+  --bg-outer: #100e0b;
+  --panel: #251f18;
+  --panel-hover: #30271d;
+  --text: #f5ecde;
+  --soft: #d1c3ae;
+  --muted: #ad9d86;
+  --emerald: #e9bd78;
+  --emerald-light: #f1ce99;
+  --emerald-dark: #d9aa61;
+  --emerald-grad: linear-gradient(180deg, #f1cd94, #e2b36e);
+  --on-accent: #352718;
+  --glow: rgba(224, 171, 89, .13);
+}
+
+.reveal-page[data-theme="birthday"] .app {
+  background: radial-gradient(100% 440px at 50% 190px, #39291b55, transparent), var(--bg);
+}
+.reveal-page[data-theme="birthday"] [data-screen="scene"] { gap: 22px; }
+.reveal-page[data-theme="birthday"] .birthday-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 2px 0;
+}
+.reveal-page[data-theme="birthday"] .birthday-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--soft);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-decoration: none;
+}
+.reveal-page[data-theme="birthday"] .birthday-brand svg { color: var(--emerald-light); }
+.reveal-page[data-theme="birthday"] .birthday-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.reveal-page[data-theme="birthday"] [data-screen="scene"] .web-grid { gap: 20px; }
+.reveal-page[data-theme="birthday"] [data-screen="scene"] .web-col { gap: 14px; }
+.reveal-page[data-theme="birthday"] [data-screen="scene"] .backbtn,
+.reveal-page[data-theme="birthday"] [data-screen="scene"] .hero-top { display: none; }
+.reveal-page[data-theme="birthday"] [data-screen="scene"] .hero-card {
+  overflow: visible;
+  padding: 8px 6px 0;
+  text-align: center;
+}
+.reveal-page[data-theme="birthday"] [data-screen="scene"] .hero-balance { align-items: center; gap: 12px; }
+.reveal-page[data-theme="birthday"][data-reveal-phase="ready"] .birthday-eyebrow,
+.reveal-page[data-theme="birthday"][data-reveal-phase="loading-audio"] .birthday-eyebrow {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--emerald-light);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.reveal-page[data-theme="birthday"] #title {
+  max-width: 100%;
+  margin: 0;
+  font-size: clamp(32px, 9vw, 39px) !important;
+  font-weight: 400;
+  line-height: 1.13;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  white-space: pre-line;
+}
+.reveal-page[data-theme="birthday"] .birthday-name {
+  display: block;
+  color: var(--emerald-light);
+  font-weight: 400;
+  font-style: italic;
+}
+.reveal-page[data-theme="birthday"] #sub {
+  max-width: 280px;
+  margin: 0 !important;
+  color: var(--soft) !important;
+  font-size: 13px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+.reveal-page[data-theme="birthday"] #birthdayDedication {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: .045em;
+}
+.reveal-page[data-theme="birthday"] .stage-showcase { margin: -3px 0 -10px; }
+.reveal-page[data-theme="birthday"] #cake .stage-wrap {
+  border: 0;
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 50% 58%, #9b602116, transparent 70%);
+  box-shadow: none;
+}
+.reveal-page[data-theme="birthday"] #panel:empty { display: none; }
+.reveal-page[data-theme="birthday"] #bottom { gap: 16px; }
+
+/* The anticipation: actual people, rather than a decorative counter. */
+.reveal-page[data-theme="birthday"] .birthday-ready-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.reveal-page[data-theme="birthday"] .birthday-facepile { display: flex; padding-left: 8px; }
+.reveal-page[data-theme="birthday"] .birthday-facepile .avatar {
+  width: 37px;
+  height: 37px;
+  margin-left: -8px;
+  border: 3px solid var(--bg);
+  border-radius: 50%;
+  font-size: 11px;
+}
+.reveal-page[data-theme="birthday"] .birthday-ready-note p {
+  max-width: 265px;
+  margin: 0;
+  color: var(--soft);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.reveal-page[data-theme="birthday"] .birthday-idle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 88px;
+  background: #ead0a706;
+  border-color: #e7c89922;
+  border-radius: 18px;
+}
+.reveal-page[data-theme="birthday"] .birthday-idle b { display: block; margin-bottom: 4px; font-size: 14px; }
+.reveal-page[data-theme="birthday"] .birthday-idle > span { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; background: #e9bd7812; color: var(--emerald-light); }
+.reveal-page[data-theme="birthday"] .birthday-idle > div { min-width: 0; }
+.reveal-page[data-theme="birthday"] .birthday-idle p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.reveal-page[data-theme="birthday"] .birthday-open-hint { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; }
+.reveal-page[data-theme="birthday"] :is(a, button, input, textarea, select):focus-visible { outline: 2px solid var(--emerald-light); outline-offset: 3px; }
+.reveal-page[data-theme="birthday"].birthday-paused #cake .stage-wrap *,
+.reveal-page[data-theme="birthday"].birthday-paused #cake .stage-wrap *::before,
+.reveal-page[data-theme="birthday"].birthday-paused #cake .stage-wrap *::after { animation-play-state: paused !important; }
+
+/* One voice, one small letter. The untouched caption is the focal point. */
+.reveal-page[data-theme="birthday"] .birthday-player {
+  --text: #3a2c20;
+  --muted: #75634e;
+  --soft: #705e49;
+  --emerald-light: #795327;
+  position: relative;
+  padding: 21px 20px 17px;
+  border: 1px solid #f8eddc;
+  border-radius: 20px;
+  background: #f2e8d8;
+  color: var(--text);
+  box-shadow: 0 12px 35px -20px #0008;
+}
+.reveal-page[data-theme="birthday"] .birthday-letter-label {
+  margin: 0 0 16px;
+  color: #75634e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+.reveal-page[data-theme="birthday"] .birthday-player .who { gap: 10px; }
+.reveal-page[data-theme="birthday"] .birthday-player .who > div { min-width: 0; }
+.reveal-page[data-theme="birthday"] .birthday-player .avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+.reveal-page[data-theme="birthday"] .birthday-player .name { font-size: 14px; overflow-wrap: anywhere; }
+.reveal-page[data-theme="birthday"] .birthday-player .meta { margin-top: 2px; font-size: 11px; }
+.reveal-page[data-theme="birthday"] .birthday-player .mood-tag { color: #715b40; }
+.reveal-page[data-theme="birthday"] .birthday-player .caption {
+  margin: 21px 0 22px;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -.015em;
+  overflow-wrap: anywhere;
+}
+.reveal-page[data-theme="birthday"] .birthday-player .caption span { color: #75634e; }
+.reveal-page[data-theme="birthday"] .birthday-player .caption span.done { color: #463523; }
+.reveal-page[data-theme="birthday"] .birthday-player .caption span.now {
+  background: linear-gradient(transparent 64%, #dfbd815c 64%);
+  color: #51320e;
+  font-weight: 500;
+}
+.reveal-page[data-theme="birthday"] .birthday-player .bars i { background: #9d7b47 !important; }
+.reveal-page[data-theme="birthday"] .birthday-player:not([data-player-state="playing"]) .bars i { animation-play-state: paused; }
+.reveal-page[data-theme="birthday"] .birthday-player[data-player-state="ended"] .bars { visibility: hidden; }
+.reveal-page[data-theme="birthday"] .birthday-transport { display: flex; align-items: center; gap: 12px; }
+.reveal-page[data-theme="birthday"] .birthday-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 96px;
+  height: 44px;
+  gap: 7px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 24px;
+  background: #463421;
+  color: #fff5e6;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.reveal-page[data-theme="birthday"] .birthday-play > span { display: inline-flex; align-items: center; }
+.reveal-page[data-theme="birthday"] .birthday-play:hover { background: #61472b; }
+.reveal-page[data-theme="birthday"] .birthday-play:disabled { opacity: .55; cursor: wait; }
+.reveal-page[data-theme="birthday"] .birthday-track { flex: 1; min-width: 0; }
+.reveal-page[data-theme="birthday"] .birthday-progress { height: 3px; overflow: hidden; border-radius: 2px; background: #d8cbb8; }
+.reveal-page[data-theme="birthday"] .birthday-progress > i { display: block; height: 100%; width: 0; border-radius: inherit; background: #947043; }
+.reveal-page[data-theme="birthday"] .birthday-times { display: flex; justify-content: space-between; margin-top: 7px; color: #75634e; font-size: 11px; font-variant-numeric: tabular-nums; }
+.reveal-page[data-theme="birthday"] .birthday-next { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; flex-shrink: 0; border: 0; background: transparent; color: #715431; cursor: pointer; }
+.reveal-page[data-theme="birthday"] .birthday-player :is(button, a):focus-visible { outline-color: #705025; }
+
+/* People remain easy to find, with the entire name and a generous tap target. */
+.reveal-page[data-theme="birthday"] .birthday-library { display: flex; flex-direction: column; gap: 14px; }
+.reveal-page[data-theme="birthday"] .birthday-library-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.reveal-page[data-theme="birthday"] .birthday-library-head b { font-size: 13px; font-weight: 600; }
+.reveal-page[data-theme="birthday"] .birthday-library-head > span { color: var(--muted); font-size: 11px; }
+.reveal-page[data-theme="birthday"] .birthday-library .friends,
+.reveal-page[data-theme="birthday"] .birthday-library .friends.few { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: 286px; padding: 3px; margin: -3px; }
+.reveal-page[data-theme="birthday"] .birthday-library .friend { max-width: none; min-height: 86px; padding: 10px 5px 9px; gap: 8px; border-radius: 15px; border-color: #f1ce9914; background: #f1ce9905; }
+.reveal-page[data-theme="birthday"] .birthday-library .friend:hover { background: #f1ce990e; }
+.reveal-page[data-theme="birthday"] .birthday-library .friend.on { background: #e9bd781a; border-color: #e9bd7880; }
+.reveal-page[data-theme="birthday"] .birthday-library .friend .avatar { width: 33px; height: 33px; border-radius: 50%; font-size: 12px; }
+.reveal-page[data-theme="birthday"] .birthday-library .friend > span:not(.avatar):not(.tick) { color: var(--soft); font-size: 11px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
+.reveal-page[data-theme="birthday"] .birthday-library .friend.on > span:not(.avatar):not(.tick) { color: var(--text); }
+.reveal-page[data-theme="birthday"] .birthday-library .tick { color: #392b1b; border-radius: 50%; }
+.reveal-page[data-theme="birthday"] .birthday-heard { display: flex; align-items: center; gap: 12px; }
+.reveal-page[data-theme="birthday"] #heard { color: var(--muted); font-size: 11px; line-height: 1.6; }
+.reveal-page[data-theme="birthday"] .birthday-heard-track { flex: 1; height: 2px; border-radius: 2px; background: #f1ce9918; overflow: hidden; }
+.reveal-page[data-theme="birthday"] .birthday-heard-track > i { display: block; height: 100%; background: var(--emerald); transition: width .3s ease; }
+.reveal-page[data-theme="birthday"] .listen-actions { flex-wrap: wrap; gap: 10px; }
+.reveal-page[data-theme="birthday"] .listen-actions > .btn { flex: 1 1 140px; min-width: 0; font-size: 12px; }
+.reveal-page[data-theme="birthday"] .listen-actions > .btn.ghost { flex: 1 1 112px; }
+.reveal-page[data-theme="birthday"] .birthday-keepsake { border: 1px solid #e7c89935 !important; border-radius: 18px; background: #ead0a708; }
+.reveal-page[data-theme="birthday"] [data-screen="verify"] .hero-card { padding: 22px 4px; }
+.reveal-page[data-theme="birthday"] [data-screen="verify"] .card { border-radius: 22px; background: #f1ce9905; }
+.reveal-page[data-theme="birthday"] .pin-digit { border-radius: 14px; background: #100e0b50; }
+.reveal-page[data-theme="birthday"][data-reveal-phase="blow"] #title { font-style: italic; }
+.reveal-page[data-theme="birthday"][data-reveal-phase="done"] .stage-showcase { opacity: .88; }
+
+@media (max-width: 359px) {
+  .reveal-page[data-theme="birthday"] [data-screen="scene"] { gap: 16px; }
+  .reveal-page[data-theme="birthday"] #title { font-size: 32px !important; }
+  .reveal-page[data-theme="birthday"] .birthday-player { padding: 18px 16px 15px; }
+  .reveal-page[data-theme="birthday"] .birthday-player .caption { font-size: 20px; }
+  .reveal-page[data-theme="birthday"] .birthday-library .friends { gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-page[data-theme="birthday"] .birthday-player .bars i { animation: none; }
+  .reveal-page[data-theme="birthday"] .birthday-heard-track > i { transition: none; }
+  .reveal-page[data-theme="birthday"] #cake .stage-wrap *,
+  .reveal-page[data-theme="birthday"] #cake .stage-wrap *::before,
+  .reveal-page[data-theme="birthday"] #cake .stage-wrap *::after { animation: none !important; transition: none !important; }
+  .reveal-page[data-theme="birthday"] .confetti i { display: none; animation: none !important; }
+}

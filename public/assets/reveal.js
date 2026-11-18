@@ -28,6 +28,12 @@ let current = null;
 let queue = [];
 let chips = [];
 let timers = [];
+let nextVoiceTimer = 0;
+
+function setPhase(next) {
+  phase = next;
+  document.body.dataset.revealPhase = next;
+}
 
 const later = (fn, ms) => { const tm = setTimeout(fn, ms); timers.push(tm); return tm; };
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
@@ -35,7 +41,11 @@ const fmtDur = (s) => { s = Math.round(s); return s >= 60 ? `${Math.floor(s / 60
 
 function header(eyebrow, title, sub, italic = false) {
   el.eyebrow.textContent = eyebrow;
+  $('#birthdayEyebrow').textContent = eyebrow;
   el.title.textContent = title;
+  if (t?.reveal && title === t.greeting(first)) {
+    el.title.replaceChildren(document.createTextNode(t.reveal.salutation), h('em', { class: 'birthday-name' }, `${first}.`));
+  }
   el.title.style.fontStyle = italic ? 'italic' : '';
   el.sub.textContent = sub || '';
   el.sub.hidden = !sub;
@@ -65,6 +75,7 @@ async function unlockAndShow(pin = '') {
   showScreen('scene');
   messages = data.messages;
   friends = data.friends || [];
+  if (t.reveal) $('#birthdayDedication').textContent = t.reveal.dedication(messages.length);
   if (!messages.length) return showEmpty();
   showReady();
 }
@@ -162,7 +173,7 @@ $('#verifyForm')?.addEventListener('submit', async (ev) => {
 });
 
 function showEmpty() {
-  phase = 'empty';
+  setPhase('empty');
   scene.setCandles(0, { spots: 12 });
   header(t.eyebrow(first), 'No messages yet', 'Nobody has recorded yet. Come back a bit later.');
   setPanel(null);
@@ -171,12 +182,20 @@ function showEmpty() {
 
 // ---------- it's time ----------
 function showReady() {
-  phase = 'ready';
+  setPhase('ready');
   scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), styles: messages.map((m) => m.candle), onTap: (i) => phase === 'cake' && play(i, false) });
   messages.forEach((m, i) => { if (scene.candles[i]) scene.candles[i].dataset.mood = moodOf(m.mood); });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
-  header(t.eyebrow(first), 'It’s time!', `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
+  header(t.eyebrow(first), t.reveal?.readyTitle || 'It’s time!', t.reveal?.readySub || `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
+  if (t.reveal) {
+    const pile = h('div', { class: 'birthday-facepile', 'aria-hidden': 'true' }, messages.slice(0, 5).map((m, i) =>
+      h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender))));
+    if (messages.length > 5) pile.append(h('span', { class: 'avatar birthday-facepile-more' }, `+${messages.length - 5}`));
+    setPanel(h('div', { class: 'birthday-ready-note' }, pile, h('p', {}, t.reveal.readyNote(messages.length))));
+    setBottom(btn('Open your gift', { icon: icon.gift(18), onclick: openGift }), h('p', { class: 'birthday-open-hint' }, t.reveal.soundHint));
+    return;
+  }
   const pile = h('div', { class: 'facepile' });
   for (let i = 0; i < Math.min(messages.length, 12); i++) pile.append(h('i', { 'aria-hidden': 'true' }, '✦'));
   setPanel(h('div', { class: 'row' }, pile));
@@ -184,9 +203,12 @@ function showReady() {
 }
 
 async function openGift() {
+  if (phase !== 'ready') return;
   const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return toast('Your browser cannot play this gift. Try Chrome or Safari.');
   ac = new AC();
   ac.resume().catch(() => {});
+  setPhase('loading-audio');
   const progress = h('p', { class: 'small muted center', style: { margin: '0' } }, 'Collecting voices…');
   setBottom(h('div', { class: 'loading', style: { flex: '0' } }, h('div', { class: 'spinner' }), progress));
   let done = 0;
@@ -220,7 +242,7 @@ function loadBuffer(i) {
 
 // ---------- the scene lights up, one voice at a time ----------
 function startLighting() {
-  phase = 'lighting';
+  setPhase('lighting');
   stopMusic = playTune(ac, gift.cake?.music);
   scene.setDim(0);
   const n = messages.length;
@@ -253,21 +275,21 @@ function startLighting() {
 // ---------- listen ----------
 function enterScene() {
   stopMusic();
-  phase = 'cake';
+  setPhase('cake');
   scene.lightAll();
   scene.setBend(0);
   updateHeader();
   setPanel(idlePanel());
   const grid = h('div', { class: 'friends' + (messages.length <= 4 ? ' few' : '') });
   chips = messages.map((m, i) => {
-    const chip = h('button', { type: 'button', class: 'friend', 'aria-label': `Play ${m.sender}'s message`, onclick: () => play(i, false) },
+    const chip = h('button', { type: 'button', class: 'friend', 'aria-pressed': 'false', 'aria-label': `Play ${m.sender}'s message`, onclick: () => play(i, false) },
       h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
       h('span', {}, m.sender));
     if (played.has(i)) chip.append(h('span', { class: 'tick', html: icon.check() }));
     grid.append(chip);
     return chip;
   });
-  const heard = h('p', { class: 'small muted', id: 'heard', style: { margin: '0' } });
+  const heard = h('p', { class: 'small muted', id: 'heard', role: 'status', style: { margin: '0' } });
   const playAll = btn('Play all', { ghost: true, icon: icon.play(14), onclick: () => {
     const q = messages.map((m, i) => i).filter((i) => !played.has(i));
     queue = q.length ? q : messages.map((m, i) => i);
@@ -276,18 +298,26 @@ function enterScene() {
   playAll.id = 'playAllBtn';
   const finaleBtn = btn(t.finaleBtn, { onclick: startFinale });
   finaleBtn.id = 'blowBtn';
-  setBottom(grid, heard, h('div', { class: 'row listen-actions' }, playAll, finaleBtn));
+  if (t.reveal) {
+    const library = h('div', { class: 'birthday-library' },
+      h('div', { class: 'birthday-library-head' }, h('b', {}, t.reveal.libraryTitle), h('span', {}, messages.length)), grid);
+    const heardTrack = h('div', { class: 'birthday-heard-track', 'aria-hidden': 'true' }, h('i'));
+    // Keep the primary actions close to the player even when many friends have recorded.
+    setBottom(h('div', { class: 'row listen-actions' }, playAll, finaleBtn), h('div', { class: 'birthday-heard' }, heard, heardTrack), library);
+  } else setBottom(grid, heard, h('div', { class: 'row listen-actions' }, playAll, finaleBtn));
   updateHeard();
 }
 
 function updateHeader() {
   const all = played.size >= messages.length;
-  header(t.eyebrow(first), t.greeting(first), current?.chain ? 'Playing every voice, one by one.' : all ? t.allHeard : t.tapHint);
+  header(t.reveal?.eyebrow || t.eyebrow(first), t.greeting(first), current?.chain ? 'Playing every voice, one by one.' : all ? t.allHeard : t.tapHint);
 }
 function updateHeard() {
   const heard = $('#heard');
   const more = messages.length > 18 ? ' · scroll for everyone' : '';
   if (heard) heard.textContent = (played.size >= messages.length ? `You heard all ${messages.length} voices` : `${played.size} of ${messages.length} voices heard`) + more;
+  const track = $('.birthday-heard-track i');
+  if (track) track.style.width = `${100 * played.size / Math.max(1, messages.length)}%`;
   const all = played.size >= messages.length;
   $('#blowBtn')?.classList.toggle('pulse', all);
   $('#blowBtn')?.classList.toggle('ghost', !all);
@@ -297,6 +327,9 @@ function updateHeard() {
 }
 
 function idlePanel() {
+  if (t.reveal) return h('div', { class: 'panel birthday-idle' },
+    h('span', { class: 'birthday-idle-icon', html: icon.wave(24), 'aria-hidden': 'true' }),
+    h('div', {}, h('b', {}, t.reveal.idleTitle), h('p', {}, t.reveal.idleSub)));
   const p = h('div', { class: 'panel row' });
   const circle = h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.wave(18) });
   p.append(circle, h('div', {}, h('b', {}, t.idleTitle), h('div', { class: 'small muted' }, 'Their words appear as they speak.')));
@@ -304,32 +337,81 @@ function idlePanel() {
 }
 
 function stopCurrent() {
+  clearTimeout(nextVoiceTimer);
   if (!current) return;
   cancelAnimationFrame(current.raf);
   if (current.src) current.src.stop();
   current.endShow?.();
   scene.setActive(current.i, false);
   chips[current.i]?.classList.remove('on');
+  chips[current.i]?.setAttribute('aria-pressed', 'false');
   current = null;
+  document.body.classList.remove('birthday-paused');
+  // Birthday pause suspends this page's audio clock so the effect and caption stay in sync.
+  if (ac?.state === 'suspended') ac.resume().catch(() => {});
 }
 
 async function play(i, chain) {
   if (phase !== 'cake' || i === undefined) return;
   stopCurrent();
+  if (!chain) queue = [];
   if (ac.state === 'suspended') ac.resume().catch(() => {});
   const m = messages[i];
   const me = { i, chain, raf: 0, src: null };
   current = me;
-  chips.forEach((c, k) => c.classList.toggle('on', k === i));
+  chips.forEach((c, k) => { c.classList.toggle('on', k === i); c.setAttribute('aria-pressed', String(k === i)); });
   scene.setActive(i, true);
 
   const words = m.words.map((w) => h('span', {}, w.w + ' '));
   const bars = h('div', { class: 'bars' }, ...[0, 1, 2, 3, 4].map(() => h('i', { style: { background: colorFor(i) } })));
-  setPanel(h('div', { class: 'panel' },
+  const card = h('div', { class: 'panel' + (t.reveal ? ' birthday-player' : '') },
     h('div', { class: 'who' }, h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
       h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec),
         moodOf(m.mood) !== 'normal' ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, `${MOODS[moodOf(m.mood)].emoji} ${MOODS[moodOf(m.mood)].label}`) : '')), bars),
-    h('div', { class: 'caption' }, words)));
+    h('div', { class: 'caption' }, words));
+  let control, progressFill, elapsed, syncControl;
+  if (t.reveal) {
+    card.prepend(h('div', { class: 'birthday-letter-label' }, t.reveal.letterLabel));
+    const clock = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, '0')}`;
+    progressFill = h('i');
+    elapsed = h('span', {}, '0:00');
+    control = h('button', { type: 'button', class: 'birthday-play', disabled: true });
+    syncControl = (state) => {
+      card.dataset.playerState = state;
+      const label = { loading: 'Loading', playing: 'Pause', paused: 'Resume', ended: 'Play again', error: 'Try again' }[state];
+      control.replaceChildren(h('span', { html: state === 'playing' ? icon.pause(18) : state === 'ended' ? icon.redo(18) : icon.play(18), 'aria-hidden': 'true' }), h('span', {}, label));
+      control.setAttribute('aria-label', `${label} ${m.sender}'s message`);
+      control.disabled = state === 'loading';
+    };
+    control.onclick = async () => {
+      if (current !== me) return play(i, false);
+      const pause = !me.paused;
+      control.disabled = true;
+      try {
+        await (pause ? ac.suspend() : ac.resume());
+        if (current !== me) return;
+        me.paused = pause;
+        if (pause) me.endShow?.pause?.();
+        else me.endShow?.resume?.();
+        document.body.classList.toggle('birthday-paused', pause);
+        syncControl(pause ? 'paused' : 'playing');
+      } catch {
+        if (current === me) { control.disabled = false; toast('Could not change playback. Try again.'); }
+      }
+    };
+    const transport = h('div', { class: 'birthday-transport' }, control,
+      h('div', { class: 'birthday-track' },
+        h('div', { class: 'birthday-progress', 'aria-hidden': 'true' }, progressFill),
+        h('div', { class: 'birthday-times' }, elapsed, h('span', {}, clock(m.durationSec)))));
+    if (messages.length > 1) transport.append(h('button', { type: 'button', class: 'birthday-next', 'aria-label': 'Play next voice', onclick: () => play((i + 1) % messages.length, false) }, h('span', { html: icon.chevronRight(18), 'aria-hidden': 'true' })));
+    card.append(transport);
+    card.setAttribute('role', 'region');
+    card.setAttribute('aria-label', `Birthday wish from ${m.sender}`);
+    syncControl('loading');
+    me.clock = clock;
+  }
+  setPanel(card);
+  if (t.reveal) card.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   updateHeader();
 
   let buf = buffers[i];
@@ -342,13 +424,19 @@ async function play(i, chain) {
     cancelAnimationFrame(me.raf);
     words.forEach((w) => { w.className = 'done'; });
     bars.remove();
+    me.endShow?.();
+    document.body.classList.remove('birthday-paused');
+    syncControl?.('ended');
+    if (progressFill) { progressFill.style.width = '100%'; elapsed.textContent = me.clock(m.durationSec); }
     played.add(i);
     if (!chips[i].querySelector('.tick')) chips[i].append(h('span', { class: 'tick', html: icon.check() }));
+    chips[i].setAttribute('aria-label', `Play ${m.sender}'s message, heard`);
+    chips[i].setAttribute('aria-pressed', 'false');
     scene.setActive(i, false);
     scene.candles[i]?.classList.add('active');
     current = null;
     updateHeard();
-    if (chain && queue.length) later(() => play(queue.shift(), true), 600);
+    if (chain && queue.length) nextVoiceTimer = setTimeout(() => { if (phase === 'cake' && !current) play(queue.shift(), true); }, 600);
     else updateHeader();
   };
   let rate = 1, lead = 0;
@@ -361,12 +449,29 @@ async function play(i, chain) {
     lead = me.src.lead;
     dur = me.src.duration;
     me.endShow = moodShow(scene.wrap, m.mood, me.src);
+    syncControl?.('playing');
   } else {
     toast('This voice could not be loaded. Showing the words only.');
+    if (t.reveal) {
+      words.forEach((w) => { w.className = 'done'; });
+      bars.remove();
+      card.querySelector('.meta').textContent = 'Audio unavailable. You can read the wish or try again.';
+      scene.setActive(i, false);
+      chips[i].setAttribute('aria-pressed', 'false');
+      syncControl('error');
+      current = null;
+      queue = [];
+      updateHeader();
+      return; // Reading the text alone does not count as hearing this voice.
+    }
     later(finish, dur * 1000);
   }
   const paint = () => {
     const el = (ac.currentTime - startAt - lead) * rate; // seconds into the recording (after the mood's intro)
+    if (progressFill) {
+      progressFill.style.width = `${100 * Math.max(0, Math.min(1, el / Math.max(0.1, buf.duration)))}%`;
+      elapsed.textContent = me.clock(Math.min(buf.duration, el));
+    }
     let k = -1;
     m.words.forEach((w, idx) => { if (w.start <= el) k = idx; });
     words.forEach((w, idx) => { w.className = idx < k ? 'done' : idx === k ? 'now' : ''; });
@@ -380,7 +485,7 @@ function startFinale() {
   stopCurrent();
   queue = [];
   clearTimers();
-  phase = 'blow';
+  setPhase('blow');
   setPanel(null);
   header('Last step', t.finaleTitle, t.finaleSub(messages.length), true);
   if (t.key === 'birthday') startBlow();
@@ -404,11 +509,14 @@ function startBlow() {
   let holding = false, progress = 0, last = performance.now(), out = 0, analyser = null, buf = null;
   const breath = breathSound();
   let breathing = false, lastPuff = 0;
-  const down = (e) => { e.preventDefault(); ac.resume().catch(() => {}); holding = true; ring.classList.add('down'); ring.setPointerCapture?.(e.pointerId); };
+  const down = (e) => { e.preventDefault(); ac.resume().catch(() => {}); holding = true; ring.classList.add('down'); if (e.pointerId !== undefined) ring.setPointerCapture?.(e.pointerId); };
   const up = () => { holding = false; ring.classList.remove('down'); };
   ring.addEventListener('pointerdown', down);
   ring.addEventListener('pointerup', up);
   ring.addEventListener('pointercancel', up);
+  ring.addEventListener('keydown', (e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) down(e); });
+  ring.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); up(); } });
+  ring.addEventListener('blur', up);
   ring.addEventListener('contextmenu', (e) => e.preventDefault());
 
   if (navigator.mediaDevices?.getUserMedia) {
@@ -461,7 +569,7 @@ function startTap() {
   setBottom(ring, h('p', { class: 'small muted center', style: { margin: '0' } }, t.finaleHint));
   ring.addEventListener('click', () => {
     if (phase !== 'blow') return;
-    phase = 'finale';
+    setPhase('finale');
     ring.classList.add('down');
     ring.disabled = true;
     if (t.key === 'graduation') {
@@ -531,7 +639,7 @@ function noise(dur, freq, vol, endFreq) {
 function finishFinale() {
   if (mic) { mic.getTracks().forEach((tr) => tr.stop()); mic = null; }
   scene.setBend(0);
-  phase = 'done';
+  setPhase('done');
   [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.07));
   [1046.5, 1318.51, 1567.98, 2093].forEach((f, k) => tone(ac, f, 0.3 + k * 0.09, 0.9, 0.04));
   playTune(ac, gift.cake?.music, { loop: false });
@@ -546,9 +654,11 @@ function showKeepsake() {
   const n = messages.length;
   const total = messages.reduce((s, m) => s + (m.durationSec || 0), 0);
   header(t.eyebrow(first), t.greeting(first), t.keepSub(n));
-  const card = h('div', { class: 'panel row', style: { borderStyle: 'dashed', borderColor: 'rgba(246,185,59,0.5)' } },
+  const card = h('div', { class: 'panel row' + (t.reveal ? ' birthday-keepsake' : ''), style: t.reveal ? {} : { borderStyle: 'dashed', borderColor: 'rgba(246,185,59,0.5)' } },
     h('span', { class: 'avatar', style: { background: 'var(--gold-soft)', color: 'var(--gold)' }, html: icon.gift(18) }),
-    h('div', {}, h('b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`), h('div', { class: 'small muted' }, 'Kept here. Open this link again any time.')));
+    h('div', {}, t.reveal ? h('b', { class: 'birthday-keep-title' }, t.reveal.keepTitle) : null,
+      h(t.reveal ? 'p' : 'b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`),
+      h('div', { class: 'small muted' }, t.reveal?.keepSub || 'Kept here. Open this link again any time.')));
   setPanel(card);
   const nameChip = (m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender);
   const names = h('div', { class: 'names' }, messages.slice(0, NAMES_SHOWN).map(nameChip));

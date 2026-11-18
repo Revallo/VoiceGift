@@ -235,7 +235,8 @@ async function runGift(occasion, c) {
   const noKey = await fetch(`${BASE}/api/manage?slug=${slug}`);
   const badKey = await fetch(`${BASE}/api/manage?slug=${slug}&key=guess`);
   if (noKey.status !== 403 || badKey.status !== 403) errors.push(`dashboard without key: ${noKey.status}/${badKey.status}`);
-  if (await m.$('#addDemo, #openReveal')) errors.push('the dashboard still has demo voices or a preview');
+  // Optional demo voices were restored on 2026-11-13; recipient previews remain forbidden.
+  if (await m.$('#openReveal')) errors.push('the dashboard still exposes a recipient preview');
   const recipientLink = 'http://' + (await m.textContent('#recipientBox .linkbox span'));
   const pin = await m.textContent('#pinVal');
   pins[recipientLink] = pin;

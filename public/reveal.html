@@ -14,8 +14,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/birthday-reveal.css">
 </head>
-<body>
+<body class="reveal-page">
 <main class="app" id="app">
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
@@ -72,6 +73,10 @@
   </section>
 
   <section data-screen="scene" hidden>
+    <div class="birthday-topline birthday-only">
+      <a class="birthday-brand" href="/" aria-label="Voice Gift home"><span data-icon="gift" aria-hidden="true"></span>Voice Gift</a>
+      <span class="birthday-sound"><span data-icon="wave" aria-hidden="true"></span>Sound on</span>
+    </div>
     <div class="web-grid">
       <div class="web-col">
         <a class="backbtn" href="/" aria-label="Back to home" data-icon="back"></a>
@@ -87,10 +92,13 @@
             <span class="badge-pill" id="revealAccessBadge" style="background:rgba(27,16,36,0.28);color:#fff;border:0">Keepsake</span>
           </div>
           <div class="hero-balance">
-            <div class="hero-balance-val" id="title" style="font-size:clamp(24px,5.5vw,32px)"></div>
+            <p class="birthday-eyebrow birthday-only" id="birthdayEyebrow"></p>
+            <h1 class="hero-balance-val" id="title" style="font-size:clamp(24px,5.5vw,32px)"></h1>
             <p class="small" id="sub" style="margin:2px 0 0;color:rgba(255,255,255,0.78)"></p>
           </div>
         </div>
+
+        <p class="birthday-only" id="birthdayDedication"></p>
 
         <div class="stage-showcase">
           <div id="cake" style="width:100%"></div>

@@ -338,7 +338,7 @@ export function moodShow(wrap, mood, { lead = 0, duration = 0 } = {}) {
   wrap.append(fx);
   wrap.classList.add(`mood-${key}`);
   const total = (lead + duration + (MOODS[key].tail || 0)) * 1000 + 300;
-  let ended = false;
+  let ended = false, paused = false, remaining = total, startedAt = performance.now();
   const end = () => {
     if (ended) return;
     ended = true;
@@ -347,6 +347,19 @@ export function moodShow(wrap, mood, { lead = 0, duration = 0 } = {}) {
     fx.classList.add('out');
     setTimeout(() => fx.remove(), 300);
   };
-  const timer = setTimeout(end, total);
+  let timer = setTimeout(end, remaining);
+  // The recipient can pause the audio clock; keep the visual effect for the remaining playback too.
+  end.pause = () => {
+    if (ended || paused) return;
+    paused = true;
+    remaining = Math.max(0, remaining - (performance.now() - startedAt));
+    clearTimeout(timer);
+  };
+  end.resume = () => {
+    if (ended || !paused) return;
+    paused = false;
+    startedAt = performance.now();
+    timer = setTimeout(end, remaining);
+  };
   return end;
 }

@@ -2,7 +2,7 @@
 // POST /api/manage { slug, key, action }    → action "update-delivery": change the PIN
 //                                            action "delete" + id: removes that message and its audio from storage
 //                                            action "delete-gift": removes the whole gift from storage
-//                                            action "add-demo": 20 demo items from 10 bundled TTS recordings
+//                                            action "add-demo": DEMO_COUNT demo items from the bundled TTS recordings
 //                                            action "remove-demo": takes the demo voices out again
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, publicGift, loadMessages, findMessage, deleteMessage, deleteGift } from '../lib/gifts.js';
@@ -53,6 +53,7 @@ export default route({
         verifyPin: gift.verifyPin || '1234'
       },
       openKey: gift.openKey,
+      demoCount: DEMO_COUNT,
       messages
     });
   },

@@ -1,4 +1,4 @@
-// Local regression: expanded gift/words/personalization layout, individual styles, 20 demos, music order and bouquet bounds.
+// Local regression: expanded gift/words/personalization layout, individual styles, 5 demos, music order and bouquet bounds.
 // DEV_LOGIN=1 server without provider keys; BASE=http://localhost:3022 node tests/gift-polish.mjs
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
@@ -48,7 +48,7 @@ try {
     const gift = await post('/api/gifts', { occasion, recipient: occasion === 'wedding' ? 'Rina & Bayu' : 'Nadia', organizer: 'Sari', verifyPin: '2411', cake: { name: 'Nadia', shape: occasion === 'graduation' ? 'box' : 'classic', music: 'dreamy', pattern: occasion === 'birthday' ? 'sprinkles' : 'round' } }, organizer);
     fixtures.push(gift);
     const demo = await post('/api/manage', { slug: gift.slug, key: gift.manageKey, action: 'add-demo' });
-    assert.equal(demo.added, 20);
+    assert.equal(demo.added, 5);
     const friendCookie = await account('Ayu', `friend-${occasion}`);
     const friend = await context(friendCookie), p = await friend.newPage();
     p.on('pageerror', e => errors.push(e.message));
@@ -82,7 +82,7 @@ try {
     await p.click('#sendBtn'); await p.locator('[data-screen="done"]:visible').waitFor(); await friend.close();
     const recipientCookie = await account('Recipient', `recipient-${occasion}`);
     const response = await fetch(`${BASE}/api/reveal?slug=${gift.slug}&k=${gift.openKey}&pin=2411`, { headers: { Cookie: recipientCookie } });
-    const data = await response.json(); assert.equal(data.messages.length, 21);
+    const data = await response.json(); assert.equal(data.messages.length, 6);
     const own = data.messages.find(m => m.sender === 'Ayu' && m.text.includes('Ini ucapan'));
     assert(own);
     if (occasion === 'graduation') assert.deepEqual(own.flower, { type: 'rose', color: 'blue' });
@@ -103,7 +103,7 @@ try {
     assert.equal(await r.evaluate(() => window.__musicEvents?.length || 0), 0);
     await r.waitForFunction(() => document.body.dataset.revealPhase === 'cake', { timeout: 30000 });
     const tunes = await r.evaluate(() => window.__musicEvents);
-    assert.equal(tunes.length, 1); assert.equal(tunes[0].lit, 21, 'Music starts only after every gift item lights up.');
+    assert.equal(tunes.length, 1); assert.equal(tunes[0].lit, 6, 'Music starts only after every gift item lights up.');
     await r.locator('.friend').last().click(); await r.locator('.birthday-player[data-player-state="playing"]').waitFor();
     assert.equal(await r.locator('.birthday-player').count(), 1);
     assert(await r.locator('.birthday-player .caption').evaluate(e => parseFloat(getComputedStyle(e).fontSize) >= 20));
@@ -123,7 +123,7 @@ try {
     await recipient.close();
   }
   assert.deepEqual(errors, []);
-  console.log('ERRORS none — expanded gift/words/personalization layout at 320/390px, saved flowers/lanterns, 20 demos, music sequencing, bouquet bounds');
+  console.log('ERRORS none — expanded gift/words/personalization layout at 320/390px, saved flowers/lanterns, 5 demos, music sequencing, bouquet bounds');
 } catch (error) {
   console.error('Browser errors:', errors);
   for (const ctx of browser.contexts()) for (const page of ctx.pages()) console.error(page.url(), (await page.locator('body').innerText()).slice(0, 700));

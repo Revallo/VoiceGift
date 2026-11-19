@@ -92,7 +92,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - Sessions: a random token in an HttpOnly, SameSite=Lax cookie (`vg_session`, 30 days); storage keeps only its sha256.
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
-- **Demo voices** (updated 2026-11-19): the gift's page has "+ Add 20 demo voices" / "Remove the demo voices"; twenty messages reuse ten bundled recordings, with repeats labeled. Older gifts can add the remaining demos.
+- **Demo voices** (updated 2026-11-19): the gift's page has "+ Add 5 demo voices" / "Remove the demo voices" (`DEMO_COUNT` in `lib/demo.js`, cut from 20 on 2026-11-19); deleted ones can be added back.
   (`POST /api/manage` `add-demo` / `remove-demo`). TTS audio + scripts in `demo/` (bundled via `includeFiles` in `vercel.json`),
   each with a mood and a candle. **Not stored in Blob** (`lib/demo.js`): the gift keeps only `demo: {at, hidden}` and the messages are
   built on each read, marked `demo: true`: never in the export or stats, no ASR call, no thank-you.

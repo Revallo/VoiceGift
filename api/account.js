@@ -9,7 +9,7 @@
 //                   { action: "thanks-read", slug? }             → a thank-you note was opened (its 7 days start)
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, loadMessages } from '../lib/gifts.js';
-import { startSession, endSession, currentUser, requireUser, publicUser, updateProfile, addGift, forgetGift, giftSlugs, listThanks, markThanksRead, googleSignIn } from '../lib/accounts.js';
+import { startSession, endSession, currentUser, requireUser, publicUser, updateProfile, addGifts, forgetGift, giftSlugs, listThanks, markThanksRead, googleSignIn } from '../lib/accounts.js';
 import { googleClientId, verifyGoogleToken, devLogin, devProfile } from '../lib/google.js';
 
 // The account's gifts, newest first. Gifts deleted since are skipped (and forgotten).
@@ -29,7 +29,7 @@ async function giftsAndStatsOf(user) {
       return null;
     }
     if (g.ownerId !== user.id) return null;
-    const msgs = await loadMessages(slug).catch(() => []);
+    const msgs = await loadMessages(slug, g).catch(() => []);
     const sent = msgs.filter((m) => m.finalText);
     const real = sent.filter((m) => !m.demo);
     const edited = real.filter((m) => m.edited);
@@ -69,6 +69,7 @@ async function giftsAndStatsOf(user) {
 // The browser's own "Your gifts" list from before accounts: the manage key proves a gift is this person's,
 // so a gift without an owner joins the account. Returns the slugs the browser no longer needs to keep.
 async function claim(user, list) {
+  const joined = [];
   const done = await Promise.all((Array.isArray(list) ? list.slice(0, 50) : []).map(async (item) => {
     const { slug, key } = item || {};
     let gift;
@@ -82,10 +83,11 @@ async function claim(user, list) {
     if (!gift.ownerId) {
       gift.ownerId = user.id;
       await saveGift(gift);
-      await addGift(user.id, gift.slug);
+      joined.push(gift.slug);
     }
     return gift.ownerId === user.id ? gift.slug : null;
   }));
+  await addGifts(user.id, joined); // one write to user.json, not one per gift
   return done.filter(Boolean);
 }
 

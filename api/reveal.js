@@ -23,7 +23,7 @@ export default route({
       throw new HttpError(403, `This link isn’t complete. Ask ${gift.organizer} for the link or PIN to the gift.`);
     }
     if (isOrganizer(gift, user)) throw new HttpError(403, `This gift is for ${gift.recipient}. Only they can open it.`);
-    const all = await loadMessages(gift.slug);
+    const all = await loadMessages(gift.slug, gift);
     const messages = all
       .filter((m) => m.finalText || m.asrText) // skip recordings abandoned before the caption step
       .map((m) => {

@@ -26,7 +26,10 @@ Claude (claude.ai), so a new session can continue without re-asking.
 - GitHub: `Revallo/VoiceGift`, branch `main`. Every push to `main` auto-deploys on Vercel (~1 min).
 - Live: **https://voicegift-one.vercel.app** (production domain — share this one, not the
   per-deployment URLs, which require a Vercel login).
-- Vercel Blob store `voicegift` (Private) is connected; `BLOB_STORE_ID` is set.
+- Storage (2026-11-19): **Upstash Redis** via Vercel Marketplace (free tier). The Vercel Blob store `voicegift` hit the account's
+  Hobby limit (2,000 advanced ops/month; locked until 2026-12-19, and no new Blob store can be made while over it), which broke
+  every page including login. Data in that store (test accounts/gifts) was not moved. `lib/store.js` uses Redis when
+  `KV_REST_API_URL` + `KV_REST_API_TOKEN` are set, else Blob, else `.data/`.
 - Not set yet: **`GOOGLE_CLIENT_ID` (without it nobody can log in on the live site)**, `ADMIN_KEY` (export + account list), `ASR_URL`/`ASR_API_KEY` (company ASR). Interim ASR: set `GROQ_API_KEY`
   (Groq Whisper large-v3); without it ASR is the mock. Each message stores `asrProvider`.
 

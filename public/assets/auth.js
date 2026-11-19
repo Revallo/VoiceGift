@@ -6,10 +6,15 @@ import { h, api, icon, toast, fmtAgo, initials } from './common.js';
 import { theme } from './themes.js';
 
 let current, account;
-const askServer = () => (account ||= api('/api/account').catch(() => ({ user: null })));
+const askServer = () => (account ||= api('/api/account').then((data) => {
+  if (typeof data.devLogin !== 'boolean' || !(data.googleClientId === null || typeof data.googleClientId === 'string')) {
+    throw new Error('Invalid login configuration');
+  }
+  return data;
+}).catch((error) => { account = null; throw error; }));
 // The logged-in account ({ name, email }) or null. Asked once per page.
 export function me() {
-  current ||= askServer().then((d) => d.user || null);
+  current ||= askServer().then((d) => d.user || null).catch(() => { current = null; return null; });
   return current;
 }
 
@@ -48,8 +53,9 @@ let gsi;
 function loadGoogle() {
   gsi ||= new Promise((resolve, reject) => {
     const s = h('script', { src: 'https://accounts.google.com/gsi/client', async: true });
-    s.onload = () => resolve(window.google.accounts.id);
-    s.onerror = () => { gsi = null; reject(new Error('Google didn’t load')); };
+    const fail = () => { gsi = null; s.remove(); reject(new Error('Google didn’t load')); };
+    s.onload = () => { if (window.google?.accounts?.id) resolve(window.google.accounts.id); else fail(); };
+    s.onerror = fail;
     document.head.append(s);
   });
   return gsi;
@@ -79,44 +85,57 @@ export function loginBox({ onDone }) {
   }
   onGoogle = ({ credential }) => logIn({ action: 'google', credential });
 
-  askServer().then(async ({ googleClientId, devLogin }) => {
-    const parts = [];
-    if (googleClientId && inAppBrowser()) {
-      note.hidden = true;
-      const copy = h('button', { type: 'button', class: 'btn ghost sm', onclick: async () => {
-        try { await navigator.clipboard.writeText(location.href); copy.textContent = 'Link copied'; } catch { copy.textContent = 'Use ⋯ → Open in browser'; }
-      } }, 'Copy this page’s link');
-      parts.push(h('div', { class: 'inapp-hint', id: 'inAppHint' },
-        h('b', {}, 'Open this page in Chrome or Safari'),
-        h('span', {}, 'Google login doesn’t work inside this app. Tap ⋯ (top right) and choose “Open in browser”, or copy the link into Chrome or Safari.'),
-        copy));
-    } else if (googleClientId) {
-      const btn = h('div', { class: 'google-btn', id: 'googleBtn' });
-      parts.push(btn);
-      slot.replaceChildren(btn);
-      try {
-        const id = await loadGoogle();
-        if (googleReady !== googleClientId) {
-          id.initialize({ client_id: googleClientId, callback: (r) => onGoogle?.(r), ux_mode: 'popup', context: 'signin' });
-          googleReady = googleClientId;
+  const retry = h('button', { type: 'button', class: 'btn ghost', id: 'retryLogin', onclick: () => { account = null; loadLogin(); } }, 'Try again');
+  function loadLogin() {
+    fail('');
+    note.hidden = false;
+    slot.replaceChildren(h('div', { class: 'spinner' }));
+    askServer().then(async ({ googleClientId, devLogin }) => {
+      const parts = [];
+      if (googleClientId && inAppBrowser()) {
+        note.hidden = true;
+        const copy = h('button', { type: 'button', class: 'btn ghost sm', onclick: async () => {
+          try { await navigator.clipboard.writeText(location.href); copy.textContent = 'Link copied'; } catch { copy.textContent = 'Use ⋯ → Open in browser'; }
+        } }, 'Copy this page’s link');
+        parts.push(h('div', { class: 'inapp-hint', id: 'inAppHint' },
+          h('b', {}, 'Open this page in Chrome or Safari'),
+          h('span', {}, 'Google login doesn’t work inside this app. Tap ⋯ (top right) and choose “Open in browser”, or copy the link into Chrome or Safari.'),
+          copy));
+      } else if (googleClientId) {
+        const btn = h('div', { class: 'google-btn', id: 'googleBtn' });
+        parts.push(btn);
+        slot.replaceChildren(btn);
+        try {
+          const id = await loadGoogle();
+          if (googleReady !== googleClientId) {
+            id.initialize({ client_id: googleClientId, callback: (r) => onGoogle?.(r), ux_mode: 'popup', context: 'signin' });
+            googleReady = googleClientId;
+          }
+          id.renderButton(btn, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', locale: 'en', width: Math.max(200, Math.min(400, btn.clientWidth || 320)) });
+        } catch {
+          fail('Google didn’t load. Check your connection and try again.');
+          note.hidden = true;
+          parts.push(retry);
         }
-        id.renderButton(btn, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'center', locale: 'en', width: Math.max(200, Math.min(400, btn.clientWidth || 320)) });
-      } catch {
-        fail('Google didn’t load. Check your connection and reload the page.');
+      } else if (!devLogin) {
+        note.hidden = true;
+        parts.push(h('p', { class: 'small', role: 'status', style: { margin: 0, color: 'var(--soft)' } }, 'Google sign-in is unavailable right now. Please try again.'), retry);
       }
-    } else if (!devLogin) {
-      parts.push(h('p', { class: 'small', style: { margin: 0, color: 'var(--soft)' } }, 'Logging in isn’t set up yet. Please try again later.'));
-    }
-    if (devLogin) { // local only (DEV_LOGIN=1): stands in for Google, for tests
-      const nameIn = h('input', { class: 'input', id: 'devName', placeholder: 'Name', maxlength: '40' });
-      const emailIn = h('input', { class: 'input', id: 'devEmail', type: 'email', placeholder: 'email@example.com', autocapitalize: 'none' });
-      const go = h('button', { type: 'submit', class: 'btn ghost', id: 'devLoginBtn' }, 'Dev login');
-      const form = h('form', { class: 'stack', style: { gap: '10px' }, onsubmit: (e) => { e.preventDefault(); logIn({ action: 'dev-login', name: nameIn.value, email: emailIn.value }); } },
-        h('p', { class: 'or-line' }, 'local dev login'), nameIn, emailIn, go);
-      parts.push(form);
-    }
-    slot.replaceChildren(...parts);
-  });
+      if (devLogin) { // local only (DEV_LOGIN=1): stands in for Google, for tests
+        const nameIn = h('input', { class: 'input', id: 'devName', placeholder: 'Name', maxlength: '40' });
+        const emailIn = h('input', { class: 'input', id: 'devEmail', type: 'email', placeholder: 'email@example.com', autocapitalize: 'none' });
+        const go = h('button', { type: 'submit', class: 'btn ghost', id: 'devLoginBtn' }, 'Dev login');
+        const form = h('form', { class: 'stack', style: { gap: '10px' }, onsubmit: (e) => { e.preventDefault(); logIn({ action: 'dev-login', name: nameIn.value, email: emailIn.value }); } },
+          h('p', { class: 'or-line' }, 'local dev login'), nameIn, emailIn, go);
+        parts.push(form);
+      }
+      slot.replaceChildren(...parts);
+    }).catch(() => {
+      note.hidden = true;
+      slot.replaceChildren(h('p', { class: 'small', role: 'alert', style: { margin: 0, color: 'var(--soft)' } }, 'Could not load sign-in. Check your connection and try again.'), retry);
+    });
+  }
+  loadLogin();
   return box;
 }
 

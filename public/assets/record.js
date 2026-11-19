@@ -494,7 +494,8 @@ $('#sendBtn').addEventListener('click', async () => {
 
 async function showDone() {
   let n = count + 1;
-  try { n = (await api(`/api/gift?slug=${encodeURIComponent(slug)}`)).count; } catch {}
+  // the count may be up to 30 s old (/api/gift is cached), so never show fewer than before plus this one
+  try { n = Math.max(n, (await api(`/api/gift?slug=${encodeURIComponent(slug)}`)).count); } catch {}
   $('#doneLead').textContent = `It stays a secret until ${gift.organizer} sends ${first} the gift.`;
   $('#doneTitle').textContent = t.doneTitle;
   $('#doneCake').textContent = '';

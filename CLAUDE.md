@@ -12,7 +12,9 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 
 ## Stack (prototype)
 - Vercel: static files in `public/`, serverless functions in `api/` (Node 22, ESM, no framework).
-- Storage: **Vercel Blob, private store**. Locally a `.data/` folder with the same interface (`lib/store.js`).
+- Storage: **Upstash Redis** (Vercel Marketplace, free: 256 MB, 500k commands/month; env `KV_REST_API_URL` + `KV_REST_API_TOKEN`),
+  since 2026-11-19 when the account's Vercel Blob Hobby quota ran out (Blob code is kept as a fallback). Locally a `.data/` folder
+  with the same interface (`lib/store.js`).
 - Frontend: plain HTML + ES modules, **no build step, no framework**. Fonts: Fraunces + Plus Jakarta Sans.
   The `›››` buttons are real sliders (`swipeButton()` in `common.js`); a tap works too.
 - Audio: the browser records **16 kHz mono 16-bit WAV** (`public/assets/recorder.js`) — playable
@@ -92,7 +94,10 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
 - **Demo voices** (updated 2026-11-19): the gift's page has "+ Add 20 demo voices" / "Remove the demo voices"; twenty messages reuse ten bundled recordings, with repeats labeled. Older gifts can add the remaining demos.
   (`POST /api/manage` `add-demo` / `remove-demo`). TTS audio + scripts in `demo/` (bundled via `includeFiles` in `vercel.json`),
-  each with a mood and a candle. Stored with `demo: true`: never in the export or stats, no ASR call, no thank-you.
+  each with a mood and a candle. **Not stored in Blob** (`lib/demo.js`): the gift keeps only `demo: {at, hidden}` and the messages are
+  built on each read, marked `demo: true`: never in the export or stats, no ASR call, no thank-you.
+- **Blob budget** (Hobby: 2,000 advanced ops = `put` + `list` a month; ran out 2026-11-19): avoid `listPaths` on hot paths. Messages
+  are `msg/<id>.json` (read directly), an account's gifts and thank-you slugs are lists in `user.json`, `/api/gift` is edge-cached 30 s.
 - Limits (`lib/limits.js`, counters in storage): 3 voices per account per gift, 20 recordings + 10 gifts per account per day.
 
 ## API (`api/*.js`)
@@ -110,8 +115,8 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent… (+ `userId` if the speaker was logged in)
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
 
-Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<ts>-<id>.json`, `gifts/<slug>/audio/<id>.wav`;
-accounts: `users/<id>/user.json`, `users/<id>/gifts/<slug>.json`, `users/<id>/thanks/<slug>.json`, `emails/<sha256>.json`, `sessions/<sha256>.json`;
+Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<id>.json` (older: `<ts>-<id>.json`), `gifts/<slug>/audio/<id>.wav`;
+accounts: `users/<id>/user.json` (+ `gifts`/`thanks` slug lists), `users/<id>/thanks/<slug>.json` (older accounts: `users/<id>/gifts/<slug>.json`), `emails/<sha256>.json`, `sessions/<sha256>.json`;
 `limits/<name>/<hash>-<period>.json` (counters).
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 

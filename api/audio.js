@@ -8,7 +8,7 @@ export default route({
   async GET(req, res) {
     const q = query(req);
     const gift = await loadGift(q.slug);
-    const { msg } = await findMessage(gift.slug, String(q.id || ''));
+    const { msg } = await findMessage(gift.slug, String(q.id || ''), gift);
     const own = q.token && q.token === msg.token;
     const user = await currentUser(req);
     if (!own && !(user && canOpen(gift, q.k, { pin: q.pin }))) throw new HttpError(403, 'Not allowed');

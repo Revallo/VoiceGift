@@ -1,5 +1,6 @@
 // Wedding: lanterns on strings of fairy lights. Drawn in a fixed 390×330 stage; every voice is a lantern.
-import { colorFor } from './common.js';
+import { colorFor, initials as senderInitials } from './common.js';
+import { ITEM_COLORS } from './item-options.js';
 import { div, seeded, createStage, createStickers, createTopper, itemStates, nameText } from './stage.js';
 
 // Fairy-light colours. The keys are the same as the cake flavours so the API stays the same.
@@ -133,9 +134,12 @@ export function createLanterns(host, opts = {}) {
       wordsFont.setSize((t || '').length > 22 ? 25 : 29);
     },
     setFont: wordsFont.setFont,
+    setLanternStyle(i, style) {
+      if (lanterns[i] && ITEM_COLORS[style?.color]) lanterns[i].style.setProperty('--c', ITEM_COLORS[style.color].hex);
+    },
     setNames(t) { names.textContent = t || ''; coupleNames = t; drawTopper(); },
     // Lay out `n` lanterns (+ empty hooks up to `spots`). Returns the lantern elements in message order.
-    setCandles(n, { spots = n, colors, onTap } = {}) {
+    setCandles(n, { spots = n, colors, lanterns: styles, names, onTap } = {}) {
       layer.textContent = '';
       lanterns.length = 0;
       const total = Math.min(Math.max(n, spots), MAX);
@@ -147,6 +151,7 @@ export function createLanterns(host, opts = {}) {
         btn.type = 'button';
         btn.className = 'lantern' + (isSpot ? ' spot' : '');
         btn.tabIndex = isSpot || !onTap ? -1 : 0;
+        if (!isSpot && names?.[p.i]) btn.setAttribute('aria-label', `Play ${names[p.i]}'s message`);
         Object.assign(btn.style, { left: `${(p.x - p.w / 2 - 6).toFixed(1)}px`, top: `${p.top.toFixed(1)}px`, width: `${p.w + 12}px`, height: `${p.len + p.h + 14}px` });
         btn.style.setProperty('--swing', `${p.swing}s`);
         btn.style.setProperty('--swing-at', `${(-p.i * 0.37).toFixed(2)}s`);
@@ -157,11 +162,18 @@ export function createLanterns(host, opts = {}) {
           Object.assign(div('l-body', { top: `${p.len}px`, left: '6px', width: `${p.w}px`, height: `${p.h}px` }), { innerHTML: '<i class="l-motif"></i>' }),
           div('l-tassel', { top: `${p.len + p.h + 2}px` })
         );
+        if (!isSpot && names?.[p.i]) {
+          const label = div('l-initial');
+          label.textContent = senderInitials(names[p.i]);
+          label.setAttribute('aria-hidden', 'true');
+          btn.querySelector('.l-body').append(label);
+        }
         if (onTap && !isSpot) btn.addEventListener('click', () => onTap(p.i));
         layer.append(btn);
         els[p.i] = btn;
       }
       lanterns.push(...els);
+      styles?.forEach((style, i) => api.setLanternStyle(i, style));
       st.updateGlow();
       return els;
     },

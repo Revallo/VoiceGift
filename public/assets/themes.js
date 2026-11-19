@@ -68,6 +68,15 @@ export const THEMES = {
     doneTitle: 'Your flower is in the bouquet',
     doneCount: (n) => `${count(n, 'flower', 'flowers')} · yours is the one circled`,
     eyebrow: (name) => `For ${name} · Graduation day`,
+    reveal: {
+      eyebrow: 'A new chapter, celebrated together', salutation: 'Congratulations,',
+      readyTitle: 'Something lovely,\njust for you.', readySub: 'A bouquet of familiar voices. Every flower holds a wish for your next chapter.',
+      dedication: (n) => `${count(n, 'voice', 'voices')} · cheering you on`,
+      readyNote: (n) => `${count(n, 'person has', 'people have')} something to tell you.`, soundHint: 'Find a quiet moment. Turn your sound on.',
+      letterLabel: 'A graduation wish, in their own words', libraryTitle: 'The people behind the flowers',
+      idleTitle: 'There’s a voice in every flower.', idleSub: 'Tap a flower or a name below. Their words will appear here.',
+      keepTitle: 'Your next chapter begins with love.', keepSub: 'Your voices are kept here. Come back whenever you need a little encouragement.'
+    },
     lightingTitle: 'Your bouquet is blooming…',
     lightingSub: 'Every flower is one friend.',
     gaveLine: (n) => `${count(n, 'person', 'people')} gave you a flower.`,
@@ -100,6 +109,15 @@ export const THEMES = {
     doneTitle: 'Your lantern is hanging',
     doneCount: (n) => `${count(n, 'lantern', 'lanterns')} · yours is the one circled`,
     eyebrow: (name) => `${name} · Wedding`,
+    reveal: {
+      eyebrow: 'For a lifetime of little moments', salutation: 'With love for',
+      readyTitle: 'A sky full of wishes,\njust for you.', readySub: 'Familiar voices, glowing together. Every lantern carries a wish for you.',
+      dedication: (n) => `${count(n, 'voice', 'voices')} · celebrating your love`,
+      readyNote: (n) => `${count(n, 'guest has', 'guests have')} something to tell you.`, soundHint: 'Find a quiet moment. Turn your sound on.',
+      letterLabel: 'A wedding wish, in their own words', libraryTitle: 'The people behind the lanterns',
+      idleTitle: 'There’s a voice in every lantern.', idleSub: 'Tap a lantern or a name below. Their words will appear here.',
+      keepTitle: 'A little light to keep with you.', keepSub: 'Your voices are kept here. Open this link to hear your people again.'
+    },
     lightingTitle: 'Your lanterns are lighting up…',
     lightingSub: 'Every lantern is one guest.',
     gaveLine: (n) => `${count(n, 'guest', 'guests')} hung a lantern for you.`,

@@ -62,11 +62,15 @@ async function load() {
       h('button', { type: 'button', class: 'del', 'aria-label': `Delete ${m.sender}'s message`, html: icon.x(12), onclick: () => remove(m) })));
   });
 
-  // demo voices: add 10 (when you don't feel like asking real people), or take them out again
+  // Demo messages: fill to twenty, including older gifts that already contain ten.
   const demos = messages.filter((m) => m.demo).length;
   const demoBtn = $('#demoBtn');
-  demoBtn.textContent = demos ? `Remove the ${demos} demo voices` : '+ Add 10 demo voices';
+  demoBtn.textContent = demos ? `Remove the ${demos} demo voices` : '+ Add 20 demo voices';
   demoBtn.onclick = () => demoAction(demos ? 'remove-demo' : 'add-demo', demoBtn);
+  const moreDemos = $('#demoMoreBtn');
+  moreDemos.hidden = !(demos > 0 && demos < 20);
+  moreDemos.textContent = `+ Add ${20 - demos} more demo voices`;
+  moreDemos.onclick = () => demoAction('add-demo', moreDemos);
 
   // 3. send it to the recipient: their link + the PIN
   const pin = gift.verifyPin || '1234';

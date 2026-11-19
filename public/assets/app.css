@@ -2362,3 +2362,10 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .row.even > .btn.ghost:first-child:not(:last-child) { flex: 1 1 0; }
 /* Dashboard: with many voices the list scrolls by itself, so "Send it" stays close. */
 .dash .who-list { max-height: 330px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--gold-border) transparent; }
+
+/* Per-person flower and lantern details, shown on every gift surface. */
+.stage .flower[data-petal] .f-petal { border-radius: 50%; clip-path: none; }
+.stage .flower[data-petal="tulip"] .f-petal { border-radius: 50% 50% 50% 50% / 85% 85% 15% 15%; }
+.stage .flower[data-petal="rose"] .f-petal { border-radius: 30% 70% 60% 40%; }
+.stage .flower[data-petal="daisy"] .f-petal { clip-path: ellipse(28% 50%); }
+.l-initial { position: absolute; inset: 0; display: grid; place-items: center; color: #382817; font: 700 12px var(--sans); text-shadow: 0 1px 1px #fff6; }

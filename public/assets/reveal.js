@@ -4,6 +4,7 @@ import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFo
 import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
 import { playTune } from './music.js';
+import { ITEM_COLORS } from './item-options.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { MOODS, moodOf, playVoice, moodShow } from './voicefx.js';
 
@@ -37,6 +38,7 @@ function setPhase(next) {
 
 const later = (fn, ms) => { const tm = setTimeout(fn, ms); timers.push(tm); return tm; };
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+const messageColor = (i) => ITEM_COLORS[messages[i]?.flower?.color || messages[i]?.lantern?.color]?.hex || colorFor(i);
 const fmtDur = (s) => { s = Math.round(s); return s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`; };
 
 function header(eyebrow, title, sub, italic = false) {
@@ -142,7 +144,9 @@ async function load() {
   }
   if ($('#verifyHelp')) $('#verifyHelp').textContent = `It came with the link. No PIN? Ask ${gift.organizer}.`;
   showScreen('verify');
-  setTimeout(() => pinBoxes[0]?.focus(), 80);
+  setTimeout(() => {
+    if (pinBoxes.every(b => !b.value) && !pinBoxes.includes(document.activeElement)) pinBoxes[0]?.focus();
+  }, 80);
 }
 
 // The 4th digit opens the gift: there is no button to press.
@@ -183,14 +187,14 @@ function showEmpty() {
 // ---------- it's time ----------
 function showReady() {
   setPhase('ready');
-  scene.setCandles(messages.length, { colors: messages.map((m, i) => colorFor(i)), styles: messages.map((m) => m.candle), onTap: (i) => phase === 'cake' && play(i, false) });
+  scene.setCandles(messages.length, { colors: messages.map((m, i) => messageColor(i)), styles: messages.map((m) => m.candle), flowers: messages.map((m) => m.flower), lanterns: messages.map((m) => m.lantern), names: messages.map((m) => m.sender), onTap: (i) => phase === 'cake' && play(i, false) });
   messages.forEach((m, i) => { if (scene.candles[i]) scene.candles[i].dataset.mood = moodOf(m.mood); });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
   header(t.eyebrow(first), t.reveal?.readyTitle || 'It’s time!', t.reveal?.readySub || `${t.people(messages.length)} recorded something for you. Turn your sound on.`);
   if (t.reveal) {
     const pile = h('div', { class: 'birthday-facepile', 'aria-hidden': 'true' }, messages.slice(0, 5).map((m, i) =>
-      h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender))));
+      h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(m.sender))));
     if (messages.length > 5) pile.append(h('span', { class: 'avatar birthday-facepile-more' }, `+${messages.length - 5}`));
     setPanel(h('div', { class: 'birthday-ready-note' }, pile, h('p', {}, t.reveal.readyNote(messages.length))));
     setBottom(btn('Open your gift', { icon: icon.gift(18), onclick: openGift }), h('p', { class: 'birthday-open-hint' }, t.reveal.soundHint));
@@ -243,7 +247,7 @@ function loadBuffer(i) {
 // ---------- the scene lights up, one voice at a time ----------
 function startLighting() {
   setPhase('lighting');
-  stopMusic = playTune(ac, gift.cake?.music);
+  stopMusic();
   scene.setDim(0);
   const n = messages.length;
   const eyebrow = t.eyebrow(first);
@@ -257,10 +261,10 @@ function startLighting() {
     at += i === 0 ? 300 : Math.max(170, 700 * Math.pow(0.86, i));
     later(() => {
       scene.light(i);
-      if (dots[i]) dots[i].style.background = colorFor(i);
+      if (dots[i]) dots[i].style.background = messageColor(i);
       count.textContent = t.progress(i + 1, n);
       setPanel(h('div', { class: 'caller' },
-        h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
+        h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(m.sender)),
         h('div', { class: 'shout' }, m.sender)));
       tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.05);
     }, at);
@@ -269,12 +273,13 @@ function startLighting() {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.06));
     header(eyebrow, t.greeting(first), t.gaveLine(n));
   }, at + 700);
+  // Let the final lighting chime decay before the selected music begins.
+  later(() => { stopMusic = playTune(ac, gift.cake?.music); }, at + 2900);
   later(enterScene, at + 3200);
 }
 
 // ---------- listen ----------
 function enterScene() {
-  stopMusic();
   setPhase('cake');
   scene.lightAll();
   scene.setBend(0);
@@ -283,7 +288,7 @@ function enterScene() {
   const grid = h('div', { class: 'friends' + (messages.length <= 4 ? ' few' : '') });
   chips = messages.map((m, i) => {
     const chip = h('button', { type: 'button', class: 'friend', 'aria-pressed': 'false', 'aria-label': `Play ${m.sender}'s message`, onclick: () => play(i, false) },
-      h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
+      h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(m.sender)),
       h('span', {}, m.sender));
     if (played.has(i)) chip.append(h('span', { class: 'tick', html: icon.check() }));
     grid.append(chip);
@@ -354,6 +359,7 @@ function stopCurrent() {
 async function play(i, chain) {
   if (phase !== 'cake' || i === undefined) return;
   stopCurrent();
+  stopMusic(); // A friend's words always have the room to themselves.
   if (!chain) queue = [];
   if (ac.state === 'suspended') ac.resume().catch(() => {});
   const m = messages[i];
@@ -363,9 +369,9 @@ async function play(i, chain) {
   scene.setActive(i, true);
 
   const words = m.words.map((w) => h('span', {}, w.w + ' '));
-  const bars = h('div', { class: 'bars' }, ...[0, 1, 2, 3, 4].map(() => h('i', { style: { background: colorFor(i) } })));
+  const bars = h('div', { class: 'bars' }, ...[0, 1, 2, 3, 4].map(() => h('i', { style: { background: messageColor(i) } })));
   const card = h('div', { class: 'panel' + (t.reveal ? ' birthday-player' : '') },
-    h('div', { class: 'who' }, h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
+    h('div', { class: 'who' }, h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(m.sender)),
       h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec),
         moodOf(m.mood) !== 'normal' ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, `${MOODS[moodOf(m.mood)].emoji} ${MOODS[moodOf(m.mood)].label}`) : '')), bars),
     h('div', { class: 'caption' }, words));
@@ -406,7 +412,7 @@ async function play(i, chain) {
     if (messages.length > 1) transport.append(h('button', { type: 'button', class: 'birthday-next', 'aria-label': 'Play next voice', onclick: () => play((i + 1) % messages.length, false) }, h('span', { html: icon.chevronRight(18), 'aria-hidden': 'true' })));
     card.append(transport);
     card.setAttribute('role', 'region');
-    card.setAttribute('aria-label', `Birthday wish from ${m.sender}`);
+    card.setAttribute('aria-label', `A wish from ${m.sender}`);
     syncControl('loading');
     me.clock = clock;
   }
@@ -483,6 +489,7 @@ async function play(i, chain) {
 // ---------- the finale ----------
 function startFinale() {
   stopCurrent();
+  stopMusic();
   queue = [];
   clearTimers();
   setPhase('blow');
@@ -642,7 +649,8 @@ function finishFinale() {
   setPhase('done');
   [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.07));
   [1046.5, 1318.51, 1567.98, 2093].forEach((f, k) => tone(ac, f, 0.3 + k * 0.09, 0.9, 0.04));
-  playTune(ac, gift.cake?.music, { loop: false });
+  stopMusic();
+  stopMusic = playTune(ac, gift.cake?.music, { loop: false });
   confetti();
   if (t.key === 'wedding') skyLanterns();
   showKeepsake();
@@ -660,7 +668,7 @@ function showKeepsake() {
       h(t.reveal ? 'p' : 'b', {}, `${n} ${n === 1 ? 'voice' : 'voices'} · ${fmtDur(total)}`),
       h('div', { class: 'small muted' }, t.reveal?.keepSub || 'Kept here. Open this link again any time.')));
   setPanel(card);
-  const nameChip = (m, i) => h('span', {}, h('i', { style: { background: colorFor(i) } }), m.sender);
+  const nameChip = (m, i) => h('span', {}, h('i', { style: { background: messageColor(i) } }), m.sender);
   const names = h('div', { class: 'names' }, messages.slice(0, NAMES_SHOWN).map(nameChip));
   if (n > NAMES_SHOWN) {
     const more = h('button', { type: 'button', class: 'more', onclick: () => { more.replaceWith(...messages.slice(NAMES_SHOWN).map((m, k) => nameChip(m, NAMES_SHOWN + k))); } },
@@ -734,7 +742,7 @@ function openThanks(thankBtn) {
       .map(([fr, i]) => {
         const has = Boolean(st.ids[fr.key]);
         return h('button', { type: 'button', class: 'thanks-friend' + (has ? ' done' : ''), onclick: () => { st.i = i; recordStep(); } },
-          h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(fr.name)),
+          h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(fr.name)),
           h('span', { class: 'grow' }, fr.name),
           h('span', { class: 'thanks-friend-state' }, has ? '\u2713 Recorded' : 'Record'));
       }));
@@ -877,7 +885,7 @@ async function exportKeepsakeVideo(saveBtn) {
       const angle = (i / total) * Math.PI * 2;
       const cx = cv.width / 2 + Math.cos(angle) * 140;
       const cy = 360 + Math.sin(angle) * 85;
-      ctx.fillStyle = colorFor(i);
+      ctx.fillStyle = messageColor(i);
       ctx.beginPath();
       ctx.arc(cx, cy, i === activeIdx ? 18 : 10, 0, Math.PI * 2);
       ctx.fill();
@@ -979,7 +987,7 @@ function effects(nodes, ms) {
 }
 
 function confetti() {
-  const cols = messages.map((m, i) => colorFor(i)).concat(['#FFFFFF', '#FFFFFF', '#F6B93B']);
+  const cols = messages.map((m, i) => messageColor(i)).concat(['#FFFFFF', '#FFFFFF', '#F6B93B']);
   const bits = [];
   for (let j = 0; j < 46; j++) {
     const round = Math.random() < 0.3;

@@ -35,7 +35,9 @@ export default route({
           words: (m.finalWords && m.finalWords.length ? m.finalWords : null) || evenWords(text, m.durationSec),
           durationSec: m.durationSec,
           mood: m.mood || 'normal',
-          candle: m.candle || null
+          candle: m.candle || null,
+          flower: m.flower || null,
+          lantern: m.lantern || null
         };
       });
     send(res, 200, {

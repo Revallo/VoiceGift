@@ -509,7 +509,7 @@ export function createCake(host, opts = {}) {
       name.setColor(nameArea?.plaque ? (lightness(colors.frost) > 0.55 ? '#4A2238' : '#FFFFFF') : c.text);
     },
     setAccent(k) { accent = k; api.setFlavor(flavor); },
-    // Scatter decorations over the selected shape's surfaces, leaving space for its inscription.
+    // Evenly spaced curved rows follow each surface, leaving room for the inscription.
     setPattern(k) {
       pattern = k;
       decoEl.textContent = '';
@@ -518,25 +518,28 @@ export function createCake(host, opts = {}) {
       const { x1, x2, y, sag, size: s } = nameArea;
       const halfName = (nameArea.plaque ? x2 - x1 : Math.min(x2 - x1, name.width())) / 2 + 12;
       const nameCenter = (x1 + x2) / 2;
-      const rnd = seeded(13 + Object.keys(SHAPES).indexOf(currentShape) * 97);
       for (const [left, top, width, height, borderRadius] of PATTERN_SURFACES[currentShape]) {
         const surface = div('cake-pattern-surface', { position: 'absolute', left: px(left), top: px(top), width: px(width), height: px(height), borderRadius, overflow: 'hidden' });
         decoEl.append(surface);
-        const count = Math.max(6, Math.round(width * height / 950));
-        let placed = 0;
-        for (let attempt = 0; attempt < count * 20 && placed < count; attempt++) {
-          const x = 8 + rnd() * (width - 16), yy = 8 + rnd() * Math.max(0, height - 16);
-          const gx = left + x, gy = top + yy;
-          if (Math.abs(gx - nameCenter) < halfName && gy > y - s - 6 && gy < y + sag + 14) continue;
-          // Keep marks inside the curved edge, without cutting most of them off.
-          if ((x - width / 2) ** 2 / (width / 2 - 6) ** 2 + (yy - height / 2) ** 2 / Math.max(1, height / 2 - 5) ** 2 > 1) continue;
-          const i = placed++;
-          const col = SPRINKLES[i % 5];
-          const d = k === 'sprinkles' ? div('p', { left: px(x), top: px(yy), width: '3px', height: '9px', borderRadius: '2px', background: col, transform: `rotate(${Math.round(rnd() * 180)}deg)` })
-            : k === 'dots' ? div('p', { left: px(x - 3), top: px(yy), width: '7px', height: '7px', borderRadius: '50%', background: col })
-            : div('p', { left: px(x - 6), top: px(yy - 4), fontSize: '12px', lineHeight: '1', color: col });
-          if (p.glyph) d.textContent = p.glyph;
-          surface.append(d);
+        const rows = Math.max(1, Math.floor((height - 8) / 22));
+        for (let row = 0; row < rows; row++) {
+          const yy = rows === 1 ? height / 2 : 10 + row * (height - 20) / (rows - 1);
+          const curve = Math.sqrt(Math.max(0, 1 - ((yy - height / 2) / (height / 2)) ** 2));
+          const span = Math.max(20, (width - 20) * curve);
+          const columns = Math.max(2, Math.floor(span / 25));
+          for (let column = 0; column < columns; column++) {
+            const x = width / 2 - span / 2 + (column + 0.5) * span / columns;
+            const gx = left + x, gy = top + yy;
+            if (Math.abs(gx - nameCenter) < halfName && gy > y - s - 6 && gy < y + sag + 14) continue;
+            // Keep marks inside the curved edge, without cutting most of them off.
+            const i = row + column;
+            const col = SPRINKLES[i % 5];
+            const d = k === 'sprinkles' ? div('p', { left: px(x - 1.5), top: px(yy - 4.5), width: '3px', height: '9px', borderRadius: '2px', background: col, transform: `rotate(${i % 2 ? 28 : -28}deg)` })
+              : k === 'dots' ? div('p', { left: px(x - 3), top: px(yy), width: '7px', height: '7px', borderRadius: '50%', background: col })
+              : div('p', { left: px(x - 6), top: px(yy - 4), fontSize: '12px', lineHeight: '1', color: col });
+            if (p.glyph) d.textContent = p.glyph;
+            surface.append(d);
+          }
         }
       }
     },

@@ -16,14 +16,22 @@ export const TUNES = {
 export function playTune(ac, key, { loop = true } = {}) {
   const tune = TUNES[key];
   if (!ac || !tune?.notes) return () => {};
+  const output = ac.createGain();
+  output.connect(ac.destination);
   let i = 0, timer = 0, stopped = false;
   const tick = () => {
     if (stopped) return;
     if (!loop && i >= tune.notes.length) return;
-    for (const f of tune.notes[i % tune.notes.length] || []) tone(ac, f, 0, tune.beat * 3, tune.vol || 0.11);
+    for (const f of tune.notes[i % tune.notes.length] || []) tone(ac, f, 0, tune.beat * 3, tune.vol || 0.11, output);
     i++;
     timer = setTimeout(tick, tune.beat * 1000);
   };
   tick();
-  return () => { stopped = true; clearTimeout(timer); };
+  return () => {
+    if (stopped) return;
+    stopped = true; clearTimeout(timer);
+    output.gain.cancelScheduledValues(ac.currentTime);
+    output.gain.setTargetAtTime(0, ac.currentTime, 0.015);
+    setTimeout(() => output.disconnect(), 120);
+  };
 }

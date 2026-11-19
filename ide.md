@@ -4,6 +4,9 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
+- ✅ 🎯 **Caption-first previews for every occasion** (2026-11-19): example recipient preview before recording; the real corrected words are edited in a large letter card after recording, with decoration collapsed. Birthday-style playback cards now cover graduation and wedding too.
+- ✅ **Personal flowers and lanterns** (2026-11-19): each sender chooses flower type/color or lantern color; lanterns show sender initials, matching sender-avatar colors. Bouquet rows fit above each container's rim, with greenery inset from the frame.
+- ✅ **Orderly sprinkles, separated music, twenty demos** (2026-11-19): evenly spaced rows follow cake surfaces; lighting chimes finish before selected music starts, and music stops for messages. Twenty demo items reuse ten sample recordings twice, explicitly labeled and excluded from training data.
 - ✅ **Shape-aware cake patterns + adjacent drawing Undo** (2026-11-19): decorations follow each cake's tier/frosting surfaces, stay within curved edges and leave the name clear; removed fixed sprinkles from plain cakes. Undo sits beside Done and affects drawing strokes only. Music source audit: `docs/MUSIC.md`.
 - ✅ 🎯 **Birthday recipient as a personal letter** (2026-11-18): quiet warm opening, real sender initials, integrated personalized cake, large cream caption card, pause/resume/replay/next controls, and readable sender names. Hearing and reading the exact message is the focus; no rewards. Implemented locally; publication is separate.
 - ✅ **Voice mood**, festive set (2026-11-13): 😭 Sad (sad trombone, rain, flames shrink), 😡 Angry (growl + BRAKK!, red shake,

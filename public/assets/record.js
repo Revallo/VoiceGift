@@ -4,6 +4,8 @@ import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { requireLogin } from './auth.js';
 import { MOODS, playVoice, moodShow } from './voicefx.js';
 import { CANDLES, FLAMES, FLAME_SHAPES, miniCandle, styleCandle } from './cake.js';
+import { ITEM_COLORS, FLOWER_TYPES } from './item-options.js';
+import { miniFlower } from './bouquet.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
@@ -16,6 +18,7 @@ let lastCorrections = [];
 let speechRec = null, speechHint = '';
 // The twist the friend adds after recording (kept when they record again).
 let mood = 'normal', candleStyle = { body: 'stripe', flame: 'classic', shape: 'drop' };
+let flowerStyle = { type: 'round', color: 'pink' }, lanternStyle = { color: 'gold' };
 
 window.addEventListener('pagehide', () => {
   if (sent && !sentDone) {
@@ -44,6 +47,9 @@ async function load() {
     return showScreen('error');
   }
   t = applyTheme(gift.occasion);
+  const defaultColor = Object.keys(ITEM_COLORS)[count % Object.keys(ITEM_COLORS).length];
+  flowerStyle = { type: FLOWER_TYPES[gift.cake?.pattern] ? gift.cake.pattern : 'round', color: defaultColor };
+  lanternStyle = { color: defaultColor };
   first = t.callName(gift.recipient);
   document.title = t.inviteTitle(first);
   $('#invitedBy').textContent = `${gift.organizer} invited you`;
@@ -55,6 +61,11 @@ async function load() {
   $('#name').value = user.name;
   $('#signedIn').textContent = `Logged in as ${user.email}`;
   $('#signedIn').hidden = false;
+  $('#invitePreviewLabel').textContent = `See how ${first} will receive your wish`;
+  $('#invitePreviewName').textContent = user.name;
+  $('#invitePreviewText').textContent = { birthday: `Selamat ulang tahun, ${first}! Semoga selalu bahagia.`, graduation: `Selamat wisuda, ${first}! Bangga banget sama kamu.`, wedding: `Selamat menempuh hidup baru! Bahagia selalu ya.` }[t.key];
+  const example = createScene($('#invitePreviewScene'), gift);
+  example.setCandles(1, { spots: 1, names: [user.name], flowers: [flowerStyle], lanterns: [lanternStyle] }); example.lightAll();
   showScreen('invite');
 }
 
@@ -176,10 +187,11 @@ async function upload() {
     sentDone = false;
     $('#captionText').value = sent.asrText;
     $('#seenLabel').textContent = `How ${first} will see it`;
+    $('#previewLetterLabel').textContent = t.reveal.letterLabel;
     $('#seenHint').textContent = `This is your ${t.item}. Tap it to try what ${first} will hear.`;
     showSeenScene();
     $('#seenAvatar').textContent = initials($('#name').value.trim());
-    $('#seenAvatar').style.background = colorFor(count);
+    $('#seenAvatar').style.background = t.key === 'graduation' ? ITEM_COLORS[flowerStyle.color].hex : t.key === 'wedding' ? ITEM_COLORS[lanternStyle.color].hex : colorFor(count);
     $('#seenName').textContent = $('#name').value.trim();
     const note = $('#mockNote');
     note.hidden = true;
@@ -189,8 +201,8 @@ async function upload() {
     $('#sendBtn').textContent = `Send to ${first}`;
     setupPlayer();
     buildTwist();
-    refreshTypoStudio();
     showScreen('caption');
+    refreshTypoStudio();
   } catch (e) {
     err($('#inviteError'), e.message);
     showScreen('invite');
@@ -200,11 +212,6 @@ async function upload() {
 // ---------- ASR Typo Correction Studio ----------
 function escapeRe(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function replacePhrase(text, from, to) {
-  const re = new RegExp(`(^|[^a-zA-Z0-9])(${escapeRe(from)})(?=$|[^a-zA-Z0-9])`, 'i');
-  return text.replace(re, (m, pre) => `${pre}${to}`);
 }
 
 function hasPhrase(text, phrase) {
@@ -276,12 +283,13 @@ function refreshTypoStudio() {
   seenWords = cur.trim().split(/\s+/).filter(Boolean).map((word) => {
     const clean = word.replace(/^[.,!?""''()]+|[.,!?""''()]+$/g, '').toLowerCase();
     const tp = suspectMap.get(clean) && hasPhrase(cur, suspectMap.get(clean).wrong) ? suspectMap.get(clean) : null;
-    const span = h('span', tp ? { class: 'suspect', role: 'button', tabindex: '0', title: `Fix: “${tp.wrong}” → “${tp.right}”`,
-      onclick: () => {
-        $('#captionText').value = replacePhrase($('#captionText').value, tp.wrong, tp.right);
-        toast(`Fixed: “${tp.wrong}” → “${tp.right}”`);
-        refreshTypoStudio();
-      } } : {}, word);
+    const edit = () => {
+      stopOwn();
+      const textarea = $('#captionText'), at = textarea.value.toLowerCase().indexOf((tp?.wrong || word).toLowerCase());
+      textarea.focus();
+      if (at >= 0) textarea.setSelectionRange(at, at + (tp?.wrong || word).length);
+    };
+    const span = h('span', tp ? { class: 'suspect', role: 'button', tabindex: '0', title: 'Listen and check this word', onclick: edit, onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); edit(); } } } : {}, word);
     box.append(span, ' ');
     return span;
   });
@@ -327,7 +335,9 @@ function showSeenScene() {
   seenScene = createScene($('#seenScene'), gift);
   const styles = [];
   styles[count] = candleStyle;
-  seenScene.setCandles(n, { spots: Math.max(12, n), styles, onTap: () => $('#playOwn').click() });
+  const flowers = [], lanterns = [], names = [];
+  flowers[count] = flowerStyle; lanterns[count] = lanternStyle; names[count] = $('#name').value.trim();
+  seenScene.setCandles(n, { spots: n, styles, flowers, lanterns, names, onTap: (i) => { if (i === count) $('#playOwn').click(); } });
   seenScene.stage.classList.add('interactive');
   seenScene.lightAll();
   seenScene.setActive(count);
@@ -349,6 +359,10 @@ function stopOwn() {
   paintSeen(-1);
   seenScene?.setActive(count, false);
   $('#playOwn').innerHTML = icon.play(16);
+  $('#playOwn').setAttribute('aria-label', 'Listen and check your words');
+  $('#captionEditor').hidden = false;
+  $('#seenCaption').hidden = true;
+  $('#editHint').textContent = 'Tap the words above to fix anything the AI misheard.';
 }
 
 // Must be called inside a tap (iOS creates the AudioContext only then).
@@ -367,6 +381,10 @@ async function playOwn() {
   playing = me;
   me.endShow = moodShow(seenScene?.wrap, mood, me);
   $('#playOwn').innerHTML = icon.pause(16);
+  $('#playOwn').setAttribute('aria-label', 'Stop listening and edit your words');
+  $('#captionEditor').hidden = true;
+  $('#seenCaption').hidden = false;
+  $('#editHint').textContent = 'Listening to your preview · stop playback to edit the words.';
   seenScene?.setActive(count, true);
   const paint = () => {
     if (playing !== me) return;
@@ -408,17 +426,28 @@ function putMini(b, style, only) {
 const igniteMini = (b) => { const c = b.querySelector('.candle'); if (c) styleCandle(c, c._style, { ignite: true }); };
 
 function buildTwist() {
-  $('#twistSub').textContent = `Optional. Tap one to hear it. Only the sound ${first} hears changes.`;
+  $('#twistSub').textContent = 'Add a little personality to your wish. Tap a mood to listen.';
   pickRow($('#moodRow'), Object.entries(MOODS).map(([k, m]) => [k, (b) => b.append(h('span', { class: 'pick-emoji' }, m.emoji), h('span', {}, m.label))]),
     (k) => k === mood,
     (k) => {
       mood = k;
       if (seenScene?.candles[count]) seenScene.candles[count].dataset.mood = k;
-      $('#seenScene').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('#captionCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
       playOwn();
     });
 
   $('#candlePicks').hidden = !isCake();
+  $('#flowerPicks').hidden = t.key !== 'graduation';
+  $('#lanternPicks').hidden = t.key !== 'wedding';
+  const colors = Object.entries(ITEM_COLORS).map(([k, c]) => [k, (b) => b.append(h('i', { class: 'item-color' + (t.key === 'wedding' ? ' lantern-color-sample' : ''), style: { background: c.hex } }, t.key === 'wedding' ? initials($('#name').value.trim()) : ''), h('span', {}, c.label))]);
+  if (t.key === 'graduation') {
+    pickRow($('#flowerTypeRow'), Object.entries(FLOWER_TYPES).map(([k, v]) => [k, b => b.append(miniFlower({ type: k, color: flowerStyle.color }), h('span', {}, v.label))]), k => k === flowerStyle.type, k => { flowerStyle.type = k; seenScene.setFlowerStyle(count, flowerStyle); });
+    pickRow($('#flowerColorRow'), colors, k => k === flowerStyle.color, k => {
+      flowerStyle.color = k; seenScene.setFlowerStyle(count, flowerStyle); $('#seenAvatar').style.background = ITEM_COLORS[k].hex;
+      $$('#flowerTypeRow .mini-flower').forEach(el => el.style.setProperty('--c', ITEM_COLORS[k].hex));
+    });
+  }
+  if (t.key === 'wedding') pickRow($('#lanternColorRow'), colors, k => k === lanternStyle.color, k => { lanternStyle.color = k; seenScene.setLanternStyle(count, lanternStyle); $('#seenAvatar').style.background = ITEM_COLORS[k].hex; });
   if (!isCake()) return;
   const changed = (b) => { seenScene.setCandleStyle(count, candleStyle); igniteMini(b); };
   pickRow($('#candleRow'), Object.entries(CANDLES).map(([k, c]) => [k, (b) => { b.append(h('span', {}, c.label)); putMini(b, { body: k }, 'stick'); }]),
@@ -455,7 +484,7 @@ $('#sendBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Sending…';
   try {
-    const res = await api('/api/message', { method: 'PATCH', json: { slug, id: sent.id, token: sent.token, text, mood, candle: isCake() ? candleStyle : null } });
+    const res = await api('/api/message', { method: 'PATCH', json: { slug, id: sent.id, token: sent.token, text, mood, candle: isCake() ? candleStyle : null, flower: t.key === 'graduation' ? flowerStyle : null, lantern: t.key === 'wedding' ? lanternStyle : null } });
     sentDone = true;
     if (Array.isArray(res.corrections) && res.corrections.length) lastCorrections = res.corrections;
     stopOwn();
@@ -477,7 +506,9 @@ async function showDone() {
   const c = createScene($('#doneCake'), gift);
   const styles = [];
   styles[n - 1] = candleStyle;
-  c.setCandles(n, { spots: Math.max(12, n), styles });
+  const flowers = [], lanterns = [], names = [];
+  flowers[n - 1] = flowerStyle; lanterns[n - 1] = lanternStyle; names[n - 1] = $('#name').value.trim();
+  c.setCandles(n, { spots: n, styles, flowers, lanterns, names });
   c.lightAll();
   c.mark(n - 1);
   $('#doneCount').textContent = t.doneCount(n);

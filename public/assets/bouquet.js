@@ -1,5 +1,6 @@
 // Graduation: the bouquet. Drawn in a fixed 390×370 stage; every voice is a flower that blooms.
 import { colorFor } from './common.js';
+import { ITEM_COLORS, FLOWER_TYPES } from './item-options.js';
 import { div, seeded, createStage, createDrawing, createStickers, createTopper, itemStates, nameText } from './stage.js';
 
 // Wrap colours. The keys are the same as the cake flavours so the API stays the same.
@@ -47,6 +48,18 @@ export const TOPPERS = {
 };
 
 const W = 390, H = 370;
+
+export function miniFlower(style) {
+  const holder = div('stage mini-flower', { position: 'relative', width: '48px', height: '48px' });
+  holder.style.setProperty('--c', ITEM_COLORS[style?.color]?.hex || ITEM_COLORS.pink.hex);
+  const flower = div('flower lit', { left: '5px', top: '5px', width: '38px', height: '38px' });
+  flower.dataset.petal = FLOWER_TYPES[style?.type] ? style.type : 'round';
+  const bloom = div('f-bloom');
+  for (let k = 0; k < 5; k++) { const petal = div('f-petal'); petal.style.setProperty('--a', `${k * 72}deg`); bloom.append(petal); }
+  bloom.append(div('f-core')); flower.append(bloom); holder.append(flower);
+  holder.setAttribute('aria-hidden', 'true');
+  return holder;
+}
 
 // The greenery around the flowers (gift.cake.greens).
 export const GREENS = {
@@ -110,7 +123,7 @@ function greensSvg(kind) {
 
 
 // Flower positions for n flowers (1–40): rows from the back (top) to the front, each wider than the last.
-export function flowerSpots(n) {
+export function flowerSpots(n, shape = 'classic') {
   const rows = n <= 3 ? 1 : n <= 7 ? 2 : n <= 12 ? 3 : n <= 20 ? 4 : n <= 30 ? 5 : 6;
   const size = n <= 3 ? 72 : n <= 7 ? 58 : n <= 12 ? 52 : n <= 20 ? 44 : n <= 30 ? 38 : 34;
   const weights = Array.from({ length: rows }, (_, r) => 3 + r);
@@ -120,11 +133,13 @@ export function flowerSpots(n) {
   const rnd = seeded(11 + n);
   const spots = [];
   counts.forEach((c, r) => {
-    const y = rows === 1 ? 118 : 70 + (88 * r) / (rows - 1);
+    const rim = shape === 'box' ? 156 : shape === 'basket' ? 160 : 166;
+    const lastY = rim - size / 2 - 10;
+    const y = rows === 1 ? lastY : 62 + ((lastY - 62) * r) / (rows - 1);
     const width = Math.min(250, (c - 1) * size * 0.98);
     for (let k = 0; k < c; k++) {
       const x = 195 + (c === 1 ? 0 : -width / 2 + (width * k) / (c - 1));
-      spots.push({ x: x + (rnd() - 0.5) * 6, y: y + (rnd() - 0.5) * 8, s: size, rot: Math.round(rnd() * 72) });
+      spots.push({ x, y, s: size, rot: Math.round(rnd() * 30) });
     }
   });
   // Spread the messages over the bouquet instead of filling it row by row.
@@ -198,7 +213,7 @@ export function createBouquet(host, opts = {}) {
   const backEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
   body.append(backEl);
   // greenery and baby's breath inside the wrap, so the bouquet looks full even with a few flowers
-  const greensEl = div('', { position: 'absolute', inset: '0' }); // the greenery (gift.cake.greens), drawn as SVG
+  const greensEl = div('', { position: 'absolute', inset: '0', transform: 'translateY(12px) scale(.86)', transformOrigin: '195px 150px' });
   body.append(greensEl);
   const rndIn = seeded(9);
   for (let i = 0; i < 26; i++) {
@@ -232,7 +247,9 @@ export function createBouquet(host, opts = {}) {
   let flavor = opts.flavor;
   let accent = opts.accent;
   let nameSize = null;
+  let currentShape = 'classic', lastLayout = null;
   function setShape(shape) {
+    currentShape = SHAPES[shape] ? shape : 'classic';
     backEl.textContent = frontEl.textContent = '';
     parts = {};
     const add = (parent) => (style, role) => { const d = div('p', style); parent.append(d); if (role) (parts[role] ||= []).push(d); return d; };
@@ -242,6 +259,7 @@ export function createBouquet(host, opts = {}) {
     frontEl.append(nameEl);
     api.setFlavor(flavor);
     api.setName(nameEl.textContent);
+    if (lastLayout) api.setCandles(lastLayout.n, lastLayout.options);
   }
 
   const flowers = [];
@@ -273,12 +291,19 @@ export function createBouquet(host, opts = {}) {
       nameFit.setSize(nameSize || 30); // shrinks to fit
     },
     setFont: nameFit.setFont,
+    setFlowerStyle(i, style) {
+      const flower = flowers[i];
+      if (!flower) return;
+      if (ITEM_COLORS[style?.color]) flower.style.setProperty('--c', ITEM_COLORS[style.color].hex);
+      if (FLOWER_TYPES[style?.type]) flower.dataset.petal = style.type;
+    },
     // Lay out `n` flowers (+ closed buds up to `spots`). Returns the flower elements in message order.
-    setCandles(n, { spots = n, colors, onTap } = {}) {
+    setCandles(n, { spots = n, colors, flowers: styles, names, onTap } = {}) {
+      lastLayout = { n, options: { spots, colors, flowers: styles, names, onTap } };
       layer.textContent = '';
       flowers.length = 0;
       const total = Math.min(Math.max(n, spots), 40);
-      const pos = flowerSpots(total);
+      const pos = flowerSpots(total, currentShape);
       const els = [];
       for (const p of pos.slice().sort((a, b) => a.y - b.y)) {
         const isSpot = p.i >= n;
@@ -286,6 +311,7 @@ export function createBouquet(host, opts = {}) {
         btn.type = 'button';
         btn.className = 'flower' + (isSpot ? ' spot' : '');
         btn.tabIndex = isSpot || !onTap ? -1 : 0;
+        if (!isSpot && names?.[p.i]) btn.setAttribute('aria-label', `Play ${names[p.i]}'s message`);
         Object.assign(btn.style, { left: `${(p.x - p.s / 2).toFixed(1)}px`, top: `${(p.y - p.s / 2).toFixed(1)}px`, width: `${p.s}px`, height: `${p.s}px` });
         btn.style.setProperty('--c', (colors && colors[p.i]) || colorFor(p.i));
         const bloom = div('f-bloom');
@@ -298,6 +324,7 @@ export function createBouquet(host, opts = {}) {
         els[p.i] = btn;
       }
       flowers.push(...els);
+      styles?.forEach((style, i) => api.setFlowerStyle(i, style));
       return els;
     },
     // The finale (throwing caps) happens around the bouquet, so the flowers stay.

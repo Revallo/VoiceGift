@@ -229,7 +229,7 @@ export function openSheet({ title = '', subtitle = '', content = null, onClose =
 }
 
 // Soft chime for candles lighting, built with Web Audio (no files).
-export function tone(ac, freq, when = 0, dur = 1, vol = 0.1) {
+export function tone(ac, freq, when = 0, dur = 1, vol = 0.1, destination = ac?.destination) {
   if (!ac) return;
   try {
     const t = ac.currentTime + when;
@@ -242,7 +242,7 @@ export function tone(ac, freq, when = 0, dur = 1, vol = 0.1) {
       g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v), t + 0.012);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur * (mult === 1 ? 1 : 0.5));
       o.connect(g);
-      g.connect(ac.destination);
+      g.connect(destination);
       o.start(t);
       o.stop(t + dur + 0.05);
     }

@@ -50,7 +50,7 @@ function renderWhoPreview() {
     recipient: rec,
     cake: decor(t.decorate.name(rec))
   });
-  whoScene.setCandles(8);
+  whoScene.setCandles(state.occasion === 'birthday' ? 6 : 8);
   whoScene.lightAll();
 }
 

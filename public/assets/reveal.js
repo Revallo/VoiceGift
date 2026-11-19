@@ -330,7 +330,7 @@ function enterScene() {
 
 function updateHeader() {
   const all = played.size >= messages.length;
-  header(t.reveal?.eyebrow || t.eyebrow(first), t.greeting(first), current?.chain ? 'Playing every voice, one by one.' : all ? t.allHeard : t.tapHint);
+  header(t.reveal?.eyebrow || t.eyebrow(first), t.greeting(first), current?.chain ? 'Playing every voice, one by one.' : all ? t.allHeard : scene.candlePages > 1 ? t.reveal.pagedHint : t.tapHint);
 }
 function updateHeard() {
   const heard = $('#heard');

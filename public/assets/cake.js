@@ -164,23 +164,21 @@ export function miniCandle(style, color, { h = 40, only = '' } = {}) {
 const W = 390, H = 300;
 const CX = 195, CY = 90; // centre of the top tier's top surface
 
-// Candle positions on the top tier for n candles (1–60). Two rings when there are many.
+export const CANDLES_PER_PAGE = 6;
+
+// Each group has its own spaced front arc. Logical indices still address every voice.
 export function candleSpots(n) {
+  n = Math.min(60, Math.max(0, Math.floor(n)));
   const spots = [];
-  const ring = (count, rx, ry, offset, depthScale) => {
-    for (let i = 0; i < count; i++) {
-      const a = Math.PI / 2 + (Math.PI * 2 * i) / count + offset;
-      spots.push({ x: CX + rx * Math.cos(a), base: CY + ry * Math.sin(a), d: ((Math.sin(a) + 1) / 2) * depthScale });
-    }
-  };
-  if (n <= 16) ring(n, n <= 3 ? 40 : n <= 6 ? 58 : 76, n <= 6 ? 9 : 12, n === 1 ? -Math.PI / 2 : Math.PI / 24, 1);
-  else {
-    const outer = Math.ceil(n * 0.62);
-    ring(outer, 80, 14, Math.PI / 24, 1);
-    ring(n - outer, 42, 6, Math.PI / 7, 0.6);
+  for (let i = 0; i < n; i++) {
+    const page = Math.floor(i / CANDLES_PER_PAGE), start = page * CANDLES_PER_PAGE;
+    const count = Math.min(CANDLES_PER_PAGE, n - start), at = i - start;
+    const span = count <= 1 ? 0 : count <= 3 ? 80 : 150;
+    const u = count <= 1 ? 0 : -1 + 2 * at / (count - 1);
+    const d = Math.sqrt(Math.max(0, 1 - u * u));
+    spots.push({ i, page, x: CX + span * u / 2, base: CY + 12 * d, d, w: 8, h: 34 + (i % 3) * 3 });
   }
-  const small = n > 32 ? 0.7 : n > 16 ? 0.82 : 1;
-  return spots.map((s, i) => ({ ...s, i, w: (8 + 2 * s.d) * small, h: Math.round((42 + 10 * s.d) * small) }));
+  return spots;
 }
 
 // The kinds of cake (gift.cake.shape). Every shape keeps its top surface centred on (CX, CY), so the candles fit all of them.
@@ -492,9 +490,39 @@ export function createCake(host, opts = {}) {
   const candles = [];
   const st = itemStates(candles, glow);
   const stickers = createStickers(stage);
+  let candlePage = 0, realCount = 0;
+  const pages = div('candle-pages');
+  pages.hidden = true;
+  pages.setAttribute('role', 'group');
+  pages.setAttribute('aria-label', 'Browse the candles');
+  const previousPage = document.createElement('button'), nextPage = document.createElement('button');
+  previousPage.type = nextPage.type = 'button';
+  previousPage.textContent = 'Previous'; nextPage.textContent = 'Next';
+  previousPage.setAttribute('aria-label', 'Previous candles'); nextPage.setAttribute('aria-label', 'Next candles');
+  const pageLabel = div('candle-page-label');
+  pageLabel.setAttribute('aria-live', 'polite');
+  pages.append(previousPage, pageLabel, nextPage);
+  host.append(pages);
+  function showCandlePage(page) {
+    const pageCount = Math.max(1, Math.ceil(realCount / CANDLES_PER_PAGE));
+    candlePage = Math.max(0, Math.min(pageCount - 1, page));
+    candles.forEach((c, i) => { c.hidden = Math.floor(i / CANDLES_PER_PAGE) !== candlePage; });
+    previousPage.disabled = candlePage === 0;
+    nextPage.disabled = candlePage === pageCount - 1;
+    const label = `${candlePage * CANDLES_PER_PAGE + 1}–${Math.min((candlePage + 1) * CANDLES_PER_PAGE, realCount)} of ${realCount}`;
+    if (pageLabel.textContent !== label) pageLabel.textContent = label;
+    pages.hidden = realCount <= CANDLES_PER_PAGE;
+  }
+  previousPage.addEventListener('click', () => showCandlePage(candlePage - 1));
+  nextPage.addEventListener('click', () => showCandlePage(candlePage + 1));
 
   const api = {
     wrap, stage, candles, toStage, size, stickers, ...st, setBackdrop,
+    get candlePages() { return Math.ceil(realCount / CANDLES_PER_PAGE); },
+    showCandlePage,
+    light(i, on = true) { if (on) showCandlePage(Math.floor(i / CANDLES_PER_PAGE)); st.light(i, on); },
+    lightAll(on = true) { st.lightAll(on); showCandlePage(0); },
+    setActive(i, speaking = false) { if (i >= 0 && i < candles.length) showCandlePage(Math.floor(i / CANDLES_PER_PAGE)); st.setActive(i, speaking); },
     drawArea: { left: 30, top: 40, width: 330, height: 260 },
     setDots: drawing.setDots, getDots: drawing.getDots, addDot: drawing.addDot,
     setFlavor(f) {
@@ -549,10 +577,11 @@ export function createCake(host, opts = {}) {
     setFont(key) { name.setFont(key); api.setPattern(pattern); },
     // Lay out `n` candles (+ empty spots up to `spots`). Returns the candle elements in message order.
     // `styles[i]` = that friend's { body, flame } (optional).
-    setCandles(n, { spots = n, colors, styles, onTap } = {}) {
+    setCandles(n, { spots = n, colors, styles, names, onTap } = {}) {
       layer.textContent = '';
       candles.length = 0;
       const total = Math.max(n, spots);
+      realCount = Math.min(n, 60);
       const pos = candleSpots(Math.min(total, 60));
       const order = pos.slice().sort((a, b) => a.base - b.base); // back to front
       const els = [];
@@ -562,11 +591,13 @@ export function createCake(host, opts = {}) {
         const btn = buildCandle(p, color, isSpot ? null : styles?.[p.i]);
         if (isSpot) btn.classList.add('spot');
         btn.tabIndex = isSpot || !onTap ? -1 : 0;
+        btn.setAttribute('aria-label', names?.[p.i] ? `Play ${names[p.i]}'s message` : `Candle ${p.i + 1}`);
         if (onTap && !isSpot) btn.addEventListener('click', () => onTap(p.i));
         layer.append(btn);
         els[p.i] = btn;
       }
       candles.push(...els.slice(0, total));
+      showCandlePage(0);
       seatAge();
       return els;
     },

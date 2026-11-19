@@ -35,6 +35,7 @@ export const THEMES = {
       libraryTitle: 'The people behind the candles',
       idleTitle: 'There’s a voice in every candle.',
       idleSub: 'Tap a candle or a name below. Their words will appear here.',
+      pagedHint: 'A few candles at a time. Pick any voice below.',
       keepTitle: 'A little love to come back to.',
       keepSub: 'Your voices are kept here. Open this link whenever you need them.'
     },

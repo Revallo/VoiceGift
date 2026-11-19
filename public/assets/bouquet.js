@@ -151,7 +151,7 @@ const poly = (pts) => `polygon(${pts.map(([x, y]) => `${x}px ${y}px`).join(', ')
 
 // The kinds of bouquet (gift.cake.shape). The flowers sit in the same place in all of them.
 export const SHAPES = {
-  classic: { label: 'Paper cone' },
+  classic: { label: 'Soft wrap' },
   box: { label: 'Flower box' },
   basket: { label: 'Basket' },
   tied: { label: 'Hand-tied' }
@@ -195,14 +195,17 @@ function buildShape(shape, B, F) {
     F({ left: '232px', top: '284px', width: '140px', height: '52px', borderRadius: '10px', transform: 'rotate(-7deg)', boxShadow: '0 4px 10px rgba(0,0,0,0.25)' }, 'front');
     return { top: 300, left: 232, width: 140, size: 18, rotate: -7 };
   }
-  // classic: the paper cone
-  B({ ...full, clipPath: poly([[72, 26], [318, 26], [372, 92], [262, 362], [128, 362], [18, 92]]) }, 'back');
-  B({ ...full, clipPath: poly([[84, 40], [306, 40], [354, 94], [254, 348], [136, 348], [36, 94]]) }, 'back2');
-  F({ ...full, clipPath: poly([[52, 168], [338, 168], [252, 356], [138, 356]]) }, 'front');
-  F({ ...full, clipPath: poly([[195, 168], [338, 168], [252, 356], [195, 356]]) }, 'front2');
-  F({ left: '52px', top: '166px', width: '286px', height: '4px', background: 'rgba(0,0,0,0.08)' });
-  bow(F, 195, 276);
-  return { top: 196 };
+  // classic: overlapping tissue and a softly curved paper wrap, rather than a rigid cone.
+  const paper = (d) => ({ ...full, clipPath: `path('${d}')` });
+  B(paper('M48 145 C36 111 51 80 88 72 Q137 82 187 130 L239 332 Q195 354 146 336 Z'), 'back');
+  B(paper('M342 144 C353 110 339 78 302 70 Q252 81 204 129 L151 334 Q197 354 244 336 Z'), 'back2');
+  B({ ...paper('M69 151 C58 121 71 101 103 96 Q150 115 195 145 Q242 114 287 96 C321 100 333 122 322 151 L243 326 Q195 344 146 326 Z'), opacity: '.68' }, 'back2');
+  F({ ...paper('M62 156 Q195 184 328 156 C314 216 284 295 248 343 Q195 361 142 343 C105 294 76 216 62 156 Z'), boxShadow: 'inset 0 -10px 0 rgba(0,0,0,.04)' }, 'front');
+  F(paper('M195 170 Q262 178 328 156 C314 216 284 295 248 343 Q224 353 195 354 Z'), 'front2');
+  F({ ...paper('M62 156 Q195 184 328 156 L324 166 Q195 194 66 166 Z'), background: 'rgba(255,255,255,.3)' });
+  F({ ...paper('M192 174 Q198 258 195 350 L199 350 Q203 257 198 174 Z'), background: 'rgba(255,255,255,.19)' });
+  bow(F, 195, 280);
+  return { top: 208, left: 90, width: 210, size: 30 };
 }
 
 export function createBouquet(host, opts = {}) {
@@ -212,6 +215,8 @@ export function createBouquet(host, opts = {}) {
 
   const backEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
   body.append(backEl);
+  const stemsEl = div('', { position: 'absolute', inset: '0' });
+  body.append(stemsEl);
   // greenery and baby's breath inside the wrap, so the bouquet looks full even with a few flowers
   const greensEl = div('', { position: 'absolute', inset: '0', transform: 'translateY(12px) scale(.86)', transformOrigin: '195px 150px' });
   body.append(greensEl);
@@ -304,6 +309,9 @@ export function createBouquet(host, opts = {}) {
       flowers.length = 0;
       const total = Math.min(Math.max(n, spots), 40);
       const pos = flowerSpots(total, currentShape);
+      stemsEl.innerHTML = currentShape === 'classic'
+        ? `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${pos.map(p => `<path d="M${p.x} ${p.y + p.s * .24} Q${195 + (p.x - 195) * .4} 199 195 278" fill="none" stroke="#638959" stroke-width="2.4" stroke-linecap="round"/>`).join('')}</svg>`
+        : '';
       const els = [];
       for (const p of pos.slice().sort((a, b) => a.y - b.y)) {
         const isSpot = p.i >= n;

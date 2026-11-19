@@ -2369,3 +2369,10 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .stage .flower[data-petal="rose"] .f-petal { border-radius: 30% 70% 60% 40%; }
 .stage .flower[data-petal="daisy"] .f-petal { clip-path: ellipse(28% 50%); }
 .l-initial { position: absolute; inset: 0; display: grid; place-items: center; color: #382817; font: 700 12px var(--sans); text-shadow: 0 1px 1px #fff6; }
+
+/* A small set of candles stays readable; every voice remains available across groups. */
+.candle-pages { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 8px; }
+.candle-pages button { min-height: 44px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--panel); color: var(--text); font: 600 12px var(--sans); cursor: pointer; }
+.candle-pages button:disabled { opacity: .4; cursor: default; }
+.candle-pages button:focus-visible { outline: 2px solid var(--emerald-light); outline-offset: 2px; }
+.candle-page-label { text-align: center; color: var(--soft); font-size: 12px; line-height: 1.4; }

@@ -4,6 +4,7 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
+- ✅ **Calmer gift scenes** (2026-11-19): show up to six spaced candles per group, with Previous/Next and automatic group selection when a voice plays; every voice keeps its own candle. Restored the caption heading above the gift. Default graduation wrap has soft curved tissue folds; lantern rows fill evenly (8 = 4 + 4, 20 = 7 + 7 + 6).
 - ✅ 🎯 **Gift, words, personalization in one open page** (revised 2026-11-19): no preview before recording. After recording, show the gift scene first, then the large cream editable caption, then expanded personalization. No disclosure arrows; birthday-style playback cards also cover graduation and wedding.
 - ✅ **Immediate opening bells** (2026-11-19): four bells answer the Open gift tap before audio downloads; clearer chimes accompany each item lighting. Start selected music only after the lighting sequence, and offer retry if browser audio cannot start.
 - ✅ **Personal flowers and lanterns** (2026-11-19): each sender chooses flower type/color or lantern color; lanterns show sender initials, matching sender-avatar colors. Bouquet rows fit above each container's rim, with greenery inset from the frame.

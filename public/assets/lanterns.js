@@ -53,23 +53,27 @@ export const TOPPERS = {
 const W = 390, H = 330;
 const MAX = 36;
 
-const strings = (total) => (total <= 12 ? [26, 128] : [14, 88, 162]);
+// Keep the lower string above the topper/inscription, while filling the sky evenly.
+const strings = (total) => total <= 0 ? [] : total <= 4 ? [66] : total <= 12 ? [24, 108] : [8, 67, 126];
 const sagY = (base, x) => base + 22 * (1 - ((x - 195) / 205) ** 2);
 
-// Lantern positions for n lanterns (1–36), spread over two or three strings.
+// Balanced rows, rather than filling the first string before starting the next.
+// Each returned index still belongs to the same voice; no decorative voices are added.
 export function lanternSpots(n) {
+  n = Math.max(0, Math.min(MAX, Math.floor(Number(n) || 0)));
   const rows = strings(n);
-  const per = Math.max(Math.ceil(n / rows.length), n <= 12 ? 6 : 1);
-  const small = rows.length > 2;
+  if (!rows.length) return [];
+  const per = Math.floor(n / rows.length), extra = n % rows.length;
+  const [w, h] = n <= 4 ? [44, 58] : n <= 8 ? [40, 52] : n <= 12 ? [34, 46] : n <= 21 ? [28, 36] : n <= 30 ? [24, 32] : [22, 30];
   const rnd = seeded(3 + n);
   const spots = [];
   rows.forEach((base, r) => {
-    const count = Math.min(per, n - spots.length);
+    const count = per + (r < extra ? 1 : 0);
     for (let k = 0; k < count; k++) {
-      // Alternate strings start half a step in, so the lanterns don't line up in columns.
-      const step = 330 / per;
-      const x = 30 + step * (k + (r % 2 ? 0.5 : 0.25));
-      spots.push({ x, top: sagY(base, x), len: Math.round((small ? 8 : 12) + rnd() * (small ? 16 : 26)), w: small ? 24 : 30, h: small ? 32 : 40, swing: (2.6 + rnd() * 1.6).toFixed(2), drift: Math.round((rnd() - 0.5) * 70) });
+      const span = count === 2 ? 210 : 312;
+      const x = count === 1 ? 195 : 195 - span / 2 + span * k / (count - 1);
+      const len = Math.round((rows.length === 3 ? 8 : 12) + rnd() * (rows.length === 3 ? 4 : 6));
+      spots.push({ x, top: sagY(base, x), len, w, h, swing: (2.6 + rnd() * 1.6).toFixed(2), drift: Math.round((rnd() - 0.5) * 70) });
     }
   });
   return spots.map((s, i) => ({ ...s, i }));

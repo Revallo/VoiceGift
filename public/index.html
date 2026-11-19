@@ -83,7 +83,7 @@ else {
 function drawGifts(name) {
   for (const [occasion, host] of [['birthday', '#heroCake'], ['graduation', '#heroBouquet'], ['wedding', '#heroLanterns']]) {
     const scene = createScene($(host), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
-    scene.setCandles(10);
+    scene.setCandles(occasion === 'birthday' ? 6 : 10);
     scene.lightAll();
   }
 }

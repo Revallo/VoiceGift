@@ -41,6 +41,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - `assets/themes.js` holds every occasion's words (one object per occasion) and `createScene()`, which picks
   the scene. Pages never hard-code "candle" or "birthday": add words there.
 - Scenes: `cake.js` (birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
+- Birthday keeps one logical candle per voice, with at most six visible per group. `setActive()`/`light()` open the matching group; `lightAll()`/`reset()` restore the first group. Keep every voice/index available; do not truncate messages to match the visible candles.
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
 - Decorate step: the kind is picked from a sideways strip of live minis (tap one, or swipe the big gift); the strip is never rebuilt on a pick, so it stays where it was scrolled; every strip (`wheel()` in `create.js`) picks whatever stops in the middle; stickers are dragged up onto the gift. The gift stays on screen and only the tools card scrolls; a music plays as soon as it's picked. Drawing has Undo (each stroke and Clear). On the cake, the age and the figures are pushed into the cream (cut at the bottom, a thin cream rim), among the candles.

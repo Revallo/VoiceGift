@@ -33,7 +33,7 @@ async function load() {
   // the gift: one item per voice so far
   $('#cake').textContent = '';
   const scene = createScene($('#cake'), gift);
-  scene.setCandles(sentMsgs.length, { spots: Math.max(12, sentMsgs.length), styles: sentMsgs.map((m) => m.candle) });
+  scene.setCandles(sentMsgs.length, { spots: sentMsgs.length || 12, styles: sentMsgs.map((m) => m.candle) });
   scene.lightAll();
 
   // 1. invite friends

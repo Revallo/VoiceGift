@@ -371,13 +371,16 @@ function stopCurrent() {
   if (ac?.state === 'suspended') ac.resume().catch(() => {});
 }
 
-async function play(i, chain) {
+// original: play the recording as it was spoken, without the friend's mood (a mood can make words hard to follow).
+async function play(i, chain, { original = false } = {}) {
   if (phase !== 'cake' || i === undefined) return;
   stopCurrent();
   stopMusic(); // A friend's words always have the room to themselves.
   if (!chain) queue = [];
   if (ac.state === 'suspended') ac.resume().catch(() => {});
   const m = messages[i];
+  const hasMood = moodOf(m.mood) !== 'normal';
+  const mood = original ? 'normal' : m.mood;
   const me = { i, chain, raf: 0, src: null };
   current = me;
   chips.forEach((c, k) => { c.classList.toggle('on', k === i); c.setAttribute('aria-pressed', String(k === i)); });
@@ -388,8 +391,15 @@ async function play(i, chain) {
   const card = h('div', { class: 'panel' + (t.reveal ? ' birthday-player' : '') },
     h('div', { class: 'who' }, h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(m.sender)),
       h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec),
-        moodOf(m.mood) !== 'normal' ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, `${MOODS[moodOf(m.mood)].emoji} ${MOODS[moodOf(m.mood)].label}`) : '')), bars),
+        hasMood && !original ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, `${MOODS[moodOf(m.mood)].emoji} ${MOODS[moodOf(m.mood)].label}`) : '',
+        hasMood && original ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, '🔊 Original') : '')), bars),
     h('div', { class: 'caption' }, words));
+  // switch between the friend's mood and their plain voice; starts this voice again from the beginning
+  const moodSwitch = hasMood && h('button', {
+    type: 'button', class: 'btn ghost sm mood-switch', id: 'moodSwitch',
+    'aria-label': original ? `Play ${m.sender}'s message with the ${MOODS[moodOf(m.mood)].label} effect` : `Play ${m.sender}'s original voice, without the effect`,
+    onclick: () => play(i, false, { original: !original })
+  }, original ? `${MOODS[moodOf(m.mood)].emoji} With ${MOODS[moodOf(m.mood)].label} effect` : '🔊 Original voice');
   let control, progressFill, elapsed, syncControl;
   if (t.reveal) {
     card.prepend(h('div', { class: 'birthday-letter-label' }, t.reveal.letterLabel));
@@ -405,7 +415,7 @@ async function play(i, chain) {
       control.disabled = state === 'loading';
     };
     control.onclick = async () => {
-      if (current !== me) return play(i, false);
+      if (current !== me) return play(i, false, { original });
       const pause = !me.paused;
       control.disabled = true;
       try {
@@ -431,6 +441,7 @@ async function play(i, chain) {
     syncControl('loading');
     me.clock = clock;
   }
+  if (moodSwitch) card.append(moodSwitch);
   setPanel(card);
   if (t.reveal) card.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   updateHeader();
@@ -465,11 +476,11 @@ async function play(i, chain) {
   const startAt = ac.currentTime;
   if (buf) {
     // the friend's mood is added here, while playing; the recording itself is unchanged
-    me.src = playVoice(ac, buf, m.mood, { onended: finish });
+    me.src = playVoice(ac, buf, mood, { onended: finish });
     rate = me.src.rate;
     lead = me.src.lead;
     dur = me.src.duration;
-    me.endShow = moodShow(scene.wrap, m.mood, me.src);
+    me.endShow = moodShow(scene.wrap, mood, me.src);
     syncControl?.('playing');
   } else {
     toast('This voice could not be loaded. Showing the words only.');

@@ -108,6 +108,17 @@ try {
     assert.equal(await r.locator('.birthday-player').count(), 1);
     assert(await r.locator('.birthday-player .caption').evaluate(e => parseFloat(getComputedStyle(e).fontSize) >= 20));
     await screenshot(r, `${occasion}-recipient`);
+    // A voice with a mood can be heard as recorded, and switched back. (Demo 2 has the Dangdut mood.)
+    await r.locator('.friend').nth(1).click(); await r.locator('.birthday-player[data-player-state="playing"]').waitFor();
+    assert.match(await r.locator('#moodSwitch').textContent(), /Original voice/);
+    await r.click('#moodSwitch'); await r.locator('.birthday-player[data-player-state="playing"]').waitFor();
+    assert.match(await r.locator('.birthday-player .mood-tag').textContent(), /Original/);
+    assert.match(await r.locator('#moodSwitch').textContent(), /With Dangdut effect/);
+    await screenshot(r, `${occasion}-original-voice`);
+    await r.click('#moodSwitch'); await r.locator('.birthday-player[data-player-state="playing"]').waitFor();
+    assert.match(await r.locator('#moodSwitch').textContent(), /Original voice/);
+    await r.locator('.friend').nth(0).click(); await r.locator('.birthday-player[data-player-state="playing"]').waitFor();
+    assert.equal(await r.locator('#moodSwitch').count(), 0, 'No switch for a voice without a mood.');
     if (occasion === 'graduation') {
       const bounds = await r.evaluate(async () => {
         const { flowerSpots } = await import('/assets/bouquet.js');

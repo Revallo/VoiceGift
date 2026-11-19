@@ -182,6 +182,8 @@ body.reveal-page[data-theme="birthday"] {
 :is(.reveal-page, .record-page) .birthday-player .name { font-size: 14px; overflow-wrap: anywhere; }
 :is(.reveal-page, .record-page) .birthday-player .meta { margin-top: 2px; font-size: 11px; }
 :is(.reveal-page, .record-page) .birthday-player .mood-tag { color: #715b40; }
+:is(.reveal-page, .record-page) .birthday-player .mood-switch { background: transparent; color: #4b3a28; border: 1px solid rgba(75, 58, 40, 0.3); font-weight: 600; }
+:is(.reveal-page, .record-page) .birthday-player .mood-switch:hover { background: rgba(75, 58, 40, 0.08); }
 :is(.reveal-page, .record-page) .birthday-player .caption {
   margin: 21px 0 22px;
   font-family: var(--display);

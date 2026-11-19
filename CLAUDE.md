@@ -59,7 +59,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   phone's back gesture works. No bottom tab bar: the profile button sits top right.
 - After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`: Sad, Angry, Dangdut, Toa,
   Horror, Helium, Alien, 8-bit; each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
-  with Web Audio only, never baked into the WAV) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
+  with Web Audio only, never baked into the WAV; the recipient's player has "🔊 Original voice" to hear it without the mood, and back) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
   **flame shape** (`CANDLES`/`FLAMES`/`FLAME_SHAPES` in `cake.js`; each pick shows only that thing, live). Saved on the message as
   `mood` and `candle {body, flame, shape}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.

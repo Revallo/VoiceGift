@@ -33,16 +33,6 @@
       <a class="backbtn" href="/" aria-label="Back to home" data-icon="back"></a>
       <p class="calm-from" id="invitedBy"></p>
       <h1 class="calm-title" id="inviteTitle"></h1>
-      <details class="invite-preview">
-        <summary id="invitePreviewLabel">See what your friend will receive</summary>
-        <div class="invite-preview-scene" id="invitePreviewScene"></div>
-        <div class="panel birthday-player">
-          <p class="birthday-letter-label">Example preview · your words come next</p>
-          <b id="invitePreviewName"></b>
-          <p class="caption" id="invitePreviewText"></p>
-        </div>
-        <p class="small muted">Your voice comes with words they can read. You’ll check those words after recording.</p>
-      </details>
 
       <form class="stack" id="inviteForm" novalidate>
         <div class="field">
@@ -105,15 +95,14 @@
 
   <section data-screen="caption" hidden>
     <div class="calm-page">
-      <div class="head">
-        <h1 class="calm-title" id="capTitle">Check your words</h1>
-        <p class="calm-tip" id="captionHelp" style="margin:0">They’ll hear your voice and read these words. Fix anything the AI misheard. Keep your slang, names and inside jokes.</p>
-      </div>
-
       <!-- what the recipient will see when they open the gift: the voice, with its words lighting up -->
       <div class="seen">
-        <span class="seen-label" id="seenLabel"></span>
         <div class="seen-clip">
+        <div class="caption-scene">
+          <div id="seenScene"></div>
+          <p class="seen-hint" id="seenHint"></p>
+        </div>
+        <span class="seen-label" id="seenLabel"></span>
         <div class="panel birthday-player" id="captionCard">
           <p class="birthday-letter-label" id="previewLetterLabel"></p>
           <div class="who">
@@ -127,25 +116,21 @@
               <button type="button" class="linkbtn small" id="resetAsrBtn" hidden>Reset</button>
             </div>
             <div class="caption-box-wrap">
-              <textarea class="input" id="captionText" maxlength="400" aria-label="Caption" aria-describedby="captionHelp" placeholder="Write exactly what you said…"></textarea>
+              <textarea class="input" id="captionText" maxlength="400" aria-label="Caption" aria-describedby="editHint" placeholder="Write exactly what you said…"></textarea>
               <span class="edit-badge" id="editBadge"></span>
             </div>
           </div>
           <div class="caption" id="seenCaption" hidden></div>
           <p class="caption-edit-hint" id="editHint">Listen once, then fix any words that don’t match your voice.</p>
         </div>
-        <details class="caption-scene">
-          <summary id="seenHint">See your voice on the gift</summary>
-          <div id="seenScene"></div>
-        </details>
         </div>
       </div>
 
       <div class="diff-line" id="diffLine" hidden></div>
 
       <!-- after recording normally: a mood for the voice (played as an effect, the recording stays as it is) + their own candle -->
-      <details class="twist" id="twist">
-        <summary class="twist-head"><b>Personalize your voice</b><small>Optional · after checking your words</small></summary>
+      <div class="twist" id="twist">
+        <div class="twist-head"><b>Personalize your voice</b><small>Optional</small></div>
         <p class="small muted" id="twistSub"></p>
         <span class="pick-label">Voice mood</span>
         <div class="pick-row" id="moodRow"></div>
@@ -164,7 +149,7 @@
         <div class="stack" id="lanternPicks" hidden>
           <span class="pick-label">Your lantern color · your initial goes in the middle</span><div class="pick-row" id="lanternColorRow"></div>
         </div>
-      </details>
+      </div>
 
       <p class="note" id="mockNote" hidden></p>
       <p class="small err" id="capError" hidden></p>

@@ -61,11 +61,6 @@ async function load() {
   $('#name').value = user.name;
   $('#signedIn').textContent = `Logged in as ${user.email}`;
   $('#signedIn').hidden = false;
-  $('#invitePreviewLabel').textContent = `See how ${first} will receive your wish`;
-  $('#invitePreviewName').textContent = user.name;
-  $('#invitePreviewText').textContent = { birthday: `Selamat ulang tahun, ${first}! Semoga selalu bahagia.`, graduation: `Selamat wisuda, ${first}! Bangga banget sama kamu.`, wedding: `Selamat menempuh hidup baru! Bahagia selalu ya.` }[t.key];
-  const example = createScene($('#invitePreviewScene'), gift);
-  example.setCandles(1, { spots: 1, names: [user.name], flowers: [flowerStyle], lanterns: [lanternStyle] }); example.lightAll();
   showScreen('invite');
 }
 
@@ -188,7 +183,7 @@ async function upload() {
     $('#captionText').value = sent.asrText;
     $('#seenLabel').textContent = `How ${first} will see it`;
     $('#previewLetterLabel').textContent = t.reveal.letterLabel;
-    $('#seenHint').textContent = `This is your ${t.item}. Tap it to try what ${first} will hear.`;
+    $('#seenHint').textContent = `Tap your ${t.item} to hear your wish.`;
     showSeenScene();
     $('#seenAvatar').textContent = initials($('#name').value.trim());
     $('#seenAvatar').style.background = t.key === 'graduation' ? ITEM_COLORS[flowerStyle.color].hex : t.key === 'wedding' ? ITEM_COLORS[lanternStyle.color].hex : colorFor(count);

@@ -4,7 +4,8 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
-- ✅ 🎯 **Caption-first previews for every occasion** (2026-11-19): example recipient preview before recording; the real corrected words are edited in a large letter card after recording, with decoration collapsed. Birthday-style playback cards now cover graduation and wedding too.
+- ✅ 🎯 **Gift, words, personalization in one open page** (revised 2026-11-19): no preview before recording. After recording, show the gift scene first, then the large cream editable caption, then expanded personalization. No disclosure arrows; birthday-style playback cards also cover graduation and wedding.
+- ✅ **Immediate opening bells** (2026-11-19): four bells answer the Open gift tap before audio downloads; clearer chimes accompany each item lighting. Start selected music only after the lighting sequence, and offer retry if browser audio cannot start.
 - ✅ **Personal flowers and lanterns** (2026-11-19): each sender chooses flower type/color or lantern color; lanterns show sender initials, matching sender-avatar colors. Bouquet rows fit above each container's rim, with greenery inset from the frame.
 - ✅ **Orderly sprinkles, separated music, twenty demos** (2026-11-19): evenly spaced rows follow cake surfaces; lighting chimes finish before selected music starts, and music stops for messages. Twenty demo items reuse ten sample recordings twice, explicitly labeled and excluded from training data.
 - ✅ **Shape-aware cake patterns + adjacent drawing Undo** (2026-11-19): decorations follow each cake's tier/frosting surfaces, stay within curved edges and leave the name clear; removed fixed sprinkles from plain cakes. Undo sits beside Done and affects drawing strokes only. Music source audit: `docs/MUSIC.md`.
@@ -57,7 +58,7 @@ Add new ideas here, one line each.
 - ⚠️ Guard the label: fix to what was *said*, not a nicer sentence. If the edit changes most words, suggest "Record again" instead.
 
 ## Natural caption checking, no rewards (proposed 2026-11-18)
-- ⏳ 🎯 **Recipient preview before recording**: show a small example of the recipient tapping your item and reading your caption; clearly label example content, never expose other friends' voices.
+- Removed by user choice (2026-11-19): **Recipient preview before recording**. Keep the recipient preview on the post-recording caption screen instead.
 - ⏳ 🎯 **Edit the preview itself**: one caption surface using the recipient's presentation; tap any word or phrase to edit, with an accessible full-caption editor as a fallback, instead of showing duplicate text boxes.
 - ⏳ 🎯 **Listen, decide, correct**: tapping a suspect phrase offers its audio context, manual editing and "that's what I said"; suggestions never silently replace speech or normalize slang.
 - ⏳ 🎯 **Words first, decoration second**: keep moods and candle choices collapsed until the caption review is finished, without making effects a reward for editing.

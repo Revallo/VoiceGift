@@ -1,5 +1,5 @@
-// Local regression: caption-first sender preview, individual styles, 20 demos, music order and bouquet bounds.
-// DEV_LOGIN=1 server without provider keys; BASE=http://localhost:3021 node tests/gift-polish.mjs
+// Local regression: expanded gift/words/personalization layout, individual styles, 20 demos, music order and bouquet bounds.
+// DEV_LOGIN=1 server without provider keys; BASE=http://localhost:3022 node tests/gift-polish.mjs
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
@@ -26,6 +26,22 @@ async function screenshot(page, name) {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.screenshot({ path: `tests/screenshots/polish-${name}.png` });
 }
+async function senderLayout(page) {
+  assert(await page.locator('#seenScene').isVisible(), 'The gift scene is always expanded.');
+  assert(await page.locator('#captionText').isVisible(), 'The corrected words remain directly editable.');
+  assert(await page.locator('#twist').isVisible(), 'Personalization is always expanded.');
+  assert(await page.locator('#moodRow .pick').first().isVisible(), 'Mood choices do not need a toggle.');
+  assert.equal(await page.locator('[data-screen="caption"] details, [data-screen="caption"] summary').count(), 0, 'No collapsed sections or disclosure arrows on the caption screen.');
+  const layout = await page.evaluate(() => {
+    const scene = document.querySelector('#seenScene').getBoundingClientRect();
+    const card = document.querySelector('#captionCard').getBoundingClientRect();
+    const twist = document.querySelector('#twist').getBoundingClientRect();
+    return { sceneBottom: scene.bottom, cardTop: card.top, cardBottom: card.bottom, twistTop: twist.top, width: innerWidth, scrollWidth: document.documentElement.scrollWidth };
+  });
+  assert(layout.sceneBottom <= layout.cardTop + 1, 'The gift scene comes above the words card.');
+  assert(layout.cardBottom <= layout.twistTop + 1, 'The words card comes above personalization.');
+  assert(layout.scrollWidth <= layout.width, 'The expanded sender layout must not scroll horizontally.');
+}
 try {
   const organizer = await account('Sari', 'org');
   for (const occasion of ['birthday', 'graduation', 'wedding']) {
@@ -37,23 +53,25 @@ try {
     const friend = await context(friendCookie), p = await friend.newPage();
     p.on('pageerror', e => errors.push(e.message));
     await p.goto(`${BASE}/g/${gift.slug}`);
-    await p.locator('.invite-preview summary').click();
-    assert.match(await p.locator('#invitePreviewText').textContent(), /Selamat/);
-    await screenshot(p, `${occasion}-before-record`);
-    await p.locator('.invite-preview summary').click();
+    await p.locator('[data-screen="invite"]:visible').waitFor();
+    assert.equal(await p.locator('.invite-preview, #invitePreviewScene, #invitePreviewLabel').count(), 0, 'No example preview before recording.');
     await p.check('#consent'); await p.click('#startBtn');
     await p.locator('[data-screen="record"]:visible').waitFor(); await p.waitForTimeout(1300); await p.click('#stopBtn');
     await p.locator('[data-screen="caption"]:visible').waitFor();
     assert(await p.locator('#captionText').isVisible());
     assert.equal(await p.locator('#seenCaption').isVisible(), false);
-    assert.equal(await p.locator('#twist').getAttribute('open'), null);
+    await senderLayout(p);
     assert(await p.locator('#captionText').evaluate(e => parseFloat(getComputedStyle(e).fontSize) >= 20));
     await p.fill('#captionText', 'Semoga selalu bahagia. Ini ucapan Ayu!');
     await screenshot(p, `${occasion}-caption`);
+    await p.setViewportSize({ width: 320, height: 740 });
+    await senderLayout(p);
+    await screenshot(p, `${occasion}-caption-320`);
+    await p.setViewportSize({ width: 390, height: 844 });
     await p.click('#playOwn'); await p.locator('#seenCaption:visible').waitFor();
     assert.equal(await p.locator('#captionText').isVisible(), false);
     await p.click('#playOwn'); await p.locator('#captionText:visible').waitFor();
-    await p.locator('#twist summary').click();
+    await senderLayout(p);
     if (occasion === 'graduation') {
       await p.click('#flowerTypeRow [data-key="rose"]'); await p.click('#flowerColorRow [data-key="blue"]');
       assert.equal(await p.locator('#seenScene .flower[data-petal="rose"]').count(), 1);
@@ -105,7 +123,7 @@ try {
     await recipient.close();
   }
   assert.deepEqual(errors, []);
-  console.log('ERRORS none — all-theme sender/recipient previews, saved flowers/lanterns, 20 demos, music sequencing, bouquet bounds');
+  console.log('ERRORS none — expanded gift/words/personalization layout at 320/390px, saved flowers/lanterns, 20 demos, music sequencing, bouquet bounds');
 } catch (error) {
   console.error('Browser errors:', errors);
   for (const ctx of browser.contexts()) for (const page of ctx.pages()) console.error(page.url(), (await page.locator('body').innerText()).slice(0, 700));

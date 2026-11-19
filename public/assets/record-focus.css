@@ -1,7 +1,7 @@
 /* The caption is the gift's message, and the primary thing to check. */
 .record-page .seen { border: 0; padding: 0; background: transparent; }
 .record-page .seen-clip { overflow: visible; padding: 0; border: 0; background: transparent; }
-.record-page .seen-label { display: block; margin: 0 0 14px; font-size: 14px; color: var(--soft); }
+.record-page .seen-label { display: block; margin: 4px 0; font-size: 14px; color: var(--soft); }
 .record-page .birthday-player { border-radius: 24px; }
 .record-page .caption-editor { margin-top: 20px; }
 .record-page .caption-editor label { color: #59432b; font-size: 14px; font-weight: 600; }
@@ -16,16 +16,9 @@
 .record-page .edit-badge { color: #75634e; background: transparent; }
 .record-page .caption-edit-hint { margin: 12px 0 0; color: #75634e; font-size: 13px; line-height: 1.5; }
 .record-page .seen-play { width: 46px; height: 46px; border: 0; border-radius: 50%; color: #fff5e6; background: #463421; flex-shrink: 0; }
-.record-page .invite-preview, .record-page .caption-scene { border: 1px solid var(--line-strong); border-radius: 18px; padding: 14px; }
-.record-page summary { cursor: pointer; font-size: 14px; line-height: 1.5; color: var(--soft); }
-.record-page .invite-preview-scene { max-width: 230px; margin: 8px auto; }
-.record-page .invite-preview .birthday-player { margin-top: 12px; }
-.record-page .invite-preview .caption { font-size: 19px; margin-bottom: 0; }
-.record-page .caption-scene { margin-top: 16px; }
-.record-page #seenScene { max-width: 270px; margin: 8px auto 0; }
-.record-page .twist { display: block; }
-.record-page .twist[open] > :not(summary) { margin-top: 14px; }
-.record-page .twist-head { display: list-item; }
+.record-page .caption-scene { margin: 0; }
+.record-page #seenScene { width: 100%; margin: 0 auto 10px; }
+.record-page .twist { display: flex; }
 .record-page .twist-head small { display: block; font-size: 12px; }
 .record-page .pick-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .item-color { display: block; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #0002; }

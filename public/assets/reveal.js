@@ -210,11 +210,26 @@ async function openGift() {
   if (phase !== 'ready') return;
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return toast('Your browser cannot play this gift. Try Chrome or Safari.');
-  ac = new AC();
-  ac.resume().catch(() => {});
   setPhase('loading-audio');
   const progress = h('p', { class: 'small muted center', style: { margin: '0' } }, 'Collecting voices…');
   setBottom(h('div', { class: 'loading', style: { flex: '0' } }, h('div', { class: 'spinner' }), progress));
+  let resumeTimeout;
+  try {
+    ac = new AC();
+    await Promise.race([
+      ac.resume(),
+      new Promise((_, reject) => { resumeTimeout = setTimeout(() => reject(new Error('Audio did not start')), 2500); })
+    ]);
+    if (ac.state !== 'running') throw new Error('Audio is not running');
+  } catch {
+    ac?.close().catch(() => {});
+    showReady();
+    return toast('Sound could not start. Tap Open your gift to try again.');
+  } finally {
+    clearTimeout(resumeTimeout);
+  }
+  // A bell welcome answers the tap immediately, even while recordings are still loading.
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.14, 0.65, 0.1));
   let done = 0;
   const total = Math.min(messages.length, 40);
   await runLimited(messages.slice(0, total).map((m, i) => () => loadBuffer(i).catch(() => null).finally(() => { done++; progress.textContent = `Collecting voices… ${done} of ${total}`; })), 4);
@@ -266,7 +281,7 @@ function startLighting() {
       setPanel(h('div', { class: 'caller' },
         h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(m.sender)),
         h('div', { class: 'shout' }, m.sender)));
-      tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.05);
+      tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.09);
     }, at);
   });
   later(() => {

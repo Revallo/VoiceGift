@@ -99,10 +99,12 @@
             <span class="label tool">Font</span>
             <div class="wheel" id="fonts"></div>
           </div>
-          <div class="row" style="justify-content:space-between" id="drawRow">
-            <button type="button" class="btn ghost sm" id="sketchToggle">✏️ Draw</button>
+          <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px" id="drawRow">
+            <div class="row" style="gap:8px">
+              <button type="button" class="btn ghost sm" id="sketchToggle">✏️ Draw</button>
+              <button type="button" class="btn ghost sm" id="undoDraw" hidden disabled>↶ Undo</button>
+            </div>
             <div class="wheel" id="brushes" hidden></div>
-            <button type="button" class="btn ghost sm" id="undoDraw" hidden disabled>↶ Undo</button>
             <button type="button" class="btn ghost sm" id="clearDraw" hidden>Clear</button>
           </div>
         </div>

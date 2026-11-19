@@ -4,6 +4,7 @@ Short list so nothing gets forgotten. ✅ = built, ⏳ = not yet. 🎯 = also br
 Add new ideas here, one line each.
 
 ## Built
+- ✅ **Shape-aware cake patterns + adjacent drawing Undo** (2026-11-19): decorations follow each cake's tier/frosting surfaces, stay within curved edges and leave the name clear; removed fixed sprinkles from plain cakes. Undo sits beside Done and affects drawing strokes only. Music source audit: `docs/MUSIC.md`.
 - ✅ 🎯 **Birthday recipient as a personal letter** (2026-11-18): quiet warm opening, real sender initials, integrated personalized cake, large cream caption card, pause/resume/replay/next controls, and readable sender names. Hearing and reading the exact message is the focus; no rewards. Implemented locally; publication is separate.
 - ✅ **Voice mood**, festive set (2026-11-13): 😭 Sad (sad trombone, rain, flames shrink), 😡 Angry (growl + BRAKK!, red shake,
   steam), 💃 Dangdut (kendang + disco lights), 📢 Toa (ding-dong + echo), 👻 Horror (hum, flicker, green flames, ghost),

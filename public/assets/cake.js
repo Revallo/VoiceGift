@@ -205,6 +205,24 @@ const RAINBOW = ['#FF6B6B', '#FFB627', '#FFE066', '#6BCB77', '#4D96FF', '#A66CFF
 const TIER_SHADE = 'inset -20px 0 0 rgba(0,0,0,0.08), inset 14px 0 0 rgba(255,255,255,0.16)';
 const px = (n) => `${Math.round(n)}px`;
 
+// Decoration surfaces in stage coordinates, following each cake's actual tiers/frosting.
+// Rounded/elliptical masks keep every decoration on the cake, including rotated sprinkles.
+export const PATTERN_SURFACES = {
+  classic: [[64, 198, 262, 68, '0 0 50% 50% / 0 0 22px 22px'], [100, 114, 190, 42, '0 0 50% 50% / 0 0 18px 18px']],
+  drip: [[80, 132, 230, 120, '0 0 50% 50% / 0 0 20px 20px']],
+  tower: [[42, 228, 306, 36, '0 0 50% 50% / 0 0 18px 18px'], [72, 166, 246, 28, '50% / 16px'], [100, 114, 190, 24, '50% / 12px']],
+  sheet: [[64, 130, 262, 108, '4px']],
+  naked: [[76, 108, 238, 23, '50% / 8px'], [76, 180, 238, 22, '50% / 8px'], [76, 234, 238, 19, '50% / 8px']],
+  rainbow: [[78, 110, 234, 38, '50% / 12px'], [78, 222, 234, 30, '50% / 12px']],
+  ruffle: [[82, 76, 226, 28, '50%'], [84, 162, 222, 35, '50% / 12px']],
+  dome: [[66, 60, 258, 204, '50% 50% 10% 10% / 78% 78% 8% 8%']],
+  stripe: [[84, 122, 222, 132, '0 0 50% 50% / 0 0 20px 20px']],
+  rosette: [[82, 76, 226, 28, '50%']],
+  pearl: [[72, 186, 246, 58, '50% / 16px'], [118, 110, 154, 25, '50% / 10px']],
+  cupcake: [[58, 132, 274, 62, '50%'], [84, 98, 222, 56, '50%'], [112, 68, 166, 46, '50%']],
+  pancake: [[84, 72, 222, 34, '50%'], [68, 121, 254, 24, '50%'], [66, 230, 258, 22, '50%']]
+};
+
 // Builds one shape's pieces into `el`. P(style, role): role = which flavor colour it takes (b1, b2, frost, top2).
 // Returns where the name goes: along a curve from (x1, y) to (x2, y) that dips by sag, like the front of a round cake.
 function buildShape(shape, P) {
@@ -227,11 +245,6 @@ function buildShape(shape, P) {
     for (let i = 0; i < n; i++) {
       const xc = x + 10 + (i * (w - 20)) / (n - 1), dx = (xc - (x + w / 2)) / (w / 2);
       P({ left: px(xc - 4), top: px(y + ry * Math.sqrt(Math.max(0, 1 - dx * dx))), width: '8px', height: '8px', borderRadius: '50%', background: '#F6B93B' });
-    }
-  };
-  const sprinkles = (x1, x2, y1, y2, n) => {
-    for (let i = 0; i < n; i++) {
-      P({ left: px(x1 + rnd() * (x2 - x1)), top: px(y1 + rnd() * (y2 - y1)), width: '3px', height: '9px', borderRadius: '2px', background: SPRINKLES[i % 5], transform: `rotate(${Math.round(rnd() * 180)}deg)` });
     }
   };
 
@@ -338,7 +351,6 @@ function buildShape(shape, P) {
   if (shape === 'tower') {
     plate();
     tier(42, 306, 204, 64, 'b1', 'frost', 18, 15);
-    sprinkles(60, 120, 228, 258, 6); sprinkles(270, 330, 228, 258, 6);
     tier(72, 246, 146, 60, 'b2', 'top2', 16, 0);
     pearls(72, 246, 190, 16, 13);
     tier(100, 190, 90, 56, 'b1', 'top2', 20, 9);
@@ -351,16 +363,11 @@ function buildShape(shape, P) {
     P({ left: '56px', top: '62px', width: '278px', height: '56px', borderRadius: '16px' }, 'top2');
     for (let i = 0; i < 14; i++) P({ left: px(52 + i * 20.5), top: '108px', width: '22px', height: '16px', borderRadius: '50%' }, 'frost');
     for (let i = 0; i < 14; i++) P({ left: px(52 + i * 20.5), top: '246px', width: '22px', height: '16px', borderRadius: '50%' }, 'frost');
-    sprinkles(70, 130, 140, 230, 7); sprinkles(260, 320, 140, 230, 7);
     return { x1: 132, x2: 258, y: 200, sag: 0, size: 30 };
   }
   // classic: two tiers
   plate();
   P({ left: '64px', top: '170px', width: '262px', height: '100px', borderRadius: '0 0 131px 131px / 0 0 22px 22px', boxShadow: 'inset -22px 0 0 rgba(0,0,0,0.08), inset 16px 0 0 rgba(255,255,255,0.14)' }, 'b1');
-  for (let i = 0; i < 16; i++) {
-    const left = i % 2 === 0;
-    P({ left: px(left ? 80 + rnd() * 62 : 250 + rnd() * 62), top: px(216 + rnd() * 26), width: '3px', height: '9px', borderRadius: '2px', background: SPRINKLES[i % 5], transform: `rotate(${Math.round(rnd() * 180)}deg)` });
-  }
   P({ left: '64px', top: '148px', width: '262px', height: '44px', borderRadius: '50%' }, 'frost');
   for (let i = 0; i < 11; i++) {
     const xc = 76 + i * 23.8, dx = (xc - 195) / 131;
@@ -411,6 +418,7 @@ function curvedName() {
     place(a) { area = a; path.setAttribute('d', `M ${a.x1 - 8} ${a.y} Q 195 ${a.y + 2 * a.sag} ${a.x2 + 8} ${a.y}`); refit(); },
     setFont(key) { css = (NAME_FONTS[key] || NAME_FONTS[DEFAULT_FONT]).css; Object.assign(text.style, css); refit(); },
     setText(t) { tp.textContent = t || ''; refit(); },
+    width() { return measure.measureText(tp.textContent).width; },
     setColor(c) { text.style.fill = c; }
   };
 }
@@ -422,8 +430,8 @@ export function createCake(host, opts = {}) {
   body.append(shapeEl);
   let parts = {};
   let flavor = opts.flavor;
-  let accent = opts.accent, pattern = opts.pattern, nameArea = null;
-  const decoEl = div('', { position: 'absolute', inset: '0' });
+  let accent = opts.accent, pattern = opts.pattern, nameArea = null, currentShape = 'classic';
+  const decoEl = div('cake-pattern', { position: 'absolute', inset: '0', pointerEvents: 'none' });
   const name = curvedName();
   // The topper (age numbers or a sugar figure) is pushed into the cream: frosting rises around its foot,
   // and it stands among the candles, so nearer candles stay in front of it.
@@ -472,7 +480,8 @@ export function createCake(host, opts = {}) {
     shapeEl.textContent = '';
     parts = {};
     const P = (style, key) => { const d = div('p', style); shapeEl.append(d); if (key) (parts[key] ||= []).push(d); return d; };
-    nameArea = buildShape(SHAPES[shape] ? shape : 'classic', P);
+    currentShape = SHAPES[shape] ? shape : 'classic';
+    nameArea = buildShape(currentShape, P);
     name.place(nameArea);
     shapeEl.append(decoEl, name.svg);
     api.setPattern(pattern);
@@ -500,28 +509,41 @@ export function createCake(host, opts = {}) {
       name.setColor(nameArea?.plaque ? (lightness(colors.frost) > 0.55 ? '#4A2238' : '#FFFFFF') : c.text);
     },
     setAccent(k) { accent = k; api.setFlavor(flavor); },
-    // Small decorations in two rows that follow the cake's curve, above and below the name.
+    // Scatter decorations over the selected shape's surfaces, leaving space for its inscription.
     setPattern(k) {
       pattern = k;
       decoEl.textContent = '';
       const p = PATTERNS[k];
       if (!p || k === 'none' || !nameArea) return;
       const { x1, x2, y, sag, size: s } = nameArea;
-      const rnd = seeded(13);
-      for (const off of [-s - 12, 14]) for (let i = 0; i < 9; i++) {
-        const t = i / 8, x = x1 + (x2 - x1) * t, yy = y + off + 4 * sag * t * (1 - t);
-        const col = SPRINKLES[i % 5];
-        const d = k === 'sprinkles' ? div('p', { left: px(x), top: px(yy), width: '3px', height: '9px', borderRadius: '2px', background: col, transform: `rotate(${Math.round(rnd() * 180)}deg)` })
-          : k === 'dots' ? div('p', { left: px(x - 3), top: px(yy), width: '7px', height: '7px', borderRadius: '50%', background: col })
-          : div('p', { left: px(x - 6), top: px(yy - 4), fontSize: '12px', lineHeight: '1', color: col });
-        if (p.glyph) d.textContent = p.glyph;
-        decoEl.append(d);
+      const halfName = (nameArea.plaque ? x2 - x1 : Math.min(x2 - x1, name.width())) / 2 + 12;
+      const nameCenter = (x1 + x2) / 2;
+      const rnd = seeded(13 + Object.keys(SHAPES).indexOf(currentShape) * 97);
+      for (const [left, top, width, height, borderRadius] of PATTERN_SURFACES[currentShape]) {
+        const surface = div('cake-pattern-surface', { position: 'absolute', left: px(left), top: px(top), width: px(width), height: px(height), borderRadius, overflow: 'hidden' });
+        decoEl.append(surface);
+        const count = Math.max(6, Math.round(width * height / 950));
+        let placed = 0;
+        for (let attempt = 0; attempt < count * 20 && placed < count; attempt++) {
+          const x = 8 + rnd() * (width - 16), yy = 8 + rnd() * Math.max(0, height - 16);
+          const gx = left + x, gy = top + yy;
+          if (Math.abs(gx - nameCenter) < halfName && gy > y - s - 6 && gy < y + sag + 14) continue;
+          // Keep marks inside the curved edge, without cutting most of them off.
+          if ((x - width / 2) ** 2 / (width / 2 - 6) ** 2 + (yy - height / 2) ** 2 / Math.max(1, height / 2 - 5) ** 2 > 1) continue;
+          const i = placed++;
+          const col = SPRINKLES[i % 5];
+          const d = k === 'sprinkles' ? div('p', { left: px(x), top: px(yy), width: '3px', height: '9px', borderRadius: '2px', background: col, transform: `rotate(${Math.round(rnd() * 180)}deg)` })
+            : k === 'dots' ? div('p', { left: px(x - 3), top: px(yy), width: '7px', height: '7px', borderRadius: '50%', background: col })
+            : div('p', { left: px(x - 6), top: px(yy - 4), fontSize: '12px', lineHeight: '1', color: col });
+          if (p.glyph) d.textContent = p.glyph;
+          surface.append(d);
+        }
       }
     },
     setTopper(k, age) { const t = TOPPERS[k]; setSeat(t?.emoji ? t : null, t?.age ? String(age || '') : ''); },
     setShape,
-    setName: name.setText,
-    setFont: name.setFont,
+    setName(text) { name.setText(text); api.setPattern(pattern); },
+    setFont(key) { name.setFont(key); api.setPattern(pattern); },
     // Lay out `n` candles (+ empty spots up to `spots`). Returns the candle elements in message order.
     // `styles[i]` = that friend's { body, flame } (optional).
     setCandles(n, { spots = n, colors, styles, onTap } = {}) {

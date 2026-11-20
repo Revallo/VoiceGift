@@ -3,6 +3,7 @@
 import { createCake, FLAVORS, SHAPES as CAKE_SHAPES, SWATCH as CAKE_SWATCH, ACCENTS as CREAMS, PATTERNS as CAKE_PATTERNS, TOPPERS as CAKE_TOPPERS } from './cake.js';
 import { createBouquet, WRAPS, SHAPES as WRAP_SHAPES, SWATCH as WRAP_SWATCH, ACCENTS as RIBBONS, PATTERNS as PETALS, TOPPERS as WRAP_TOPPERS, GREENS } from './bouquet.js';
 import { createLanterns, LIGHTS, SHAPES as LIGHT_SHAPES, SWATCH as LIGHT_SWATCH, ACCENTS as STRINGS, PATTERNS as MOTIFS, TOPPERS as LIGHT_TOPPERS } from './lanterns.js';
+import { createTumpeng, FLAVORS as RICES, SHAPES as CONES, SWATCH as RICE_SWATCH, ACCENTS as TRAYS, PATTERNS as GARNISH, TOPPERS as TIPS } from './tumpeng.js';
 
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 export const firstName = (r) => String(r || '').trim().split(/\s+/)[0] || '';
@@ -54,6 +55,54 @@ export const THEMES = {
     thanksText: 'Thank you for your birthday wish. Hearing your voice made my day.',
     waFriends: (name) => `Record a 15-second birthday wish for ${name}! It’s a secret, don’t tell them.`,
     waRecipient: (name) => `${name}! Your friends made you a voice gift 🎂 Turn your sound on.`
+  },
+
+  // An Indonesian birthday: a tumpeng (a cone of rice) with a side dish from every friend.
+  tumpeng: {
+    key: 'tumpeng', label: 'Tumpeng', bg: '#16170F', emoji: '🍚',
+    callName: firstName,
+    people: (n) => count(n, 'person', 'people'),
+    item: 'dish', items: 'dishes', itemsOn: 'served',
+    recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
+    decorate: { next: 'Next: customize gift', title: 'Customize your tumpeng', lead: 'rice, tray & garnish', shapeLabel: 'Tumpeng', shapes: CONES, swatchLabel: 'Rice', swatches: RICES, swatch: RICE_SWATCH, flavor: 'turmeric', accentLabel: 'Tray', accents: TRAYS, patternLabel: 'Garnish', patterns: GARNISH, topperLabel: 'On top', toppers: TIPS, nameLabel: 'Title', nameMax: 24, name: (r) => fullName(r).slice(0, 24), draw: false,
+      stickers: ['🌶️', '🍃', '✨', '🎉', '🎈', '🌺', '⭐', '🥥', '🍌', '🎁', '💛', '🌟', '🎶', '🙏', '🥳', '🌼', '🎀', '🍀', '💫', '🔥', '🌙', '👑', '🤍', '🍚'] },
+    inviteTitle: (name) => `Record a message for ${name}’s birthday`,
+    countLine: (n) => (n ? `${count(n, 'friend has', 'friends have')} brought a dish` : 'Be the first to bring a dish'),
+    doneTitle: 'Your dish is on the tumpeng',
+    doneCount: (n) => `${count(n, 'dish', 'dishes')} · yours is the one circled`,
+    eyebrow: (name) => `For ${name}`,
+    reveal: {
+      eyebrow: 'A little celebration, just for you',
+      salutation: 'Happy birthday,',
+      readyTitle: 'A tumpeng,\njust for you.',
+      readySub: 'Every dish around it was brought by someone who loves you. Each one holds a wish.',
+      dedication: (n) => `${count(n, 'voice', 'voices')} · made with love`,
+      readyNote: (n) => `${count(n, 'person has', 'people have')} something to tell you.`,
+      soundHint: 'Find a quiet moment. Turn your sound on.',
+      letterLabel: 'A birthday wish, in their own words',
+      libraryTitle: 'The people behind the dishes',
+      idleTitle: 'There’s a voice in every dish.',
+      idleSub: 'Tap a dish or a name below. Their words will appear here.',
+      keepTitle: 'A little love to come back to.',
+      keepSub: 'Your voices are kept here. Open this link whenever you need them.'
+    },
+    lightingTitle: 'Your friends are bringing the dishes…',
+    lightingSub: 'Every dish is one friend.',
+    gaveLine: (n) => `${count(n, 'person', 'people')} brought a dish for you.`,
+    progress: (i, n) => (i === n ? `All ${n} ${n === 1 ? 'dish is' : 'dishes are'} served` : `${i} of ${n} dishes served`),
+    greeting: (name) => `Happy birthday, ${name}!`,
+    tapHint: 'Each dish is a friend. Tap one to hear them.',
+    idleTitle: 'Tap a dish to hear who brought it',
+    allHeard: 'You heard everyone. Now cut the tumpeng.',
+    finaleBtn: 'Cut the tumpeng',
+    finaleTitle: 'Cut the tumpeng!',
+    finaleSub: () => 'The top is yours. Give it to someone you love.',
+    finaleAction: 'Tap to cut',
+    finaleHint: 'Just like at a real syukuran.',
+    keepSub: (n) => `${count(n, 'person loves', 'people love')} you.`,
+    thanksText: 'Thank you for your birthday wish. Hearing your voice made my day.',
+    waFriends: (name) => `Record a 15-second birthday wish for ${name}! It’s a secret, don’t tell them.`,
+    waRecipient: (name) => `${name}! Your friends made you a voice tumpeng 🍚 Turn your sound on.`
   },
 
   graduation: {
@@ -141,13 +190,14 @@ export const THEMES = {
 
 export const theme = (occasion) => THEMES[occasion] || THEMES.birthday;
 
-// The scene for a gift: cake, bouquet or lanterns.
+// The scene for a gift: cake, tumpeng, bouquet or lanterns.
 export function createScene(host, gift, opts = {}) {
   const t = theme(gift.occasion);
   const cake = gift.cake || {};
   const o = { ...opts, flavor: cake.flavor || t.decorate.flavor, shape: cake.shape, font: cake.font, name: cake.name, dots: cake.dots, stickers: cake.stickers, accent: cake.accent, pattern: cake.pattern, topper: cake.topper, age: cake.age, backdrop: cake.backdrop, greens: cake.greens };
   if (t.key === 'graduation') return createBouquet(host, o);
   if (t.key === 'wedding') return createLanterns(host, { ...o, names: gift.recipient });
+  if (t.key === 'tumpeng') return createTumpeng(host, o);
   return createCake(host, o);
 }
 

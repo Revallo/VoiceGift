@@ -9,7 +9,7 @@ $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 // What the person picked on the first page ("/"): from ?occasion= or inside ?next=/new?occasion=…
-const THINGS = { birthday: ['cake', '🎂'], graduation: ['bouquet', '💐'], wedding: ['lanterns', '🏮'] };
+const THINGS = { birthday: ['cake', '🎂'], tumpeng: ['tumpeng', '🍚'], graduation: ['bouquet', '💐'], wedding: ['lanterns', '🏮'] };
 const picked = (() => {
   const q = new URLSearchParams(location.search);
   let o = q.get('occasion');

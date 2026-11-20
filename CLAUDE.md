@@ -3,7 +3,7 @@
 ## What this is
 A web app where friends record short voice messages for someone. The organizer sends the recipient
 their link when they want the surprise to start (e.g. at 00:00 on a birthday); it opens as a scene where every voice is one item: a cake with
-candles (birthday), a bouquet of flowers (graduation) or lanterns (wedding). Built for
+candles (birthday), a tumpeng with side dishes (Indonesian birthday), a bouquet of flowers (graduation) or lanterns (wedding). Built for
 Taiwan Mobile's AI team: every message gives **Indonesian speech + the caption the speaker
 corrected** — labeled data for our Indonesian ASR (~70% accurate today). The UX is the product;
 the data is the side effect. This is a **prototype**: keep it simple and readable.
@@ -30,7 +30,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | URL | File | Who |
 | --- | --- | --- |
 | `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/new`, "Open your gift" (paste the link), "Dashboard" (→ `/account`) |
-| `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
+| `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / tumpeng / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: "Continue with Google" → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content), 3. send it (recipient link + PIN) |
@@ -42,7 +42,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 ## Occasions (themes)
 - `assets/themes.js` holds every occasion's words (one object per occasion) and `createScene()`, which picks
   the scene. Pages never hard-code "candle" or "birthday": add words there.
-- Scenes: `cake.js` (birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
+- Scenes: `cake.js` (birthday), `tumpeng.js` (occasion `tumpeng`, an Indonesian birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
 - Birthday keeps one logical candle per voice, with at most six visible per group. `setActive()`/`light()` open the matching group; `lightAll()`/`reset()` restore the first group. Keep every voice/index available; do not truncate messages to match the visible candles.
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
@@ -62,6 +62,11 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   with Web Audio only, never baked into the WAV; the recipient's player has "🔊 Original voice" to hear it without the mood, and back) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
   **flame shape** (`CANDLES`/`FLAMES`/`FLAME_SHAPES` in `cake.js`; each pick shows only that thing, live). Saved on the message as
   `mood` and `candle {body, flame, shape}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
+- Tumpeng (added 2026-11-20, asked for as a local element): a cone of rice on a bamboo tray + banana leaf; every voice is a **side dish**
+  the friend picks after recording (`DISH_TYPES` in `item-options.js`: satay, ketupat, lontong, fried chicken, egg, tempeh, perkedel, krupuk,
+  urap, sambal, fried fish, tofu; drawn as SVG in `tumpeng.js`), saved as `dish {type}` (`cleanDish` in `lib/gifts.js`). Dishes are spaced
+  evenly along the tray (a second row in front from 13 on, up to 40). Decorate: rice (`FLAVORS`), cone (`SHAPES`), tray (`ACCENTS`),
+  garnish (`PATTERNS`), on top (`TOPPERS`, incl. age). Finale: "Cut the tumpeng" (one tap: the top lifts off via `finaleStart()`, the dishes hop).
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
 

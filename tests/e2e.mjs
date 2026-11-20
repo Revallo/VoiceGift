@@ -84,6 +84,7 @@ async function signUpHere(p, name, email, shotName) {
 
 const CASES = {
   birthday: { recipient: 'Dimas', swatch: 9, shape: 'tower', friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
+  tumpeng: { recipient: 'Putri', swatch: 3, shape: 'tall', friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
   graduation: { recipient: 'Nadia', swatch: 6, shape: 'basket', friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
   wedding: { recipient: 'Rina & Bayu', swatch: 6, shape: 'heart', extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };

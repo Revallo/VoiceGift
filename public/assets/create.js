@@ -59,6 +59,7 @@ const decor = (name) => ({ flavor: state.flavor || t.decorate.flavor, shape: sta
 
 const LEADS = {
   birthday: 'Each friend’s voice lights one candle on the cake.',
+  tumpeng: 'Each friend brings one dish to the tumpeng, with their voice.',
   graduation: 'Each friend’s voice opens one flower in the bouquet.',
   wedding: 'Each friend’s voice lights one lantern in the sky.'
 };

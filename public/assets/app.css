@@ -65,6 +65,25 @@ body[data-theme="wedding"] {
   --stage-bg: #1E171B;
 }
 
+/* Tumpeng: a warm banana-leaf room, a turmeric accent */
+body[data-theme="tumpeng"] {
+  --fg: 240, 236, 220;
+  --bg: #13140D;
+  --bg-outer: #0C0D08;
+  --panel: #1E2016;
+  --panel-subtle: #181A11;
+  --panel-hover: #282B1D;
+  --text: #F2EEDC;
+  --emerald: #F2C12E;
+  --emerald-light: #FFD866;
+  --emerald-dark: #DDA918;
+  --emerald-grad: linear-gradient(180deg, #FFD458, #EDB524);
+  --on-accent: #2A2006;
+  --glow: rgba(242, 193, 46, 0.2);
+  --face: #2E3122;
+  --stage-bg: #191B12;
+}
+
 /* Built from the colours above, so they sit on body, where each occasion sets its own */
 body {
   --line: rgba(var(--fg), 0.09);
@@ -996,6 +1015,29 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
 .flower.active .f-bloom { transform: rotate(var(--rot, 0deg)) scale(1.14); filter: drop-shadow(0 0 10px var(--c)); }
 .flower.speaking .f-bloom { animation: vg-sway 0.5s ease-in-out infinite alternate; }
 .flower.mine::before { content: ''; position: absolute; inset: -5px; border: 2px solid var(--emerald-light); border-radius: 50%; z-index: 1; }
+
+/* tumpeng: every voice is a side dish around the cone */
+.stage.tumpeng .glow { background: radial-gradient(circle, rgba(255, 210, 90, 0.34) 0%, rgba(120, 190, 90, 0.12) 42%, rgba(0, 0, 0, 0) 70%); }
+.tp-name { color: #FFE9A8; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
+.stage.tumpeng .tp-top, .stage.tumpeng .tp-tip { transition: translate 0.9s cubic-bezier(0.3, 1.3, 0.5, 1), rotate 0.9s cubic-bezier(0.3, 1.3, 0.5, 1); transform-box: view-box; transform-origin: 195px var(--cut, 120px); }
+.stage.tumpeng .tp-cutline { opacity: 0; transition: opacity 0.3s; }
+.stage.tumpeng.cut .tp-top, .stage.tumpeng.cut .tp-tip { translate: 34px -46px; rotate: 14deg; }
+.stage.tumpeng.cut .tp-cutline { opacity: 1; }
+.dish { position: absolute; padding: 0; margin: 0; border: 0; background: transparent; cursor: default; -webkit-tap-highlight-color: transparent; transform-origin: 50% 80%; }
+.dish .d-leaf { position: absolute; left: 4%; right: 4%; bottom: 2%; height: 34%; border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 50, 16, 0.55), rgba(20, 50, 16, 0)); }
+.dish .d-food, .mini-dish .d-food { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3)); }
+.dish .d-food { opacity: 0; transform: translateY(-14px) scale(0.5); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.dish.lit .d-food { opacity: 1; transform: none; }
+.dish.spot .d-leaf { left: 10%; right: 10%; bottom: 8%; height: 46%; background: rgba(255, 255, 255, 0.04); border: 1.5px dashed rgba(255, 255, 255, 0.35); }
+.stage.interactive .dish.lit { cursor: pointer; }
+.dish.active .d-food { transform: translateY(-6px) scale(1.18); filter: drop-shadow(0 0 8px color-mix(in srgb, var(--c, #F2C12E) 80%, transparent)) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3)); }
+.dish.speaking .d-food { animation: vg-dish-talk 0.32s ease-in-out infinite alternate; }
+.dish.mine::before { content: ''; position: absolute; inset: -5px; border: 2px solid var(--emerald-light); border-radius: 50%; z-index: 1; }
+.dish.out .d-food { animation: vg-dish-hop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) var(--hop-at, 0s) 2 both; }
+.mini-dish { flex: 0 0 auto; }
+.mini-dish .d-leaf { position: absolute; left: 6%; right: 6%; bottom: 4%; height: 30%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0)); }
+@keyframes vg-dish-talk { 0% { transform: translateY(-6px) scale(1.16) rotate(-4deg); } 100% { transform: translateY(-9px) scale(1.22) rotate(4deg); } }
+@keyframes vg-dish-hop { 0%, 100% { transform: none; } 45% { transform: translateY(-16px) scale(1.12); } }
 
 /* lanterns: every voice is a lantern */
 .lanterns svg .fairy { fill: var(--light, #FFE6A3); opacity: var(--on, 0.3); filter: drop-shadow(0 0 3px var(--light, #FFE6A3)); transition: opacity 0.8s ease; }
@@ -2040,6 +2082,10 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .pick-title h1 { font-size: 1.6rem; line-height: 1.15; margin: 0 0 6px; }
 .pick-title p { margin: 0; color: var(--soft); font-size: 14px; }
 .picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.picks:has(> .pick:nth-child(4)) { grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.picks:has(> .pick:nth-child(4)) .pick { padding-inline: 2px; }
+.picks:has(> .pick:nth-child(4)) .pick b { font-size: 0.86rem; }
+.picks:has(> .pick:nth-child(4)) .pick small { font-size: 0.66rem; white-space: nowrap; }
 .pick { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 12px 6px 10px; border-radius: 18px; cursor: pointer; background: var(--panel); border: 1.5px solid var(--line); color: var(--text); font: inherit; transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease; }
 .pick:active { transform: scale(0.97); }
 .pick .em { font-size: 1.7rem; line-height: 1; }
@@ -2246,7 +2292,7 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .fx-disco { top: -30%; width: 46px; height: 150%; background: linear-gradient(180deg, hsl(var(--h) 95% 65% / 0.55), transparent 80%); mix-blend-mode: screen; transform-origin: 50% 0; animation: vg-disco 0.9s ease-in-out infinite alternate; filter: blur(2px); }
 .fx-emoji { font-size: 34px; animation: vg-dance 0.45s ease-in-out infinite alternate; }
 .fx-emoji.r { animation-delay: -0.22s; }
-.stage-wrap.mood-dangdut .candle.lit, .stage-wrap.mood-dangdut .flower.lit, .stage-wrap.mood-dangdut .lantern.lit { animation: vg-beat 0.454s ease-in-out infinite; }
+.stage-wrap.mood-dangdut .candle.lit, .stage-wrap.mood-dangdut .flower.lit, .stage-wrap.mood-dangdut .lantern.lit, .stage-wrap.mood-dangdut .dish.lit { animation: vg-beat 0.454s ease-in-out infinite; }
 @keyframes vg-disco { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
 @keyframes vg-dance { from { transform: translateY(0) rotate(-10deg); } to { transform: translateY(-8px) rotate(10deg); } }
 @keyframes vg-beat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
@@ -2263,7 +2309,7 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 @keyframes vg-ghost { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 0.75; } 50% { translate: 230px -24px; } 85% { opacity: 0.6; } 100% { translate: 470px 6px; opacity: 0; } }
 /* Helium: balloons rise, the speaking item floats up */
 .fx-balloon { bottom: -50px; font-size: 30px; animation: vg-balloon 3.2s ease-in both; }
-.stage-wrap.mood-helium .candle.speaking, .stage-wrap.mood-helium .flower.speaking, .stage-wrap.mood-helium .lantern.speaking { translate: 0 -16px; transition: translate 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.stage-wrap.mood-helium .candle.speaking, .stage-wrap.mood-helium .flower.speaking, .stage-wrap.mood-helium .lantern.speaking, .stage-wrap.mood-helium .dish.speaking { translate: 0 -16px; transition: translate 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
 @keyframes vg-balloon { 0% { transform: translate(0, 0) rotate(-6deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--sway, 0px), -420px) rotate(8deg); opacity: 0.9; } }
 /* Alien: a UFO flies in and beams the gift */
 .fx-ufo { left: calc(50% - 22px); top: 6px; font-size: 44px; animation: vg-ufo 1s cubic-bezier(0.3, 1.3, 0.5, 1) both, vg-hover 0.8s ease-in-out 1s infinite alternate; }

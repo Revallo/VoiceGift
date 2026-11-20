@@ -1,0 +1,23 @@
+{
+  "_about": "The 12 wishes for Dimas in the promo video (promo/README.md). Made with edge-tts by promo/make-voices.py. In the video, 'heard' marks the voices tapped and heard (in this order); the rest only light a candle. 'mood' (if set) is the app's voice mood (voicefx.js MOODS), played in the app and rendered into the soundtrack; 'say' (if set) is what the TTS speaks, with fewer pauses; 'text' is the caption.",
+  "recipient": "Dimas",
+  "organizer": "Sari",
+  "heard": [
+    1,
+    4
+  ],
+  "voices": [
+    { "name": "Sari", "voice": "F", "pitch": "+6Hz", "rate": "+8%", "text": "Dimas! Selamat ulang tahun, semoga semua mimpimu tercapai." },
+    { "name": "Bayu", "voice": "M", "pitch": "+4Hz", "rate": "+14%", "text": "Dim, HBD bro! Traktir jangan lupa ya!", "say": "Dim, HBD bro, traktir jangan lupa ya!" },
+    { "name": "Nadia", "voice": "F", "pitch": "+8Hz", "rate": "+10%", "text": "Happy birthday Dimas, makasih udah jadi sahabat terbaik." },
+    { "name": "Papa", "voice": "M", "pitch": "-8Hz", "rate": "-6%", "text": "Selamat ulang tahun, Dimas. Papa bangga sama kamu." },
+    { "name": "Mama", "voice": "F", "pitch": "-3Hz", "rate": "+0%", "mood": "helium", "text": "Selamat ulang tahun, Dimas! Sehat terus ya, Nak.", "say": "Selamat ulang tahun, Dimas, sehat terus ya, Nak." },
+    { "name": "Rizky", "voice": "M", "pitch": "+8Hz", "rate": "+10%", "text": "Selamat ulang tahun, Dim! Kapan main bareng lagi?" },
+    { "name": "Kak Tari", "voice": "F", "pitch": "-4Hz", "rate": "+0%", "text": "Selamat ulang tahun, adikku! Makin dewasa ya." },
+    { "name": "Andre", "voice": "M", "pitch": "+0Hz", "rate": "+5%", "text": "Happy birthday Dimas! Sukses terus kerjaannya." },
+    { "name": "Putri", "voice": "F", "pitch": "+4Hz", "rate": "+6%", "text": "Selamat ulang tahun! Kangen banget sama kamu." },
+    { "name": "Om Hendra", "voice": "M", "pitch": "-12Hz", "rate": "-10%", "text": "Selamat ulang tahun, Dimas. Panjang umur dan banyak rezeki." },
+    { "name": "Dewi", "voice": "F", "pitch": "+10Hz", "rate": "+12%", "text": "HBD Dimas! Jangan lupa bahagia ya." },
+    { "name": "Fajar", "voice": "M", "pitch": "+2Hz", "rate": "+8%", "text": "Selamat ulang tahun, bro. Semoga tahun ini lancar semua." }
+  ]
+}

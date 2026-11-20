@@ -4,3 +4,8 @@ node_modules/
 .env*
 .DS_Store
 tests/screenshots/
+
+# promo video (promo/README.md): renders and intermediates
+promo/out/
+promo/build/
+promo/*/build/

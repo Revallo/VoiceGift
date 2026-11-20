@@ -37,7 +37,8 @@ export default route({
           mood: m.mood || 'normal',
           candle: m.candle || null,
           flower: m.flower || null,
-          lantern: m.lantern || null
+          lantern: m.lantern || null,
+          dish: m.dish || null
         };
       });
     send(res, 200, {

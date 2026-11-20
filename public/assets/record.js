@@ -6,6 +6,7 @@ import { MOODS, playVoice, moodShow } from './voicefx.js';
 import { CANDLES, FLAMES, FLAME_SHAPES, miniCandle, styleCandle } from './cake.js';
 import { ITEM_COLORS, FLOWER_TYPES } from './item-options.js';
 import { miniFlower } from './bouquet.js';
+import { DISHES, dishKey, miniDish } from './tumpeng.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
@@ -18,7 +19,7 @@ let lastCorrections = [];
 let speechRec = null, speechHint = '';
 // The twist the friend adds after recording (kept when they record again).
 let mood = 'normal', candleStyle = { body: 'stripe', flame: 'classic', shape: 'drop' };
-let flowerStyle = { type: 'round', color: 'pink' }, lanternStyle = { color: 'gold' };
+let flowerStyle = { type: 'round', color: 'pink' }, lanternStyle = { color: 'gold' }, dishStyle = { type: 'satay' };
 
 window.addEventListener('pagehide', () => {
   if (sent && !sentDone) {
@@ -50,6 +51,7 @@ async function load() {
   const defaultColor = Object.keys(ITEM_COLORS)[count % Object.keys(ITEM_COLORS).length];
   flowerStyle = { type: FLOWER_TYPES[gift.cake?.pattern] ? gift.cake.pattern : 'round', color: defaultColor };
   lanternStyle = { color: defaultColor };
+  dishStyle = { type: dishKey('', count) };
   first = t.callName(gift.recipient);
   document.title = t.inviteTitle(first);
   $('#invitedBy').textContent = `${gift.organizer} invited you`;
@@ -186,7 +188,7 @@ async function upload() {
     $('#seenHint').textContent = `Tap your ${t.item} to hear your wish.`;
     showSeenScene();
     $('#seenAvatar').textContent = initials($('#name').value.trim());
-    $('#seenAvatar').style.background = t.key === 'graduation' ? ITEM_COLORS[flowerStyle.color].hex : t.key === 'wedding' ? ITEM_COLORS[lanternStyle.color].hex : colorFor(count);
+    $('#seenAvatar').style.background = itemColor();
     $('#seenName').textContent = $('#name').value.trim();
     const note = $('#mockNote');
     note.hidden = true;
@@ -323,6 +325,9 @@ $('#captionText').addEventListener('input', refreshTypoStudio);
 let ac = null, buffer = null, playing = null, raf = 0, seenWords = [], seenScene = null;
 const isCake = () => typeof seenScene?.setCandleStyle === 'function';
 
+// The colour of this friend's item (their avatar wears it).
+const itemColor = () => t.key === 'graduation' ? ITEM_COLORS[flowerStyle.color].hex : t.key === 'wedding' ? ITEM_COLORS[lanternStyle.color].hex : t.key === 'tumpeng' ? DISHES[dishStyle.type].tint : colorFor(count);
+
 // The gift as the recipient will find it, with this friend's item ready to be tapped.
 function showSeenScene() {
   const n = count + 1;
@@ -330,9 +335,9 @@ function showSeenScene() {
   seenScene = createScene($('#seenScene'), gift);
   const styles = [];
   styles[count] = candleStyle;
-  const flowers = [], lanterns = [], names = [];
-  flowers[count] = flowerStyle; lanterns[count] = lanternStyle; names[count] = $('#name').value.trim();
-  seenScene.setCandles(n, { spots: n, styles, flowers, lanterns, names, onTap: (i) => { if (i === count) $('#playOwn').click(); } });
+  const flowers = [], lanterns = [], dishes = [], names = [];
+  flowers[count] = flowerStyle; lanterns[count] = lanternStyle; dishes[count] = dishStyle; names[count] = $('#name').value.trim();
+  seenScene.setCandles(n, { spots: n, styles, flowers, lanterns, dishes, names, onTap: (i) => { if (i === count) $('#playOwn').click(); } });
   seenScene.stage.classList.add('interactive');
   seenScene.lightAll();
   seenScene.setActive(count);
@@ -398,7 +403,7 @@ function setupPlayer() {
   $('#playOwn').onclick = () => (playing ? stopOwn() : playOwn());
 }
 
-// ---------- the twist: a mood for the voice, and (on the cake) their own candle: stick, flame colour, flame shape ----------
+// ---------- the twist: a mood for the voice, and their own item (candle: stick, flame colour, flame shape; flower; lantern; dish) ----------
 function pickRow(row, items, isOn, onPick) {
   row.textContent = '';
   for (const [key, make] of items) {
@@ -434,6 +439,10 @@ function buildTwist() {
   $('#candlePicks').hidden = !isCake();
   $('#flowerPicks').hidden = t.key !== 'graduation';
   $('#lanternPicks').hidden = t.key !== 'wedding';
+  $('#dishPicks').hidden = t.key !== 'tumpeng';
+  if (t.key === 'tumpeng') pickRow($('#dishRow'), Object.entries(DISHES).map(([k, d]) => [k, (b) => b.append(miniDish(k, 40), h('span', {}, d.label))]), (k) => k === dishStyle.type, (k) => {
+    dishStyle = { type: k }; seenScene.setDishStyle(count, dishStyle); seenScene.light(count); seenScene.setActive(count); $('#seenAvatar').style.background = itemColor();
+  });
   const colors = Object.entries(ITEM_COLORS).map(([k, c]) => [k, (b) => b.append(h('i', { class: 'item-color' + (t.key === 'wedding' ? ' lantern-color-sample' : ''), style: { background: c.hex } }, t.key === 'wedding' ? initials($('#name').value.trim()) : ''), h('span', {}, c.label))]);
   if (t.key === 'graduation') {
     pickRow($('#flowerTypeRow'), Object.entries(FLOWER_TYPES).map(([k, v]) => [k, b => b.append(miniFlower({ type: k, color: flowerStyle.color }), h('span', {}, v.label))]), k => k === flowerStyle.type, k => { flowerStyle.type = k; seenScene.setFlowerStyle(count, flowerStyle); });
@@ -479,7 +488,7 @@ $('#sendBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Sending…';
   try {
-    const res = await api('/api/message', { method: 'PATCH', json: { slug, id: sent.id, token: sent.token, text, mood, candle: isCake() ? candleStyle : null, flower: t.key === 'graduation' ? flowerStyle : null, lantern: t.key === 'wedding' ? lanternStyle : null } });
+    const res = await api('/api/message', { method: 'PATCH', json: { slug, id: sent.id, token: sent.token, text, mood, candle: isCake() ? candleStyle : null, flower: t.key === 'graduation' ? flowerStyle : null, lantern: t.key === 'wedding' ? lanternStyle : null, dish: t.key === 'tumpeng' ? dishStyle : null } });
     sentDone = true;
     if (Array.isArray(res.corrections) && res.corrections.length) lastCorrections = res.corrections;
     stopOwn();
@@ -502,9 +511,9 @@ async function showDone() {
   const c = createScene($('#doneCake'), gift);
   const styles = [];
   styles[n - 1] = candleStyle;
-  const flowers = [], lanterns = [], names = [];
-  flowers[n - 1] = flowerStyle; lanterns[n - 1] = lanternStyle; names[n - 1] = $('#name').value.trim();
-  c.setCandles(n, { spots: n, styles, flowers, lanterns, names });
+  const flowers = [], lanterns = [], dishes = [], names = [];
+  flowers[n - 1] = flowerStyle; lanterns[n - 1] = lanternStyle; dishes[n - 1] = dishStyle; names[n - 1] = $('#name').value.trim();
+  c.setCandles(n, { spots: n, styles, flowers, lanterns, dishes, names });
   c.lightAll();
   c.mark(n - 1);
   $('#doneCount').textContent = t.doneCount(n);

@@ -1,10 +1,10 @@
 // The recipient's page: the scene lights up (candles / flowers / lanterns) → listen to each voice
-// → the finale (blow out the candles / throw your cap / release the lanterns) → keepsake.
+// → the finale (blow out the candles / cut the tumpeng / throw your cap / release the lanterns) → keepsake.
 import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFor, initials, tone, copyText, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
 import { playTune } from './music.js';
-import { ITEM_COLORS } from './item-options.js';
+import { ITEM_COLORS, DISH_TYPES } from './item-options.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { MOODS, moodOf, playVoice, moodShow } from './voicefx.js';
 
@@ -38,7 +38,7 @@ function setPhase(next) {
 
 const later = (fn, ms) => { const tm = setTimeout(fn, ms); timers.push(tm); return tm; };
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
-const messageColor = (i) => ITEM_COLORS[messages[i]?.flower?.color || messages[i]?.lantern?.color]?.hex || colorFor(i);
+const messageColor = (i) => ITEM_COLORS[messages[i]?.flower?.color || messages[i]?.lantern?.color]?.hex || DISH_TYPES[messages[i]?.dish?.type]?.tint || colorFor(i);
 const fmtDur = (s) => { s = Math.round(s); return s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`; };
 
 function header(eyebrow, title, sub, italic = false) {
@@ -187,7 +187,7 @@ function showEmpty() {
 // ---------- it's time ----------
 function showReady() {
   setPhase('ready');
-  scene.setCandles(messages.length, { colors: messages.map((m, i) => messageColor(i)), styles: messages.map((m) => m.candle), flowers: messages.map((m) => m.flower), lanterns: messages.map((m) => m.lantern), names: messages.map((m) => m.sender), onTap: (i) => phase === 'cake' && play(i, false) });
+  scene.setCandles(messages.length, { colors: messages.map((m, i) => messageColor(i)), styles: messages.map((m) => m.candle), flowers: messages.map((m) => m.flower), lanterns: messages.map((m) => m.lantern), dishes: messages.map((m) => m.dish), names: messages.map((m) => m.sender), onTap: (i) => phase === 'cake' && play(i, false) });
   messages.forEach((m, i) => { if (scene.candles[i]) scene.candles[i].dataset.mood = moodOf(m.mood); });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
@@ -593,10 +593,10 @@ function startBlow() {
   requestAnimationFrame(step);
 }
 
-// Graduation and wedding: one tap, everyone together.
+// Graduation, wedding and tumpeng: one tap, everyone together.
 function startTap() {
   const ring = h('button', { type: 'button', class: 'holdbtn', 'aria-label': t.finaleAction, style: { background: 'rgba(255,255,255,0.14)' } });
-  const inner = h('span', { html: t.key === 'graduation' ? icon.cap(32) : icon.sparkle(30) });
+  const inner = h('span', { html: t.key === 'graduation' ? icon.cap(32) : t.key === 'tumpeng' ? KNIFE : icon.sparkle(30) });
   inner.append(h('span', {}, t.finaleAction));
   ring.append(inner);
   setBottom(ring, h('p', { class: 'small muted center', style: { margin: '0' } }, t.finaleHint));
@@ -609,13 +609,18 @@ function startTap() {
       throwCaps();
       later(finishFinale, 2300);
     } else {
+      // tumpeng: the top comes off first (a soft knock), then the dishes hop
+      if (scene.finaleStart) { scene.finaleStart(); noise(0.12, 900, 0.5, 200); }
+      const first = scene.finaleStart ? 1000 : 150;
       const order = scene.finaleOrder(messages.length);
       const stepMs = Math.min(220, 2600 / Math.max(1, order.length));
-      order.forEach((ci, r) => later(() => { scene.finaleOut(ci); tone(ac, NOTES[(r * 2) % NOTES.length], 0, 1.6, 0.035); }, 150 + r * stepMs));
-      later(finishFinale, 150 + order.length * stepMs + 1800);
+      order.forEach((ci, r) => later(() => { scene.finaleOut(ci); tone(ac, NOTES[(r * 2) % NOTES.length], 0, 1.6, 0.035); }, first + r * stepMs));
+      later(finishFinale, first + order.length * stepMs + 1800);
     }
   });
 }
+
+const KNIFE = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l9-9"/><path d="M12 12l7.5-7.5a2.1 2.1 0 0 1 3 3L15 15z"/></svg>';
 
 // The sound of blowing: a soft loop of breath that follows the blowing, and a small puff for each flame.
 function breathSound() {

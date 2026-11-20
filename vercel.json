@@ -34,6 +34,10 @@
     {
       "source": "/account",
       "destination": "/account.html"
+    },
+    {
+      "source": "/admin/asr",
+      "destination": "/asr.html"
     }
   ],
   "functions": {

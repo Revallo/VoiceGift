@@ -34,6 +34,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: "Continue with Google" → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content), 3. send it (recipient link + PIN) |
+| `/admin/asr` | `asr.html` + `assets/asr.js` | the team (ADMIN_KEY, typed in, kept for the tab only): which ASR runs, TWM health + latest tasks, how many corrected captions reached TWM, retry the ones that did not |
 | `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → items light → listen → finale (blow / throw cap / release lanterns) → keepsake → thank everyone |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
@@ -118,6 +119,8 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - `POST /api/manage` action `update-delivery` {verifyPin} → change the 4-digit PIN
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent… (+ `userId` if the speaker was logged in)
+- `GET /api/asr` (header `X-Admin-Key`) → ASR provider, TWM health + latest tasks, caption/sync counts, failed syncs; `POST` {action: "retry", slug, id, kind} → sends that caption to TWM again
+- Admin endpoints use `requireAdmin()` (`lib/http.js`): `X-Admin-Key` header (or the old `?key=`), constant-time compare, 10 tries/min per IP, off unless `ADMIN_KEY` has 12+ characters.
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
 
 Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<id>.json` (older: `<ts>-<id>.json`), `gifts/<slug>/audio/<id>.wav`;
@@ -129,8 +132,9 @@ accounts: `users/<id>/user.json` (+ `gifts`/`thanks` slug lists), `users/<id>/th
 `lib/asr.js` is the only seam (+ `lib/twm-asr.js`). **Company ASR (TWM overseas, added 2026-11-20):** set `TWM_ASR_USER` +
 `TWM_ASR_PASSWORD` (optional `TWM_ASR_URL`, default `https://asrapi.bronci.ai/gateway`; `TWM_ASR_MODEL`). It logs in, streams
 the WAV over the WebSocket (`type=file`, `saveResult=1`) and keeps the task id as `asrTaskId`; when the speaker saves their caption,
-`syncCorrection()` PUTs it to `/api/v1/subtitle/tasks/:id/subtitle-json` as `type: "edited"` (result in `asrSync`). TWM keeps
-original + latest edit itself; we still keep `asrText`/`finalText` too. Spec: BRONCI "Conversational ASR Streaming API" v3.22 + the
+`syncCorrection()` PUTs it to `/api/v1/subtitle/tasks/:id/subtitle-json` as `type: "edited"` (result in `asrSync`). The same text is sent once;
+failures are listed on `/admin/asr`. Safety (`twm-asr.js`): HTTPS + `wss://` only, timeouts, a failed login waits 60 s (TWM locks
+accounts after wrong logins), task ids must be numeric, sizes capped. TWM keeps original + latest edit itself; we still keep `asrText`/`finalText` too. Spec: BRONCI "Conversational ASR Streaming API" v3.22 + the
 subtitle-json mail (2026-11-20). The test gateway `172.27.41.176` is internal, so Vercel can only reach production. Otherwise mock by default (a plausible Indonesian greeting with typical ASR mistakes, with even word
 timings). Set `GROQ_API_KEY` for Groq Whisper large-v3 (interim, free tier), or `ASR_URL` (+ `ASR_API_KEY`) for a
 generic HTTP API (TWM wins, then this, then Groq; adapt `fromProvider()` to its response shape). Locally, keys go in `.env`.

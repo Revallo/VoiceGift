@@ -5,7 +5,7 @@
 // DELETE /api/message   { slug, id, token }        → "record again"
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug, cleanMood, cleanCandle } from '../lib/gifts.js';
-import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
+import { transcribe, asrProvider, evenWords, computeCorrections, syncCorrection } from '../lib/asr.js';
 import { requireUser } from '../lib/accounts.js';
 import { LIMITS, countRecording } from '../lib/limits.js';
 import { cleanFlower, cleanLantern, cleanDish } from '../lib/gifts.js';
@@ -46,7 +46,8 @@ export default route({
         occasion: gift.occasion,
         speechStartSec,
         speechEndSec,
-        clientHint: cleanText(q.hint, 300)
+        clientHint: cleanText(q.hint, 300),
+        name: `vg-${gift.slug}-msg`
       });
     } catch (e) {
       console.error(e);
@@ -64,6 +65,7 @@ export default route({
       asrText: asr.text,
       asrWords: asr.words,
       asrTypos: asr.typos || [],
+      asrTaskId: asr.taskId ?? null, // the task on the ASR side (TWM), where the correction is written back
       finalText: null,
       edited: false,
       corrections: [],
@@ -101,6 +103,7 @@ export default route({
     msg.lantern = cleanLantern(body.lantern);
     msg.dish = cleanDish(body.dish);
     msg.sentAt = new Date().toISOString();
+    msg.asrSync = await syncCorrection(msg, text);
     await updateMessage(path, msg);
     send(res, 200, { ok: true, edited: msg.edited, corrections: msg.corrections });
   },

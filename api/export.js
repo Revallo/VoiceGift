@@ -22,6 +22,7 @@ export default route({
           audio: m.audioPath,
           durationSec: m.durationSec,
           asrProvider: m.asrProvider,
+          asrTaskId: m.asrTaskId ?? undefined, // TWM task: holds the original + the corrected transcript too
           asrText: m.asrText,
           finalText: m.finalText,
           edited: m.edited,

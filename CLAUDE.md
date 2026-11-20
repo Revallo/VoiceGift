@@ -126,9 +126,14 @@ accounts: `users/<id>/user.json` (+ `gifts`/`thanks` slug lists), `users/<id>/th
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
-`lib/asr.js` is the only seam. Mock by default (a plausible Indonesian greeting with typical ASR mistakes, with even word
-timings). Set `GROQ_API_KEY` for Groq Whisper large-v3 (interim, free tier), or `ASR_URL` (+ `ASR_API_KEY`) for the
-company API (wins over Groq; adapt `fromProvider()` to its response shape). Locally, keys go in `.env`.
+`lib/asr.js` is the only seam (+ `lib/twm-asr.js`). **Company ASR (TWM overseas, added 2026-11-20):** set `TWM_ASR_USER` +
+`TWM_ASR_PASSWORD` (optional `TWM_ASR_URL`, default `https://asrapi.bronci.ai/gateway`; `TWM_ASR_MODEL`). It logs in, streams
+the WAV over the WebSocket (`type=file`, `saveResult=1`) and keeps the task id as `asrTaskId`; when the speaker saves their caption,
+`syncCorrection()` PUTs it to `/api/v1/subtitle/tasks/:id/subtitle-json` as `type: "edited"` (result in `asrSync`). TWM keeps
+original + latest edit itself; we still keep `asrText`/`finalText` too. Spec: BRONCI "Conversational ASR Streaming API" v3.22 + the
+subtitle-json mail (2026-11-20). The test gateway `172.27.41.176` is internal, so Vercel can only reach production. Otherwise mock by default (a plausible Indonesian greeting with typical ASR mistakes, with even word
+timings). Set `GROQ_API_KEY` for Groq Whisper large-v3 (interim, free tier), or `ASR_URL` (+ `ASR_API_KEY`) for a
+generic HTTP API (TWM wins, then this, then Groq; adapt `fromProvider()` to its response shape). Locally, keys go in `.env`.
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.

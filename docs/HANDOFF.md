@@ -30,7 +30,7 @@ Claude (claude.ai), so a new session can continue without re-asking.
   Hobby limit (2,000 advanced ops/month; locked until 2026-12-19, and no new Blob store can be made while over it), which broke
   every page including login. Data in that store (test accounts/gifts) was not moved. `lib/store.js` uses Redis when
   `KV_REST_API_URL` + `KV_REST_API_TOKEN` are set, else Blob, else `.data/`.
-- Not set yet: **`GOOGLE_CLIENT_ID` (without it nobody can log in on the live site)**, `ADMIN_KEY` (export + account list), `ASR_URL`/`ASR_API_KEY` (company ASR). Interim ASR: set `GROQ_API_KEY`
+- Not set yet: **`GOOGLE_CLIENT_ID` (without it nobody can log in on the live site)**, `ADMIN_KEY` (export + account list), `TWM_ASR_USER`/`TWM_ASR_PASSWORD` (company ASR, code ready 2026-11-20: recognise + write the corrected caption back; tested only against a fake server so far). Interim ASR: set `GROQ_API_KEY`
   (Groq Whisper large-v3); without it ASR is the mock. Each message stores `asrProvider`.
 
 ## How we work

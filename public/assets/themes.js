@@ -188,13 +188,51 @@ export const THEMES = {
   }
 };
 
-export const theme = (occasion) => THEMES[occasion] || THEMES.birthday;
+// Some kinds change the words: a money or snack bouquet holds notes / snacks, not flowers, and the Hội An
+// lanterns float down a river instead of up into the sky.
+const treatWords = (one, many, verb) => ({
+  item: one, items: many, itemsOn: 'in',
+  countLine: (n) => (n ? `${count(n, 'friend has', 'friends have')} added a ${one}` : `Be the first to add a ${one}`),
+  doneTitle: `Your ${one} is in the bouquet`,
+  doneCount: (n) => `${count(n, one, many)} · yours is the one circled`,
+  lightingTitle: 'Your bouquet is filling up…',
+  lightingSub: `Every ${one} is one friend.`,
+  gaveLine: (n) => `${count(n, 'person', 'people')} ${verb} for you.`,
+  progress: (i, n) => (i === n ? `All ${n} ${many} are in` : `${i} of ${n} ${many} in`),
+  tapHint: `Each ${one} is a friend. Tap one to hear them.`,
+  idleTitle: `Tap a ${one} to hear who added it`,
+  reveal: {
+    libraryTitle: `The people behind the ${many}`,
+    idleTitle: `There’s a voice in every ${one}.`,
+    idleSub: `Tap a ${one} or a name below. Their words will appear here.`
+  }
+});
+const BY_SHAPE = {
+  graduation: {
+    money: { ...treatWords('note', 'notes', 'tucked in a note'), reveal: { ...treatWords('note', 'notes').reveal, readySub: 'A money bouquet of familiar voices. Every note holds a wish for your next chapter.' } },
+    snack: { ...treatWords('snack', 'snacks', 'brought a snack'), reveal: { ...treatWords('snack', 'snacks').reveal, readySub: 'A snack bouquet of familiar voices. Every snack holds a wish for your next chapter.' } }
+  },
+  wedding: {
+    hoian: {
+      allHeard: 'You heard everyone. Now let the wishes float away.',
+      finaleBtn: 'Float the lanterns', finaleTitle: 'Float the lanterns',
+      finaleSub: (n) => (n === 1 ? 'The wish drifts down the river.' : `All ${n} wishes drift down the river together.`),
+      finaleAction: 'Tap to float', finaleHint: 'Like the lantern nights on the river in Hội An.',
+      reveal: { readyTitle: 'A river of wishes,\njust for you.' }
+    }
+  }
+};
+export function theme(occasion, shape) {
+  const t = THEMES[occasion] || THEMES.birthday;
+  const o = BY_SHAPE[t.key]?.[shape];
+  return o ? { ...t, ...o, reveal: { ...t.reveal, ...o.reveal } } : t;
+}
 
 // The scene for a gift: cake, tumpeng, bouquet or lanterns.
 export function createScene(host, gift, opts = {}) {
   const t = theme(gift.occasion);
   const cake = gift.cake || {};
-  const o = { ...opts, flavor: cake.flavor || t.decorate.flavor, shape: cake.shape, font: cake.font, name: cake.name, dots: cake.dots, stickers: cake.stickers, accent: cake.accent, pattern: cake.pattern, topper: cake.topper, age: cake.age, backdrop: cake.backdrop, greens: cake.greens };
+  const o = { ...opts, local: cake.local, flavor: cake.flavor || t.decorate.flavor, shape: cake.shape, font: cake.font, name: cake.name, dots: cake.dots, stickers: cake.stickers, accent: cake.accent, pattern: cake.pattern, topper: cake.topper, age: cake.age, backdrop: cake.backdrop, greens: cake.greens };
   if (t.key === 'graduation') return createBouquet(host, o);
   if (t.key === 'wedding') return createLanterns(host, { ...o, names: gift.recipient });
   if (t.key === 'tumpeng') return createTumpeng(host, o);
@@ -202,8 +240,8 @@ export function createScene(host, gift, opts = {}) {
 }
 
 // Colours the page for the occasion (background, theme-color).
-export function applyTheme(occasion) {
-  const t = theme(occasion);
+export function applyTheme(occasion, shape) {
+  const t = theme(occasion, shape);
   document.body.dataset.theme = t.key;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t.bg);
   return t;

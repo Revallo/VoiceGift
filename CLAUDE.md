@@ -67,6 +67,11 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   urap, sambal, fried fish, tofu; drawn as SVG in `tumpeng.js`), saved as `dish {type}` (`cleanDish` in `lib/gifts.js`). Dishes are spaced
   evenly along the tray (a second row in front from 13 on, up to 40). Decorate: rice (`FLAVORS`), cone (`SHAPES`), tray (`ACCENTS`),
   garnish (`PATTERNS`), on top (`TOPPERS`, incl. age). Finale: "Cut the tumpeng" (one tap: the top lifts off via `finaleStart()`, the dishes hop).
+- Local touches (added 2026-11-25, `assets/local.js`, ideas + sensitivities in `ide local.md`): `gift.cake.local` = `none|id|th|ph|vn` (`LOCAL_KEYS`),
+  guessed from the phone's time zone and picked in the decorate step's "Local" row. It puts that country's stickers first, adds its backdrop
+  (`BACKDROPS` with `local`) and lantern motif (`PATTERNS` with `local`), and sets the money / snacks of the bouquet kinds `money` and `snack`
+  (`treat` in `bouquet.js` SHAPES; theme words per kind via `theme(occasion, shape)`). A snack bouquet friend picks `flower.snack` (`SNACK_TYPES`).
+  Lanterns add `hoian` (finale: down onto a river, not up), `capiz`, `xi`. Never: flags, maps, real banknote designs, royal/religious symbols, brands.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
 

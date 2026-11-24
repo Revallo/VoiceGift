@@ -6,6 +6,27 @@ export const ITEM_COLORS = {
   white: { label: 'Ivory', hex: '#F5E6BF' }
 };
 export const FLOWER_TYPES = { round: { label: 'Round' }, tulip: { label: 'Tulip' }, rose: { label: 'Rose' }, daisy: { label: 'Daisy' } };
+// The local touch of a gift (gift.cake.local). 'none' = no country. Details (stickers, money, detection) in local.js.
+export const LOCAL_KEYS = ['none', 'id', 'th', 'ph', 'vn'];
+// The snack a friend puts in a snack bouquet (message.flower.snack). Popular snacks of each country, drawn as
+// look-alike packs without brand names or logos (drawings in local.js). local '' = the set for "no country".
+export const SNACK_TYPES = {
+  noodles: { label: 'Instant noodles', local: 'id' }, kopi: { label: 'Coffee sachet', local: 'id' },
+  wafer: { label: 'Choco wafer', local: 'id' }, potato: { label: 'Potato chips', local: 'id' },
+  basreng: { label: 'Spicy basreng', local: 'id' }, tehbox: { label: 'Jasmine tea', local: 'id' },
+  mama: { label: 'Instant noodles', local: 'th' }, seaweed: { label: 'Seaweed crisps', local: 'th' },
+  thaitea: { label: 'Thai milk tea', local: 'th' }, mango: { label: 'Dried mango', local: 'th' },
+  squid: { label: 'Squid snack', local: 'th' }, rolls: { label: 'Coconut rolls', local: 'th' },
+  pancit: { label: 'Pancit canton', local: 'ph' }, chocnut: { label: 'Choco nut bar', local: 'ph' },
+  garlic: { label: 'Garlic corn', local: 'ph' }, mangoes: { label: 'Dried mangoes', local: 'ph' },
+  polvoron: { label: 'Polvoron', local: 'ph' }, threeinone: { label: '3-in-1 coffee', local: 'ph' },
+  mi: { label: 'Instant noodles', local: 'vn' }, caphe: { label: 'Iced coffee', local: 'vn' },
+  banhpia: { label: 'Bánh pía', local: 'vn' }, jackfruit: { label: 'Jackfruit chips', local: 'vn' },
+  banhtrang: { label: 'Rice paper snack', local: 'vn' }, keodua: { label: 'Coconut candy', local: 'vn' },
+  choco: { label: 'Chocolate bar', local: '' }, chips: { label: 'Chips', local: '' },
+  cookies: { label: 'Cookies', local: '' }, gummy: { label: 'Gummy bears', local: '' },
+  juice: { label: 'Juice box', local: '' }, candy: { label: 'Candy', local: '' }
+};
 // The side dish a friend puts around the tumpeng (message.dish = { type }). Drawings in tumpeng.js.
 export const DISH_TYPES = {
   satay: { label: 'Satay', tint: '#A65A2A' }, ketupat: { label: 'Ketupat', tint: '#7DB04E' },

@@ -2423,3 +2423,53 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .candle-pages button:disabled { opacity: .4; cursor: default; }
 .candle-pages button:focus-visible { outline: 2px solid var(--emerald-light); outline-offset: 2px; }
 .candle-page-label { text-align: center; color: var(--soft); font-size: 12px; line-height: 1.4; }
+
+/* ---------- Local touches (local.js): money & snack bouquets, local lanterns, the river ---------- */
+/* Money and snack bouquets: each voice is a fan of notes or a snack pack on a stick, instead of a flower */
+.flower.treat { border-radius: 12px; }
+.flower.treat .t-art { position: absolute; inset: -6% 2% -16%; transform: rotate(var(--rot, 0deg)) scale(0.5); transform-origin: 50% 85%; filter: saturate(0.3) brightness(0.6) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3)); transition: transform 0.55s cubic-bezier(0.3, 1.6, 0.5, 1), filter 0.5s ease; }
+.stage[data-treat="money"] .flower.treat .t-art { inset: -16% -14% -12%; }
+.flower.treat.lit .t-art { transform: rotate(var(--rot, 0deg)) scale(1); filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35)); }
+.flower.treat.active .t-art { transform: rotate(var(--rot, 0deg)) scale(1.16); filter: drop-shadow(0 0 10px var(--c)); }
+.flower.treat.speaking .t-art { animation: vg-treat-sway 0.5s ease-in-out infinite alternate; }
+/* an empty place (no voice yet): the snack / notes faded and small, like a closed bud */
+.flower.treat.spot .t-art { transform: rotate(var(--rot, 0deg)) scale(0.62); filter: saturate(0.25) brightness(0.75); opacity: 0.55; }
+.flower.treat.mine::before { border-radius: 14px; }
+@keyframes vg-treat-sway { 0% { transform: rotate(calc(var(--rot, 0deg) - 7deg)) scale(1.16); } 100% { transform: rotate(calc(var(--rot, 0deg) + 7deg)) scale(1.22); } }
+.mini-snack { position: relative; flex: 0 0 auto; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3)); }
+
+/* Hội An silk lantern: round, ribbed, narrow gold caps and a long red tassel */
+.stage.lanterns[data-shape="hoian"] .l-body { border-radius: 50% / 46%; }
+.stage.lanterns[data-shape="hoian"] .l-body::before, .stage.lanterns[data-shape="hoian"] .l-body::after { left: 32%; width: 36%; height: 4px; background: #B8862E; }
+.stage.lanterns[data-shape="hoian"] .l-tassel { width: 3px; height: 15px; margin-left: -1.5px; background: #9E2F25; }
+.stage.lanterns[data-shape="hoian"] .lantern.lit .l-tassel { background: #D2442F; }
+/* Capiz: a pearly ball of small translucent shell squares, the friend's colour shining through */
+.stage.lanterns[data-shape="capiz"] .l-body { border-radius: 50%; background: repeating-linear-gradient(0deg, rgba(110, 80, 50, 0.38) 0 0.8px, transparent 0.8px 7px), repeating-linear-gradient(90deg, rgba(110, 80, 50, 0.38) 0 0.8px, transparent 0.8px 7px), radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.6), transparent 55%) 0 0 / 7px 7px, color-mix(in srgb, var(--c) 40%, #EFE6D6); }
+.stage.lanterns[data-shape="capiz"] .lantern.lit .l-body { background: repeating-linear-gradient(0deg, rgba(150, 110, 60, 0.32) 0 0.8px, transparent 0.8px 7px), repeating-linear-gradient(90deg, rgba(150, 110, 60, 0.32) 0 0.8px, transparent 0.8px 7px), radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.7), transparent 55%) 0 0 / 7px 7px, radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 64%), color-mix(in srgb, var(--c) 50%, #FFF6E6); }
+/* Red lantern: lucky red with wide gold caps, a faint gold 囍; the friend's colour is the tassel */
+.stage.lanterns[data-shape="xi"] .l-body { border-radius: 50% / 44%; container-type: size; background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.3)), repeating-linear-gradient(90deg, transparent 0 6px, rgba(0, 0, 0, 0.12) 6px 7px), #C8202B; }
+.stage.lanterns[data-shape="xi"] .lantern.lit .l-body { background: radial-gradient(ellipse at 50% 58%, rgba(255, 214, 120, 0.75), rgba(255, 214, 120, 0) 62%), repeating-linear-gradient(90deg, transparent 0 6px, rgba(0, 0, 0, 0.08) 6px 7px), #E0262F; box-shadow: 0 0 16px 3px rgba(255, 80, 60, 0.55), 0 0 42px 12px rgba(255, 80, 60, 0.2); }
+.stage.lanterns[data-shape="xi"] .l-body::before, .stage.lanterns[data-shape="xi"] .l-body::after { left: 14%; width: 72%; height: 6px; background: #E7B32E; }
+.stage.lanterns[data-shape="xi"] .l-motif::after { content: '囍'; position: absolute; inset: 0; display: grid; place-items: center; color: #F6C445; opacity: 0.3; font: 700 62cqh/1 serif; }
+.stage.lanterns[data-shape="xi"] .l-initial { color: #FFE7A0; text-shadow: 0 1px 2px #5A0A10; }
+.stage.lanterns[data-shape="xi"] .l-tassel { width: 4px; height: 13px; margin-left: -2px; background: var(--c); }
+
+/* Local lantern motifs */
+.stage[data-motif="kawung"] .l-motif { background: radial-gradient(ellipse 1.5px 2.5px at 50% 30%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px, radial-gradient(ellipse 1.5px 2.5px at 50% 70%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px, radial-gradient(ellipse 2.5px 1.5px at 30% 50%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px, radial-gradient(ellipse 2.5px 1.5px at 70% 50%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px; }
+.stage[data-motif="laithai"] .l-motif { background: repeating-linear-gradient(45deg, rgba(231, 179, 46, 0.65) 0 1px, transparent 1px 5px), repeating-linear-gradient(-45deg, rgba(231, 179, 46, 0.65) 0 1px, transparent 1px 5px); }
+.stage[data-motif="banig"] .l-motif { background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.34) 0 2.5px, transparent 2.5px 5px), repeating-linear-gradient(90deg, rgba(110, 30, 70, 0.26) 0 2.5px, transparent 2.5px 5px); }
+.stage[data-motif="blossom"] .l-motif { background: radial-gradient(circle, #FFF6C8 0 0.9px, transparent 1.2px) 0 0 / 11px 11px, radial-gradient(circle at 50% 28%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 28% 52%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 72% 52%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 38% 74%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 62% 74%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px; }
+
+/* The river: Hội An lanterns come down onto it and drift away with the current */
+.lanterns .river .rv-wave { animation: vg-ripple 4s ease-in-out infinite alternate; }
+.stage.lanterns[data-shape="hoian"] .lantern.out { animation: vg-river 7.5s cubic-bezier(0.35, 0, 0.6, 1) var(--river-at, 0s) both; }
+@keyframes vg-ripple { from { transform: translateX(-6px); } to { transform: translateX(6px); } }
+@keyframes vg-river {
+  0% { transform: none; }
+  30% { transform: translate(var(--river-dx, 0px), var(--river-dy, 120px)) scale(0.62); }
+  38% { transform: translate(var(--river-dx, 0px), calc(var(--river-dy, 120px) - 3px)) scale(0.62); }
+  100% { transform: translate(calc(var(--river-dx, 0px) + 160px), calc(var(--river-dy, 120px) + 4px)) scale(0.46); opacity: 0; }
+}
+
+/* The sticker tray: the country's stickers come first, then a thin line */
+.sticker-sep { flex: 0 0 auto; width: 1px; align-self: stretch; margin: 8px 4px; background: var(--line-strong); }

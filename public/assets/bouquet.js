@@ -2,6 +2,7 @@
 import { colorFor } from './common.js';
 import { ITEM_COLORS, FLOWER_TYPES } from './item-options.js';
 import { div, seeded, createStage, createDrawing, createStickers, createTopper, itemStates, nameText } from './stage.js';
+import { moneySvg, snackSvg, snackKey } from './local.js';
 
 // Wrap colours. The keys are the same as the cake flavours so the API stays the same.
 export const WRAPS = {
@@ -154,8 +155,13 @@ export const SHAPES = {
   classic: { label: 'Soft wrap' },
   box: { label: 'Flower box' },
   basket: { label: 'Basket' },
-  tied: { label: 'Hand-tied' }
+  tied: { label: 'Hand-tied' },
+  // Each voice is a fan of folded notes / a snack instead of a flower, in the soft wrap. The money and the
+  // snacks follow the gift's country (gift.cake.local, see local.js).
+  money: { label: 'Money bouquet', treat: 'money' },
+  snack: { label: 'Snack bouquet', treat: 'snack' }
 };
+export const isTreat = (shape) => Boolean(SHAPES[shape]?.treat);
 
 const full = { left: '0', top: '0', width: `${W}px`, height: `${H}px` };
 
@@ -252,9 +258,10 @@ export function createBouquet(host, opts = {}) {
   let flavor = opts.flavor;
   let accent = opts.accent;
   let nameSize = null;
-  let currentShape = 'classic', lastLayout = null;
+  let currentShape = 'classic', lastLayout = null, local = opts.local;
   function setShape(shape) {
     currentShape = SHAPES[shape] ? shape : 'classic';
+    stage.dataset.treat = SHAPES[currentShape].treat || '';
     backEl.textContent = frontEl.textContent = '';
     parts = {};
     const add = (parent) => (style, role) => { const d = div('p', style); parent.append(d); if (role) (parts[role] ||= []).push(d); return d; };
@@ -287,6 +294,8 @@ export function createBouquet(host, opts = {}) {
       nameEl.style.color = c.text;
     },
     setShape,
+    // The country: which money / which snacks (only the money and snack bouquets change).
+    setLocal(k) { local = k; if (lastLayout && SHAPES[currentShape].treat) api.setCandles(lastLayout.n, lastLayout.options); },
     setAccent(k) { accent = k; api.setFlavor(flavor); },
     setPattern(k) { stage.dataset.petal = PATTERNS[k] ? k : 'round'; },
     setTopper(k) { setTucked(TOPPERS[k]); tuck.hidden = !TOPPERS[k]?.emoji; },
@@ -299,6 +308,10 @@ export function createBouquet(host, opts = {}) {
     setFlowerStyle(i, style) {
       const flower = flowers[i];
       if (!flower) return;
+      if (SHAPES[currentShape].treat === 'snack' && style) {
+        const type = snackKey(style.snack, i, local);
+        if (flower.dataset.snack !== type) { flower.dataset.snack = type; flower.querySelector('.t-art').innerHTML = snackSvg(type); } // static markup
+      }
       if (ITEM_COLORS[style?.color]) flower.style.setProperty('--c', ITEM_COLORS[style.color].hex);
       if (FLOWER_TYPES[style?.type]) flower.dataset.petal = style.type;
     },
@@ -309,8 +322,10 @@ export function createBouquet(host, opts = {}) {
       flowers.length = 0;
       const total = Math.min(Math.max(n, spots), 40);
       const pos = flowerSpots(total, currentShape);
-      stemsEl.innerHTML = currentShape === 'classic'
-        ? `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${pos.map(p => `<path d="M${p.x} ${p.y + p.s * .24} Q${195 + (p.x - 195) * .4} 199 195 278" fill="none" stroke="#638959" stroke-width="2.4" stroke-linecap="round"/>`).join('')}</svg>`
+      const treat = SHAPES[currentShape].treat;
+      // stems in the soft wrap; money and snacks sit on wooden sticks
+      stemsEl.innerHTML = currentShape === 'classic' || treat
+        ? `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${pos.map(p => `<path d="M${p.x} ${p.y + p.s * .24} Q${195 + (p.x - 195) * .4} 199 195 278" fill="none" stroke="${treat ? '#D8B98A' : '#638959'}" stroke-width="${treat ? 2 : 2.4}" stroke-linecap="round"/>`).join('')}</svg>`
         : '';
       const els = [];
       for (const p of pos.slice().sort((a, b) => a.y - b.y)) {
@@ -322,11 +337,21 @@ export function createBouquet(host, opts = {}) {
         if (!isSpot && names?.[p.i]) btn.setAttribute('aria-label', `Play ${names[p.i]}'s message`);
         Object.assign(btn.style, { left: `${(p.x - p.s / 2).toFixed(1)}px`, top: `${(p.y - p.s / 2).toFixed(1)}px`, width: `${p.s}px`, height: `${p.s}px` });
         btn.style.setProperty('--c', (colors && colors[p.i]) || colorFor(p.i));
-        const bloom = div('f-bloom');
-        bloom.style.setProperty('--rot', `${p.rot}deg`);
-        for (let k = 0; k < 5; k++) { const pe = div('f-petal'); pe.style.setProperty('--a', `${k * 72}deg`); bloom.append(pe); }
-        bloom.append(div('f-core'));
-        btn.append(bloom);
+        if (treat) {
+          // a fan of notes / a snack pack, tilted a little like the flowers
+          btn.classList.add('treat');
+          const art = div('t-art');
+          art.style.setProperty('--rot', `${(p.rot - 15) * 0.6}deg`);
+          if (treat === 'snack') btn.dataset.snack = snackKey(styles?.[p.i]?.snack, p.i, local);
+          art.innerHTML = treat === 'money' ? moneySvg(local) : snackSvg(btn.dataset.snack); // static markup
+          btn.append(art);
+        } else {
+          const bloom = div('f-bloom');
+          bloom.style.setProperty('--rot', `${p.rot}deg`);
+          for (let k = 0; k < 5; k++) { const pe = div('f-petal'); pe.style.setProperty('--a', `${k * 72}deg`); bloom.append(pe); }
+          bloom.append(div('f-core'));
+          btn.append(bloom);
+        }
         if (onTap && !isSpot) btn.addEventListener('click', () => onTap(p.i));
         layer.append(btn);
         els[p.i] = btn;

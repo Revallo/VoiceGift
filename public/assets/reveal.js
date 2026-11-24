@@ -69,7 +69,7 @@ async function unlockAndShow(pin = '') {
   const data = await api(`/api/reveal?${q.toString()}`);
   gift = data.gift;
   thanked = data.thanked;
-  t = applyTheme(gift.occasion);
+  t = applyTheme(gift.occasion, gift.cake?.shape);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
   if ($('#revealAccessBadge')) $('#revealAccessBadge').textContent = '✓ PIN';
@@ -133,7 +133,7 @@ async function load() {
     return showScreen('error');
   }
   gift = pub.gift;
-  t = applyTheme(gift.occasion);
+  t = applyTheme(gift.occasion, gift.cake?.shape);
   first = t.callName(gift.recipient);
   document.title = `Verify PIN for ${first}`;
   if ($('#verifyOrganizer')) $('#verifyOrganizer').textContent = `${gift.organizer} sent a gift`;
@@ -683,7 +683,7 @@ function finishFinale() {
   stopMusic();
   stopMusic = playTune(ac, gift.cake?.music, { loop: false });
   confetti();
-  if (t.key === 'wedding') skyLanterns();
+  if (t.key === 'wedding' && !scene.onRiver?.()) skyLanterns(); // Hội An lanterns stay on the river
   showKeepsake();
 }
 

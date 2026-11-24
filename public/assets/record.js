@@ -4,9 +4,10 @@ import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { requireLogin } from './auth.js';
 import { MOODS, playVoice, moodShow } from './voicefx.js';
 import { CANDLES, FLAMES, FLAME_SHAPES, miniCandle, styleCandle } from './cake.js';
-import { ITEM_COLORS, FLOWER_TYPES } from './item-options.js';
-import { miniFlower } from './bouquet.js';
+import { ITEM_COLORS, FLOWER_TYPES, SNACK_TYPES } from './item-options.js';
 import { DISHES, dishKey, miniDish } from './tumpeng.js';
+import { miniFlower, SHAPES as WRAP_SHAPES } from './bouquet.js';
+import { snacksFor, snackKey, miniSnack } from './local.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(15)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon](18)));
@@ -47,9 +48,10 @@ async function load() {
     $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
     return showScreen('error');
   }
-  t = applyTheme(gift.occasion);
+  t = applyTheme(gift.occasion, gift.cake?.shape);
   const defaultColor = Object.keys(ITEM_COLORS)[count % Object.keys(ITEM_COLORS).length];
   flowerStyle = { type: FLOWER_TYPES[gift.cake?.pattern] ? gift.cake.pattern : 'round', color: defaultColor };
+  if (treat() === 'snack') flowerStyle.snack = snackKey('', count, gift.cake?.local);
   lanternStyle = { color: defaultColor };
   dishStyle = { type: dishKey('', count) };
   first = t.callName(gift.recipient);
@@ -437,7 +439,12 @@ function buildTwist() {
     });
 
   $('#candlePicks').hidden = !isCake();
-  $('#flowerPicks').hidden = t.key !== 'graduation';
+  // money bouquet: every note is the same, nothing to pick; snack bouquet: pick your snack instead of a flower
+  $('#flowerPicks').hidden = t.key !== 'graduation' || Boolean(treat());
+  $('#snackPicks').hidden = treat() !== 'snack';
+  if (treat() === 'snack') pickRow($('#snackRow'), snacksFor(gift.cake?.local).map((k) => [k, (b) => b.append(miniSnack(k, 38), h('span', {}, SNACK_TYPES[k].label))]), (k) => k === flowerStyle.snack, (k) => {
+    flowerStyle.snack = k; seenScene.setFlowerStyle(count, flowerStyle); seenScene.light(count); seenScene.setActive(count);
+  });
   $('#lanternPicks').hidden = t.key !== 'wedding';
   $('#dishPicks').hidden = t.key !== 'tumpeng';
   if (t.key === 'tumpeng') pickRow($('#dishRow'), Object.entries(DISHES).map(([k, d]) => [k, (b) => b.append(miniDish(k, 40), h('span', {}, d.label))]), (k) => k === dishStyle.type, (k) => {
@@ -532,3 +539,6 @@ async function showDone() {
 }
 
 load();
+
+// A money or snack bouquet instead of flowers (bouquet.js SHAPES)
+function treat() { return t?.key === 'graduation' ? WRAP_SHAPES[gift?.cake?.shape]?.treat || '' : ''; }

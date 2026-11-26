@@ -4,6 +4,7 @@
 // Natural materials only (no styrofoam); no temples, monks or incense (see `ide local.md`); the name is never drawn in red.
 import { KRATHONG_TYPES } from './item-options.js';
 import { div, seeded, createStage, createStickers, createTopper, itemStates, nameText } from './stage.js';
+import { drapeSvg } from './local.js';
 
 // The night (gift.cake.flavor): the colour of the sky and the water.
 export const FLAVORS = {
@@ -115,6 +116,11 @@ export function krathongSpots(n) {
 
 export function createKrathong(host, opts = {}) {
   const { wrap, stage, glow, body, layer, toStage, size, setBackdrop } = createStage(host, W, H, 'krathongs');
+  // the country (gift.cake.local): what hangs across the top at a wedding there
+  const drape = div('local-drape');
+  body.prepend(drape);
+  const paintDrape = (k) => { drape.innerHTML = drapeSvg(k, W); }; // static markup
+  paintDrape(opts.local);
   glow.style.top = '-60px';
   const id = `kt${++uid}`;
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -171,6 +177,7 @@ export function createKrathong(host, opts = {}) {
   const types = [];
 
   const api = {
+    setLocal: paintDrape,
     wrap, stage, candles: items, toStage, size, stickers, ...st, setBackdrop,
     drawArea: null, // no drawing on the river
     setDots() {}, getDots() { return []; }, addDot() {},

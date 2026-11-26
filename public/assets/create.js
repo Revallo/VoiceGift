@@ -34,6 +34,7 @@ const MAX_STICKERS = 30;
 function go(screen) {
   history.pushState({ screen }, '');
   showScreen(screen);
+  if (screen === 'decorate') renderPeeks();
 }
 history.replaceState({ screen: 'who' }, '');
 window.addEventListener('popstate', (e) => {
@@ -81,6 +82,23 @@ function showKindName() {
   $('#kindName').textContent = label;
   $('#decorKindName').textContent = label;
   for (const el of $('#kinds').children) el.setAttribute('aria-checked', String(el.dataset.v === state.shape));
+  const keys = Object.keys(t.decorate.shapes);
+  $('#kindDots').replaceChildren(...keys.map((k) => h('i', { class: k === state.shape ? 'on' : '' })));
+}
+// In Customize the kinds before and after peek in at the sides, so it's plain the gift can be swiped.
+function renderPeeks() {
+  if (!scene || $('[data-screen="decorate"]').hidden) return;
+  const keys = Object.keys(t.decorate.shapes), at = keys.indexOf(state.shape), rec = recipientOr();
+  for (const [id, dir] of [['#kindPrev', -1], ['#kindNext', 1]]) {
+    const key = keys[(at + dir + keys.length) % keys.length], kt = theme(state.occasion, key);
+    const mini = h('div', { class: 'mini' });
+    $(id).replaceChildren(mini);
+    $(id).setAttribute('aria-label', `${dir < 0 ? 'Previous' : 'Next'} kind: ${kt.decorate.shapes[key]?.label || key}`);
+    const sc = createScene(mini, { occasion: state.occasion, recipient: rec, cake: { flavor: kt.decorate.flavor, shape: key, font: state.font, name: kt.decorate.name(rec), greens: state.greens, local: state.local,
+      accent: kt.decorate.accent, pattern: kt.decorate.pattern, topper: kt.decorate.topper, backdrop: kt.decorate.backdrop || (kt.scene === t.scene ? state.backdrop : 'party') } });
+    sc.setCandles(state.occasion === 'birthday' ? 6 : 8);
+    sc.lightAll();
+  }
 }
 
 // Everything picked in the decorate step, as stored in gift.cake.
@@ -224,18 +242,18 @@ function buildDecorate() {
   renderStickerTray();
 }
 
-// The country: its stickers come first in the tray, its backdrop and lantern motif join the strips, and a
-// money / snack bouquet uses its money and snacks. Picking one also puts its backdrop behind the gift, so the
-// change shows straight away (unless another backdrop was chosen on purpose).
+// The country shows on the gift itself: the cake's mat and garland, the print on the bouquet's wrap, what hangs
+// over a wedding. Its stickers come first in the tray, its backdrop and lantern motif join the strips, and a
+// money / snack bouquet uses its money and snacks. It never swaps the backdrop: that stays the organizer's pick.
 function renderLocals() {
   wheel($('#locals'), Object.entries(LOCALES), state.local, (k, v) => chip(v.label), (k) => {
     state.local = k;
     scene.setLocal?.(k);
-    const own = Object.entries(BACKDROPS).find(([, v]) => v.local === k)?.[0];
-    if (state.backdrop === 'party' || BACKDROPS[state.backdrop]?.local) { state.backdrop = own || 'party'; scene.setBackdrop(state.backdrop); }
+    if (BACKDROPS[state.backdrop]?.local && BACKDROPS[state.backdrop].local !== k) { state.backdrop = 'party'; scene.setBackdrop(state.backdrop); }
     if (t.decorate.patterns[state.pattern]?.local && t.decorate.patterns[state.pattern].local !== k) { state.pattern = Object.keys(t.decorate.patterns)[0]; scene.setPattern(state.pattern); }
     renderDetails();
     renderStickerTray();
+    renderPeeks();
   });
 }
 
@@ -301,6 +319,7 @@ function setShape(k) {
   state.shape = k;
   if (!switchScene()) { scene.setShape(k); renderTools(); }
   showKindName();
+  renderPeeks();
 }
 function stepShape(dir) {
   const keys = Object.keys(t.decorate.shapes);

@@ -157,3 +157,100 @@ export function miniSnack(type, size = 44) {
   el.setAttribute('aria-hidden', 'true');
   return el;
 }
+
+// ---------- the country on the cake and at the wedding (static markup, never user text) ----------
+let ids = 0;
+const f1 = (n) => n.toFixed(1);
+// Points along a garland lying on the cake plate, in front of the cake: two soft loops from left to right.
+function garlandPath(y0, step) {
+  const pts = [];
+  for (let x = 54; x <= 336; x += step) {
+    const t = (x - 54) / 282, dx = (x - 195) / 162;
+    pts.push([x, y0 + 13 * Math.sqrt(Math.max(0, 1 - dx * dx)) + 6 * Math.abs(Math.sin(2 * Math.PI * t))]);
+  }
+  return pts;
+}
+const petals5 = (x, y, r, fill, heart) => {
+  let s = '';
+  for (let k = 0; k < 5; k++) { const a = (k * 72 - 90) * Math.PI / 180; s += `<circle cx="${f1(x + Math.cos(a) * r * 0.62)}" cy="${f1(y + Math.sin(a) * r * 0.62)}" r="${f1(r * 0.5)}" fill="${fill}"/>`; }
+  return s + `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r * 0.3)}" fill="${heart}"/>`;
+};
+const star5 = (x, y, r, fill) => {
+  let d = '';
+  for (let k = 0; k < 10; k++) { const a = (k * 36 - 90) * Math.PI / 180, rr = k % 2 ? r * 0.48 : r; d += `${k ? 'L' : 'M'}${f1(x + Math.cos(a) * rr)} ${f1(y + Math.sin(a) * rr)}`; }
+  return `<path d="${d}Z" fill="${fill}"/>`;
+};
+const zigzagEllipse = (cx, cy, rx, ry, n) => {
+  let d = '';
+  for (let k = 0; k <= n * 2; k++) { const a = Math.PI * k / n, r = k % 2 ? 0.94 : 1; d += `${k ? 'L' : 'M'}${f1(cx + Math.cos(a) * rx * r)} ${f1(cy + Math.sin(a) * ry * r)}`; }
+  return d + 'Z';
+};
+const svg = (W, H, inner) => `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="position:absolute;left:0;top:0;overflow:visible" aria-hidden="true">${inner}</svg>`;
+
+// Under the cake, in place of the white plate: what the cake stands on. dy moves it up for the sheet cake's board.
+export function cakeMatSvg(local, dy = 0) {
+  const cy = 273 + dy, rx = 172, ry = 26;
+  const rim = (fill, stroke) => `<ellipse cx="195" cy="${cy + 3}" rx="${rx}" ry="${ry}" fill="rgba(60,30,20,.18)"/><ellipse cx="195" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}"${stroke ? ` stroke="${stroke}" stroke-width="3"` : ''}/>`;
+  const mats = {
+    // a banana leaf with a cut edge, as under a tumpeng
+    id: () => `<ellipse cx="195" cy="${cy + 3}" rx="${rx + 6}" ry="${ry + 2}" fill="rgba(60,30,20,.16)"/><path d="${zigzagEllipse(195, cy, rx + 8, ry + 2, 46)}" fill="#3E8C38"/><ellipse cx="195" cy="${cy}" rx="${rx - 8}" ry="${ry - 4}" fill="#5DAA4A"/>`
+      + Array.from({ length: 15 }, (_, k) => { const a = Math.PI * (k + 0.5) / 15; return `<path d="M${f1(195 + Math.cos(a) * 110)} ${f1(cy + Math.sin(a) * 13)}L${f1(195 + Math.cos(a) * (rx - 8))} ${f1(cy + Math.sin(a) * (ry - 4))}" stroke="#3E8C38" stroke-width="1.4"/>`; }).join(''),
+    // a silk cloth with a gold border
+    th: () => rim('#5B2A86') + `<ellipse cx="195" cy="${cy}" rx="${rx - 7}" ry="${ry - 3.5}" fill="none" stroke="#E2B43A" stroke-width="2.4"/>`
+      + Array.from({ length: 36 }, (_, k) => { const a = Math.PI * 2 * k / 36; return `<circle cx="${f1(195 + Math.cos(a) * (rx - 14))}" cy="${f1(cy + Math.sin(a) * (ry - 7))}" r="1.7" fill="#F3D36B"/>`; }).join(''),
+    // a woven banig mat
+    ph: () => { const id = `banig${++ids}`; return `<defs><pattern id="${id}" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="12" height="12" fill="#F3D9A4"/><rect width="6" height="6" fill="#E8577A"/><rect x="6" y="6" width="6" height="6" fill="#3FA37A"/><rect x="6" width="6" height="6" fill="#F6C84B"/></pattern></defs>`
+      + rim(`url(#${id})`, '#B9874A'); },
+    // a red lacquer tray with a gold rim
+    vn: () => rim('#B01E28', '#E7B32E') + `<ellipse cx="195" cy="${cy}" rx="${rx - 10}" ry="${ry - 5}" fill="none" stroke="#F3D36B" stroke-width="1.2" stroke-dasharray="3 4"/>`
+  };
+  return mats[local] ? svg(390, 300, mats[local]()) : '';
+}
+
+// In front of the cake, on its mat: a garland of the country's flowers.
+export function cakeGarlandSvg(local, dy = 0) {
+  const y0 = 268 + dy;
+  const string = (step, color) => `<path d="M${garlandPath(y0, step).map(([x, y]) => `${x} ${f1(y)}`).join('L')}" stroke="${color}" stroke-width="1.4" fill="none"/>`;
+  const g = {
+    // melati: a string of jasmine buds
+    id: () => string(4, '#2F6E2A') + garlandPath(y0, 7).map(([x, y], i) => `<ellipse cx="${x}" cy="${f1(y)}" rx="4.4" ry="5.8" fill="#FFFDF4" stroke="#CFC6A8" stroke-width=".7" transform="rotate(${i % 2 ? 20 : -20} ${x} ${f1(y)})"/>`).join('')
+      + garlandPath(y0, 21).map(([x, y]) => petals5(x, y, 9, '#FFFFFF', '#E9D57A')).join(''),
+    // phuang malai: thick jasmine with rose and marigold knots
+    th: () => garlandPath(y0, 5.5).map(([x, y]) => `<circle cx="${x}" cy="${f1(y)}" r="4.6" fill="#FFFDF4" stroke="#D9D0B6" stroke-width=".6"/>`).join('')
+      + garlandPath(y0, 47).map(([x, y], i) => i % 2 ? petals5(x, y, 10, '#F6A21C', '#E0661A') : `<circle cx="${x}" cy="${f1(y)}" r="7.5" fill="#D7263D"/><path d="M${x - 3.5} ${f1(y)}a3.5 3.5 0 1 1 3.5 3.5" stroke="#9E1428" stroke-width="1.4" fill="none"/>`).join(''),
+    // sampaguita: little white stars between leaves
+    ph: () => string(4, '#2F6E2A') + garlandPath(y0, 13).map(([x, y], i) => `<ellipse cx="${x + 6.5}" cy="${f1(y + 1)}" rx="6" ry="2.6" fill="#3E8C38" transform="rotate(${i % 2 ? 25 : -25} ${x + 6.5} ${f1(y + 1)})"/>`).join('')
+      + garlandPath(y0, 13).map(([x, y]) => `${star5(x, y, 8, '#FFFFFF')}<circle cx="${x}" cy="${f1(y)}" r="1.8" fill="#E9D57A"/>`).join(''),
+    // mai: two blossoming branches beside the cake
+    vn: () => [1, -1].map((s) => {
+      const X = (x) => f1(195 + s * (x - 195));
+      const y = (v) => f1(v + dy);
+      return `<path d="M${X(74)} ${y(292)}Q${X(48)} ${y(262)} ${X(22)} ${y(232)}M${X(56)} ${y(270)}Q${X(70)} ${y(248)} ${X(64)} ${y(226)}M${X(40)} ${y(250)}Q${X(22)} ${y(252)} ${X(10)} ${y(262)}" stroke="#6B3E22" stroke-width="3.4" fill="none" stroke-linecap="round"/>`
+        + [[22, 232, 9], [64, 226, 8.5], [10, 262, 8], [48, 258, 8.5], [70, 284, 8], [34, 242, 6.5], [62, 246, 6.5]].map(([x, v, r]) => petals5(Number(X(x)), Number(y(v)), r, '#FFD23F', '#E07A12')).join('');
+    }).join('')
+  };
+  return g[local] ? svg(390, 300, g[local]()) : '';
+}
+
+// At a wedding: what hangs across the top of the scene.
+export function drapeSvg(local, W = 390) {
+  const loops = (n, depth, y0 = 2) => { const w = W / n; return Array.from({ length: n }, (_, k) => `M${f1(k * w)} ${y0}Q${f1(k * w + w / 2)} ${y0 + depth * 2} ${f1((k + 1) * w)} ${y0}`).join(''); };
+  const along = (n, depth, step, y0 = 2) => { const pts = [], w = W / n; for (let x = step / 2; x < W; x += step) { const t = (x % w) / w; pts.push([x, y0 + depth * 4 * t * (1 - t)]); } return pts; };
+  const d = {
+    // janur: a fringe of woven young coconut leaf
+    id: () => `<rect x="0" y="0" width="${W}" height="9" fill="#E9C94A"/><path d="M0 9H${W}" stroke="#B8962A" stroke-width="1.4"/>`
+      + Array.from({ length: Math.ceil(W / 13) }, (_, k) => { const x = k * 13 + 6.5, l = k % 3 === 1 ? 40 : 26; return `<path d="M${x - 4.5} 9L${x} ${9 + l}L${x + 4.5} 9Z" fill="${k % 2 ? '#F1D766' : '#D9B83A'}"/><path d="M${x} 10V${8 + l}" stroke="#B8962A" stroke-width=".7"/>`; }).join(''),
+    // jasmine garlands with marigold tassels
+    th: () => along(3, 22, 5.5).map(([x, y]) => `<circle cx="${f1(x)}" cy="${f1(y)}" r="3.4" fill="#FFFDF4" stroke="#E6DEC8" stroke-width=".5"/>`).join('')
+      + [0, 1, 2, 3].map((k) => { const x = f1(k * W / 3); return `<path d="M${x} 4V40" stroke="#FFFDF4" stroke-width="5" stroke-dasharray="4 1.5"/>${petals5(Number(x), 44, 8, '#F6A21C', '#E0661A')}<path d="M${x} 52l-4 12M${x} 52l4 12" stroke="#D7263D" stroke-width="2.2" stroke-linecap="round"/>`; }).join(''),
+    // capiz shells on strings
+    ph: () => Array.from({ length: 13 }, (_, k) => { const x = f1(15 + k * (W - 30) / 12), n = k % 2 ? 3 : 4; return `<path d="M${x} 0V${n * 14 + 4}" stroke="#C9B48A" stroke-width="1"/>`
+      + Array.from({ length: n }, (_, j) => `<circle cx="${x}" cy="${8 + j * 14}" r="6" fill="#FFF4DE" fill-opacity=".92" stroke="#C9A86E" stroke-width="1"/><circle cx="${Number(x) - 1.8}" cy="${6 + j * 14}" r="1.8" fill="#FFFFFF"/>`).join(''); }).join('')
+      + `<path d="${loops(4, 8)}" stroke="#F2C1CF" stroke-width="3" fill="none"/>`,
+    // red swags with gold trim and tassels
+    vn: () => `<path d="${loops(3, 16, 0)}V0H0Z" fill="#B3202A"/><path d="${loops(3, 16, 0)}" stroke="#E7B32E" stroke-width="3" fill="none"/>`
+      + [0, 1, 2, 3].map((k) => { const x = f1(k * W / 3); return `<path d="M${x} 0V26" stroke="#E7B32E" stroke-width="2"/><circle cx="${x}" cy="28" r="5" fill="#E7B32E"/><path d="M${Number(x) - 4} 31L${x} 48L${Number(x) + 4} 31Z" fill="#D7263D"/>`; }).join('')
+      + along(3, 16, 30, 0).map(([x, y]) => petals5(x, y + 3, 5, '#FFD23F', '#E07A12')).join('')
+  };
+  return d[local] ? svg(W, 80, d[local]()) : '';
+}

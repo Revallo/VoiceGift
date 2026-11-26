@@ -5,6 +5,7 @@
 // animals, except the dragon of the Imlek kind (themes.js IMLEK), drawn as a lucky motif, never as a year sign.
 import { ENVELOPE_TYPES } from './item-options.js';
 import { div, seeded, createStage, createStickers, createTopper, itemStates, nameText } from './stage.js';
+import { drapeSvg } from './local.js';
 
 // The blossoms (gift.cake.flavor): yellow mai (the South), pink đào (the North), a kumquat tree, or both blossoms.
 export const FLAVORS = {
@@ -111,6 +112,11 @@ export function envelopeSpots(n) {
 
 export function createLixi(host, opts = {}) {
   const { wrap, stage, glow, body, layer, toStage, size, setBackdrop } = createStage(host, W, H, 'lixi');
+  // the country (gift.cake.local): what hangs across the top at a wedding there
+  const drape = div('local-drape');
+  body.prepend(drape);
+  const paintDrape = (k) => { drape.innerHTML = drapeSvg(k, W); }; // static markup
+  paintDrape(opts.local);
   glow.style.top = '-140px';
   const id = `lx${++uid}`;
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -186,6 +192,7 @@ export function createLixi(host, opts = {}) {
   const stickers = createStickers(stage);
 
   const api = {
+    setLocal: paintDrape,
     wrap, stage, candles: envelopes, toStage, size, stickers, ...st, setBackdrop,
     drawArea: null, // no drawing on the tree
     setDots() {}, getDots() { return []; }, addDot() {},

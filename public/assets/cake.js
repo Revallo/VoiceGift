@@ -1,6 +1,7 @@
 // Birthday: the cake. Drawn in a fixed 390×300 stage; every voice is a candle.
 import { colorFor } from './common.js';
 import { div, seeded, createStage, createDrawing, createStickers, itemStates, NAME_FONTS, DEFAULT_FONT } from './stage.js';
+import { cakeMatSvg, cakeGarlandSvg } from './local.js';
 
 export const FLAVORS = {
   strawberry: { label: 'Strawberry', b1: '#F2A9C4', b2: '#FFE3EE', frost: '#FFF0F6', top2: '#FFF7FA', text: '#8E2552' },
@@ -226,8 +227,8 @@ export const PATTERN_SURFACES = {
 function buildShape(shape, P) {
   const rnd = seeded(7);
   const plate = () => {
-    P({ left: '33px', top: '248px', width: '324px', height: '50px', borderRadius: '50%', background: '#FFFFFF', boxShadow: '0 4px 10px rgba(80,40,60,0.18)' });
-    P({ left: '47px', top: '254px', width: '296px', height: '36px', borderRadius: '50%', background: '#F4E6DC' });
+    P({ left: '33px', top: '248px', width: '324px', height: '50px', borderRadius: '50%', background: '#FFFFFF', boxShadow: '0 4px 10px rgba(80,40,60,0.18)' }, 'plate');
+    P({ left: '47px', top: '254px', width: '296px', height: '36px', borderRadius: '50%', background: '#F4E6DC' }, 'plate');
   };
   // a round tier: side (role), its top ellipse (topRole), optional frosting drips along the front edge
   const tier = (x, w, top, h, role, topRole, ry, drips) => {
@@ -444,6 +445,17 @@ export function createCake(host, opts = {}) {
   let flavor = opts.flavor;
   let accent = opts.accent, pattern = opts.pattern, nameArea = null, currentShape = 'classic';
   const decoEl = div('cake-pattern', { position: 'absolute', inset: '0', pointerEvents: 'none' });
+  // The country (gift.cake.local): what the cake stands on, and a garland of its flowers on the plate.
+  let local = opts.local;
+  const matEl = div('cake-local', { position: 'absolute', inset: '0', pointerEvents: 'none' });
+  const garlandEl = div('cake-local', { position: 'absolute', inset: '0', pointerEvents: 'none' });
+  const paintLocal = () => {
+    const dy = currentShape === 'sheet' ? -10 : 0;
+    matEl.innerHTML = cakeMatSvg(local, dy); // static markup
+    garlandEl.innerHTML = cakeGarlandSvg(local, dy);
+    // the country's mat takes the place of the white plate
+    for (const d of parts.plate || []) d.style.visibility = matEl.childElementCount ? 'hidden' : '';
+  };
   const name = curvedName();
   // The topper (age numbers or a sugar figure) is pushed into the cream: frosting rises around its foot,
   // and it stands among the candles, so nearer candles stay in front of it.
@@ -495,7 +507,9 @@ export function createCake(host, opts = {}) {
     currentShape = SHAPES[shape] ? shape : 'classic';
     nameArea = buildShape(currentShape, P);
     name.place(nameArea);
-    shapeEl.append(decoEl, name.svg);
+    shapeEl.prepend(matEl);
+    shapeEl.append(garlandEl, decoEl, name.svg);
+    paintLocal();
     api.setPattern(pattern);
     api.setFlavor(flavor);
   }
@@ -556,6 +570,7 @@ export function createCake(host, opts = {}) {
       name.setColor(nameArea?.plaque ? (lightness(colors.frost) > 0.55 ? '#4A2238' : '#FFFFFF') : c.text);
     },
     setAccent(k) { accent = k; api.setFlavor(flavor); },
+    setLocal(k) { local = k; paintLocal(); },
     // Evenly spaced curved rows follow each surface, leaving room for the inscription.
     setPattern(k) {
       pattern = k;

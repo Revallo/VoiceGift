@@ -2,6 +2,7 @@
 import { colorFor, initials as senderInitials } from './common.js';
 import { ITEM_COLORS } from './item-options.js';
 import { div, seeded, createStage, createStickers, createTopper, itemStates, nameText } from './stage.js';
+import { drapeSvg } from './local.js';
 
 // Fairy-light colours. The keys are the same as the cake flavours so the API stays the same.
 export const LIGHTS = {
@@ -94,6 +95,11 @@ export function lanternSpots(n) {
 
 export function createLanterns(host, opts = {}) {
   const { wrap, stage, glow, body, layer, toStage, size, setBackdrop } = createStage(host, W, H, 'lanterns');
+  // the country (gift.cake.local): what hangs across the top at a wedding there
+  const drape = div('local-drape');
+  body.prepend(drape);
+  const paintDrape = (k) => { drape.innerHTML = drapeSvg(k, W); }; // static markup
+  paintDrape(opts.local);
   glow.style.top = '-120px';
   body.append(div('l-stars')); // two slow layers of stars behind everything
   const sky = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -146,6 +152,7 @@ export function createLanterns(host, opts = {}) {
   };
 
   const api = {
+    setLocal: paintDrape,
     wrap, stage, candles: lanterns, toStage, size, stickers, ...st, setBackdrop,
     drawArea: null, // no drawing on the lanterns
     setDots() {}, getDots() { return []; }, addDot() {},

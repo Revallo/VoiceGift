@@ -56,14 +56,12 @@
       <button type="button" class="btn sm save-btn" id="saveDecorBtn">Save</button>
     </header>
 
-    <div class="stage-showcase">
+    <div class="stage-showcase decor-kinds">
+      <button type="button" class="kind-peek prev" id="kindPrev" aria-label="Previous kind"></button>
       <div id="decorCake"></div>
+      <button type="button" class="kind-peek next" id="kindNext" aria-label="Next kind"></button>
     </div>
-    <div class="kind-switch">
-      <button type="button" class="icon-btn" id="kindPrev" aria-label="Previous kind" data-icon="back"></button>
-      <b id="decorKindName"></b>
-      <button type="button" class="icon-btn flip" id="kindNext" aria-label="Next kind" data-icon="back"></button>
-    </div>
+    <div class="kind-switch"><b id="decorKindName"></b><span class="kind-dots" id="kindDots" aria-hidden="true"></span></div>
 
     <div class="tool-tabs" id="toolTabs" role="tablist" aria-label="Decorate"></div>
     <div class="decor-tools" id="decorTools">

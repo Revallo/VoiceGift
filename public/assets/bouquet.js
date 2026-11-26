@@ -176,13 +176,13 @@ function bow(P, x, y) {
 
 // The country's motif, printed lightly on the wrapping paper (gift.cake.local): the same patterns as the local
 // lanterns and backdrops, scaled up for paper. Faint, so the name on the wrap stays easy to read.
-const kawung = (c, s) => ['50% 26%', '50% 74%', '26% 50%', '74% 50%'].map((at, i) => `radial-gradient(ellipse ${i < 2 ? '4px 7px' : '7px 4px'} at ${at}, ${c} 94%, transparent) 0 0 / ${s}px ${s}px`).join(', ') + `, radial-gradient(circle at 50% 50%, ${c} 0 1.6px, transparent 2.2px) 0 0 / ${s}px ${s}px`;
+const kawung = (c, s) => { const a = (s * 0.13).toFixed(1), b = (s * 0.22).toFixed(1); return ['50% 25%', '50% 75%', '25% 50%', '75% 50%'].map((at, i) => `radial-gradient(ellipse ${i < 2 ? `${a}px ${b}px` : `${b}px ${a}px`} at ${at}, ${c} 94%, transparent) 0 0 / ${s}px ${s}px`).join(', ') + `, radial-gradient(circle at 50% 50%, ${c} 0 ${(s * 0.05).toFixed(1)}px, transparent ${(s * 0.07).toFixed(1)}px) 0 0 / ${s}px ${s}px`; };
 const blossoms = (petal, heart, s) => ['50% 30%', '31% 46%', '69% 46%', '38% 68%', '62% 68%'].map((at) => `radial-gradient(circle at ${at}, ${petal} 0 2.6px, transparent 3.1px) 0 0 / ${s}px ${s}px`).join(', ') + `, radial-gradient(circle at 50% 50%, ${heart} 0 1.8px, transparent 2.3px) 0 0 / ${s}px ${s}px`;
 export const WRAP_MOTIFS = {
-  id: kawung('rgba(92, 56, 26, 0.24)', 30),
-  th: 'radial-gradient(circle, rgba(201, 150, 28, 0.42) 0 1.8px, transparent 2.3px) 0 0 / 16px 16px, repeating-linear-gradient(45deg, rgba(201, 150, 28, 0.26) 0 1px, transparent 1px 11.3px), repeating-linear-gradient(-45deg, rgba(201, 150, 28, 0.26) 0 1px, transparent 1px 11.3px)',
-  ph: 'repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.26) 0 5px, transparent 5px 10px), repeating-linear-gradient(90deg, rgba(120, 40, 80, 0.14) 0 5px, transparent 5px 10px)',
-  vn: blossoms('rgba(255, 214, 80, 0.55)', 'rgba(214, 120, 20, 0.5)', 34)
+  id: kawung('rgba(92, 56, 26, 0.45)', 44),
+  th: 'radial-gradient(circle, rgba(201, 150, 28, 0.7) 0 2px, transparent 2.5px) 0 0 / 16px 16px, repeating-linear-gradient(45deg, rgba(201, 150, 28, 0.5) 0 1.2px, transparent 1.2px 11.3px), repeating-linear-gradient(-45deg, rgba(201, 150, 28, 0.5) 0 1.2px, transparent 1.2px 11.3px)',
+  ph: 'repeating-linear-gradient(45deg, rgba(232, 87, 122, 0.32) 0 6px, transparent 6px 12px), repeating-linear-gradient(-45deg, rgba(63, 163, 122, 0.26) 0 6px, transparent 6px 12px)',
+  vn: blossoms('rgba(240, 176, 20, 0.8)', 'rgba(214, 90, 20, 0.75)', 30)
 };
 
 // Builds a shape: B() = behind the flowers, F() = in front. Second argument = the wrap colour it takes.

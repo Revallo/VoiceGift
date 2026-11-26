@@ -1,6 +1,6 @@
 // /signup and /login: "Continue with Google". /account: layered mobile-app profile & settings (bottom sheets).
 import { $, $$, h, api, icon, showScreen, toast, openSheet, closeSheet, bottomNav } from './common.js';
-import { me, logOut, loginBox, giftItem } from './auth.js';
+import { me, logOut, loginBox, giftItem, remember } from './auth.js';
 import { applyTheme } from './themes.js';
 import { noteCard } from './thanksnote.js';
 
@@ -84,6 +84,7 @@ function openEditProfileSheet() {
           json: { name: nameIn.value.trim(), bio: bioIn.value.trim() }
         });
         populateUserUI(user);
+        remember(user);
         closeSheet();
         toast('Profile updated');
       } catch (e) {
@@ -132,6 +133,7 @@ function openAsrPrefsSheet() {
         }
       });
       populateUserUI(user);
+      remember(user);
       toast('Speech-to-text preferences saved');
     } catch (e) {
       toast(e.message);

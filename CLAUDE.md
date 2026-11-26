@@ -129,6 +129,10 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
   that **pops up once** on home; then it waits in the Dashboard and is **deleted 7 days after it was opened** (`listThanks`).
   Only that friend can play the voice in it, and only until it expires. Friends who recorded before accounts were required have no `userId` and get none.
 - Sessions: a random token in an HttpOnly, SameSite=Lax cookie (`vg_session`, 30 days); storage keeps only its sha256.
+- Moving between pages (2026-11-26): `me()` remembers the account for the tab (sessionStorage `vg-me`) so a page draws at once;
+  the server is still asked in the background and a different answer reloads the page. Display only: every API checks the cookie.
+  Every page has `@view-transition` (a cross-fade, `soft.css`), speculation rules (prerender `/`, `/new`, `/account`; prefetch other
+  links) and a one-shot reload if a module fails to link; `/assets/*` is served `stale-while-revalidate` (`vercel.json`).
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
 - **Demo voices** (updated 2026-11-19): the gift's page has "+ Add 5 demo voices" / "Remove the demo voices" (`DEMO_COUNT` in `lib/demo.js`, cut from 20 on 2026-11-19); deleted ones can be added back.

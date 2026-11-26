@@ -16,6 +16,20 @@
 <link rel="stylesheet" href="/assets/birthday-reveal.css">
 <link rel="stylesheet" href="/assets/record-focus.css">
 <link rel="stylesheet" href="/assets/soft.css">
+<script>
+// Files are served from the browser's cache and refreshed in the background (vercel.json). Right after a deploy one
+// page can get old and new files mixed; if that breaks a module, load once more (by then the cache is fresh).
+addEventListener('error', (e) => {
+  if (!/export named|module script failed|Importing a module/i.test(e.message || '') || sessionStorage.getItem('vg-reloaded')) return;
+  sessionStorage.setItem('vg-reloaded', '1');
+  location.reload();
+}, true);
+addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-reloaded'), 4000));
+</script>
+<script type="speculationrules">
+{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/account#*"]}, "eagerness": "moderate"}],
+ "prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/api/*"}}]}, "eagerness": "moderate"}]}
+</script>
 </head>
 <body class="calm record-page">
 <main class="app" id="app">

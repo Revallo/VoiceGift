@@ -836,3 +836,10 @@ body.reveal-page[data-theme="birthday"] {
 .input::placeholder { color: rgba(var(--fg), 0.6); }
 /* Check your words: one surface only (the words), not a tile inside a tile */
 .record-page .birthday-player { background: transparent; box-shadow: none; padding: 4px 8px 0; border-radius: 0; }
+
+/* ==================== Moving between pages ==================== */
+/* A soft cross-fade instead of a white flash (browsers without it just load the page); the bottom nav stays put */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.18s; }
+.bottom-nav { view-transition-name: bottom-nav; }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }

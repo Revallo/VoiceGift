@@ -10,7 +10,7 @@ import { MOODS, moodOf, playVoice, moodShow } from './voicefx.js';
 
 addStars($('#app'), 26, 55);
 if ($('#revLogo')) $('#revLogo').innerHTML = icon.gift(16);
-if ($('#verLogo')) $('#verLogo').innerHTML = icon.lock(16);
+if ($('#verLogo')) $('#verLogo').innerHTML = icon.lock(52);
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const slug = slugFromPath();
@@ -136,13 +136,13 @@ async function load() {
   t = applyTheme(gift.occasion, gift.cake?.shape);
   first = t.callName(gift.recipient);
   document.title = `Verify PIN for ${first}`;
-  if ($('#verifyOrganizer')) $('#verifyOrganizer').textContent = `${gift.organizer} sent a gift`;
+  if ($('#verifyOrganizer')) $('#verifyOrganizer').textContent = `From ${gift.organizer}`;
   if ($('#verifyCountBadge')) $('#verifyCountBadge').textContent = `${pub.count || 0} secret voices`;
   if ($('#verifyHeroTitle')) $('#verifyHeroTitle').textContent = `For ${first}`;
   if ($('#verifyPinTitle')) {
-    $('#verifyPinTitle').textContent = `Type the 4-digit PIN that ${gift.organizer} sent you`;
+    $('#verifyPinTitle').textContent = `The PIN from ${gift.organizer}`;
   }
-  if ($('#verifyHelp')) $('#verifyHelp').textContent = `It came with the link. No PIN? Ask ${gift.organizer}.`;
+  if ($('#verifyHelp')) $('#verifyHelp').textContent = `No PIN? Ask ${gift.organizer}.`;
   showScreen('verify');
   setTimeout(() => {
     if (pinBoxes.every(b => !b.value) && !pinBoxes.includes(document.activeElement)) pinBoxes[0]?.focus();

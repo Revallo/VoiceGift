@@ -174,6 +174,17 @@ function bow(P, x, y) {
   P({ left: `${x - 10}px`, top: `${y}px`, width: '20px', height: '20px', borderRadius: '50%', background: '#D9A93A', boxShadow: 'inset -3px -3px 0 rgba(0,0,0,0.15)' });
 }
 
+// The country's motif, printed lightly on the wrapping paper (gift.cake.local): the same patterns as the local
+// lanterns and backdrops, scaled up for paper. Faint, so the name on the wrap stays easy to read.
+const kawung = (c, s) => ['50% 26%', '50% 74%', '26% 50%', '74% 50%'].map((at, i) => `radial-gradient(ellipse ${i < 2 ? '4px 7px' : '7px 4px'} at ${at}, ${c} 94%, transparent) 0 0 / ${s}px ${s}px`).join(', ') + `, radial-gradient(circle at 50% 50%, ${c} 0 1.6px, transparent 2.2px) 0 0 / ${s}px ${s}px`;
+const blossoms = (petal, heart, s) => ['50% 30%', '31% 46%', '69% 46%', '38% 68%', '62% 68%'].map((at) => `radial-gradient(circle at ${at}, ${petal} 0 2.6px, transparent 3.1px) 0 0 / ${s}px ${s}px`).join(', ') + `, radial-gradient(circle at 50% 50%, ${heart} 0 1.8px, transparent 2.3px) 0 0 / ${s}px ${s}px`;
+export const WRAP_MOTIFS = {
+  id: kawung('rgba(92, 56, 26, 0.24)', 30),
+  th: 'radial-gradient(circle, rgba(201, 150, 28, 0.42) 0 1.8px, transparent 2.3px) 0 0 / 16px 16px, repeating-linear-gradient(45deg, rgba(201, 150, 28, 0.26) 0 1px, transparent 1px 11.3px), repeating-linear-gradient(-45deg, rgba(201, 150, 28, 0.26) 0 1px, transparent 1px 11.3px)',
+  ph: 'repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.26) 0 5px, transparent 5px 10px), repeating-linear-gradient(90deg, rgba(120, 40, 80, 0.14) 0 5px, transparent 5px 10px)',
+  vn: blossoms('rgba(255, 214, 80, 0.55)', 'rgba(214, 120, 20, 0.5)', 34)
+};
+
 // Builds a shape: B() = behind the flowers, F() = in front. Second argument = the wrap colour it takes.
 // Returns where the name goes.
 function buildShape(shape, B, F) {
@@ -287,7 +298,10 @@ export function createBouquet(host, opts = {}) {
       const c = WRAPS[f] || WRAPS.strawberry;
       const paint = (role, bg) => (parts[role] || []).forEach((d) => (d.style.background = bg));
       const ribbon = ACCENTS[accent]?.color?.startsWith('#') ? ACCENTS[accent].color : c.bow;
-      for (const role of ['back', 'back2', 'front', 'front2']) paint(role, c[role]);
+      // the country's motif is printed on the paper that faces you (and, softer, on the paper behind)
+      const motif = WRAP_MOTIFS[local];
+      stage.dataset.wrapmotif = motif ? local : '';
+      for (const role of ['back', 'back2', 'front', 'front2']) paint(role, motif && role !== 'back2' ? `${motif}, ${c[role]}` : c[role]);
       paint('bow', ribbon);
       (parts.handle || []).forEach((d) => (d.style.borderColor = c.back));
       paint('weave', `repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 16px), repeating-linear-gradient(90deg, ${c.front} 0 14px, ${c.front2} 14px 22px)`);
@@ -295,7 +309,7 @@ export function createBouquet(host, opts = {}) {
     },
     setShape,
     // The country: which money / which snacks (only the money and snack bouquets change).
-    setLocal(k) { local = k; if (lastLayout && SHAPES[currentShape].treat) api.setCandles(lastLayout.n, lastLayout.options); },
+    setLocal(k) { local = k; api.setFlavor(flavor); if (lastLayout && SHAPES[currentShape].treat) api.setCandles(lastLayout.n, lastLayout.options); },
     setAccent(k) { accent = k; api.setFlavor(flavor); },
     setPattern(k) { stage.dataset.petal = PATTERNS[k] ? k : 'round'; },
     setTopper(k) { setTucked(TOPPERS[k]); tuck.hidden = !TOPPERS[k]?.emoji; },

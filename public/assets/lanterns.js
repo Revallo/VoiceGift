@@ -27,7 +27,9 @@ export const SHAPES = {
   // Local lanterns. Hội An silk lanterns end on the river (thả đèn hoa đăng) instead of in the sky.
   hoian: { label: 'Hội An silk', river: true },
   capiz: { label: 'Capiz shell' },
-  xi: { label: 'Red lantern' }
+  xi: { label: 'Red lantern' },
+  // Ramadan / Lebaran feel: a woven-palm ketupat instead of a lantern (food, not a religious symbol).
+  ketupat: { label: 'Ketupat' }
 };
 export const onRiver = (shape) => Boolean(SHAPES[shape]?.river);
 export const SWATCH = (l) => ({ background: l.light, boxShadow: `0 0 12px ${l.light}` });

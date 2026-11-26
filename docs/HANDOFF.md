@@ -83,6 +83,14 @@ Claude (claude.ai), so a new session can continue without re-asking.
   midnight blue, wedding soft plum) with ONE bright accent each (candle gold, periwinkle, rose champagne) and dark text on it;
   the gift sits in its own glow, the friend's mic button breathes, labels and small print are bigger. Tokens are at the top of
   `app.css`; the component polish is the last block of `app.css` ("Candlelit polish").
+- Decision (2026-11-26, branch `redesign-soft`): **the Soft look** replaces Candlelit. Revallo found the old UI ugly (bordered
+  boxes, too many words, too many steps) and sent two references (a clean white app with a huge bold title and a floating
+  nav; a pastel lavender/peach app with soft blobs). Now: a light page with a pastel wash per occasion, Montserrat only with
+  capitals for titles and labels, black pill buttons, round icon buttons, cute two-tone SVG icons (`icons.js`), no card
+  boxes, sheets instead of extra pages, a bottom nav on home and account. `/new` is one screen (kind carousel + occasion +
+  names + slide "Create gift") with Customize as its own page. Added kinds: wedding `ketupat` (Ramadan feel) and `imlek`
+  (red-gold angpao tree, dragon envelopes and backdrop); the bouquet wrap carries the country's motif. All in `soft.css`;
+  the old override layers in `app.css` are still there underneath and can be deleted once nothing needs them.
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)

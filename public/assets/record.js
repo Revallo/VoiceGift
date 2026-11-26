@@ -66,12 +66,11 @@ async function load() {
   if (itemPick()) itemStyle = { type: itemPick().key('', count) };
   first = t.callName(gift.recipient);
   document.title = t.inviteTitle(first);
-  $('#invitedBy').textContent = `${gift.organizer} invited you`;
+  $('#invitedBy').textContent = `From ${gift.organizer}`;
   $('#inviteTitle').textContent = t.inviteTitle(first);
   $('#startBtn').innerHTML = icon.mic(48);
-  $$('[data-private]').forEach((p) => (p.textContent = `🔒 Only you and ${first} can hear this voice.`));
-  $('#recEyebrow').textContent = `Recording for ${first}`;
-  $('#nameFor').textContent = first;
+  $$('[data-private]').forEach((p) => { p.innerHTML = icon.lock(14); p.append(` Only you and ${first} can hear this voice.`); });
+  $('#recEyebrow').textContent = `For ${first}`;
   $('#name').value = user.name;
   $('#signedIn').textContent = `Logged in as ${user.email}`;
   $('#signedIn').hidden = false;
@@ -437,8 +436,20 @@ function putMini(b, style, only) {
 }
 const igniteMini = (b) => { const c = b.querySelector('.candle'); if (c) styleCandle(c, c._style, { ignite: true }); };
 
+// Two tabs: the mood of the voice, and the friend's own item on the gift.
+$$('.twist-tab').forEach((b) => b.addEventListener('click', () => {
+  $$('.twist-tab').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', String(x === b)); });
+  $$('.twist-pane').forEach((p) => (p.hidden = p.dataset.tab !== b.dataset.tab));
+}));
+
 function buildTwist() {
-  $('#twistSub').textContent = 'Add a little personality to your wish. Tap a mood to listen.';
+  $('#twistSub').textContent = 'Tap one to hear it';
+  // the second tab is this gift's own item: a candle, a flower, a dish, an envelope…
+  const item = isCake() ? ['candle', 'Candle'] : t.scene === 'tumpeng' ? ['bowl', 'Dish'] : t.scene === 'lanterns' ? ['lantern', 'Lantern']
+    : t.scene === 'lixi' ? ['envelope', 'Envelope'] : t.scene === 'krathong' ? ['flower', 'Light']
+    : t.scene === 'bouquet' && treat() === 'snack' ? ['gift', 'Snack'] : t.scene === 'bouquet' && !treat() ? ['flower', 'Flower'] : null;
+  $('#itemTab').hidden = !item;
+  if (item) { $('#itemTabIco').innerHTML = icon[item[0]](20); $('#itemTabLabel').textContent = item[1]; }
   pickRow($('#moodRow'), moodsFor(gift.cake?.local).map(([k, m]) => [k, (b) => b.append(h('span', { class: 'pick-emoji' }, m.emoji), h('span', {}, m.label))]),
     (k) => k === mood,
     (k) => {

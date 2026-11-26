@@ -1,7 +1,8 @@
 // Tết (Vietnamese New Year): a blossom tree in a pot, and every voice is a red lì xì envelope hanging on its branches
 // (people really hang lì xì on their mai / đào tree). Drawn in a fixed 390×370 stage. The friend picks the design of
 // their envelope (message.item.type, ENVELOPE_TYPES). The finale: the recipient opens them all, a gold coin pops out of each.
-// Kept clear of what Vietnam frowns on (see `ide local.md`): no flags or maps, no white or black wrapping, no zodiac.
+// Kept clear of what Vietnam frowns on (see `ide local.md`): no flags or maps, no white or black wrapping, no zodiac
+// animals, except the dragon of the Imlek kind (themes.js IMLEK), drawn as a lucky motif, never as a year sign.
 import { ENVELOPE_TYPES } from './item-options.js';
 import { div, seeded, createStage, createStickers, createTopper, itemStates, nameText } from './stage.js';
 
@@ -57,6 +58,9 @@ const DRAW = {
   peach: `${frame(RED, GOLD)}${flower(20, 34, 5.6, '#F7A6C0', '#C2416B')}${flower(11, 45, 3, '#F7A6C0', '#C2416B')}<path d="M32 50Q26 40 20 34M11 45Q15 40 20 34" stroke="#7A3B16" stroke-width="1.1" fill="none"/>`,
   coin: `${frame(RED, GOLD)}<circle cx="20" cy="36" r="10" fill="${GOLD}" stroke="#B9852A" stroke-width="1.2"/><rect x="16.5" y="32.5" width="7" height="7" fill="${RED}"/><circle cx="20" cy="36" r="7.6" fill="none" stroke="#B9852A" stroke-width=".8"/>`,
   koi: `${frame(RED, GOLD)}<path d="M9 38C13 30 25 30 29 36L34 31L33 38L34 45L29 40C25 46 13 46 9 38Z" fill="#F0A33A" stroke="${GOLD}" stroke-width=".8"/><circle cx="13.5" cy="36.6" r="1.1" fill="#5A1A10"/><path d="M17 33q2 5 0 10M21.5 32.5q2 5.5 0 11" stroke="#C8622A" stroke-width=".9" fill="none"/>`,
+  dragon: `${frame(RED, GOLD)}<path d="M9 44c2-7 9-6 10-1 1 4 7 4 8-1 1-6-6-8-10-5" fill="none" stroke="${GOLD}" stroke-width="2.6" stroke-linecap="round"/><path d="M17 37c1-4 6-6 10-4l3-3 .5 4 3 1.5-3.5 1.5c-.5 3-3 4.5-6 4" fill="${GOLD}"/><circle cx="27.4" cy="35" r=".9" fill="${RED}"/><path d="M11 42l-2-2M14 46l-1 3M22 46l1 3" stroke="${GOLD}" stroke-width="1.3" stroke-linecap="round"/><circle cx="20" cy="20" r="2.6" fill="${GOLD}"/>`,
+  scale: `${frame(RED, GOLD)}${[28, 34, 40, 46].map((y, r) => [0, 1, 2, 3].map((c) => `<path d="M${7 + c * 7 + (r % 2) * 3.5} ${y}a3.5 3.5 0 0 1 7 0" fill="none" stroke="${GOLD}" stroke-width="1.1"/>`).join('')).join('')}<circle cx="20" cy="19" r="2.6" fill="${GOLD}"/>`,
+  cloud: `${frame(RED, GOLD)}<path d="M9 40a4 4 0 0 1 6-3 5 5 0 0 1 9 1 3.5 3.5 0 1 1 1 7H11a3 3 0 0 1-2-5z" fill="none" stroke="${GOLD}" stroke-width="1.4"/><path d="M16 41a2 2 0 1 1 3 1.6M24 30a3 3 0 0 1 5-1 2.5 2.5 0 1 1 2 4h-6" fill="none" stroke="${GOLD}" stroke-width="1.2" stroke-linecap="round"/><circle cx="20" cy="20" r="2.6" fill="${GOLD}"/>`,
   lantern: `${frame(GOLD, RED)}<path d="M20 22v4" stroke="${RED}" stroke-width="1.2"/><rect x="15" y="26" width="10" height="2.5" rx="1" fill="#8A1A1A"/><ellipse cx="20" cy="37" rx="9" ry="9.5" fill="${RED}"/><path d="M14 37h12M20 28v18" stroke="#8A1A1A" stroke-width=".8" opacity=".7"/><rect x="15" y="45.5" width="10" height="2.5" rx="1" fill="#8A1A1A"/><path d="M20 48v5" stroke="${RED}" stroke-width="1.6"/>`
 };
 export const ENVELOPES = Object.fromEntries(Object.entries(ENVELOPE_TYPES).map(([k, v]) => [k, { ...v, svg: DRAW[k] }]));

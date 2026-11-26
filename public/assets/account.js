@@ -1,10 +1,9 @@
 // /signup and /login: "Continue with Google". /account: layered mobile-app profile & settings (bottom sheets).
-import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet } from './common.js';
+import { $, $$, h, api, icon, showScreen, toast, openSheet, closeSheet, bottomNav } from './common.js';
 import { me, logOut, loginBox, giftItem } from './auth.js';
 import { applyTheme } from './themes.js';
 import { noteCard } from './thanksnote.js';
 
-addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
@@ -54,13 +53,10 @@ function populateUserUI(user) {
   currentUser = user;
   const initial = (user.name || user.email || 'U').trim()[0].toUpperCase();
   if ($('#acctAvatar')) $('#acctAvatar').textContent = initial;
-  $('#hello').textContent = `Hi, ${user.name || 'organizer'}`;
+  $('#hello').textContent = `Hi, ${(user.name || 'there').split(/\s+/)[0]}`;
   $('#meEmail').textContent = user.email;
   if ($('#rowProfileSub')) {
     $('#rowProfileSub').textContent = user.bio ? `${user.name} · ${user.bio}` : `${user.name} · ${user.email}`;
-  }
-  if ($('#rowProfileVal')) {
-    $('#rowProfileVal').textContent = 'Edit';
   }
   const prefs = user.prefs || {};
   if ($('#rowPrefsVal')) {
@@ -74,7 +70,7 @@ function openEditProfileSheet() {
   const nameIn = h('input', { class: 'input', value: currentUser.name || '', maxlength: 60, required: true, placeholder: 'Your name' });
   const bioIn = h('input', { class: 'input', value: currentUser.bio || '', maxlength: 120, placeholder: 'e.g. Voice Gift Organizer · Jakarta' });
   const emailIn = h('input', { class: 'input', value: currentUser.email || '', disabled: true, style: { opacity: '0.55', cursor: 'not-allowed' } });
-  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save profile changes');
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save');
 
   const form = h('form', {
     class: 'stack',
@@ -97,15 +93,14 @@ function openEditProfileSheet() {
       }
     }
   },
-    h('div', { class: 'field' }, h('label', {}, 'Display name'), nameIn),
-    h('div', { class: 'field' }, h('label', {}, 'Role / bio'), bioIn),
-    h('div', { class: 'field' }, h('label', {}, 'Verified email'), emailIn),
+    h('div', { class: 'field' }, h('label', {}, 'Name'), nameIn),
+    h('div', { class: 'field' }, h('label', {}, 'Bio'), bioIn),
+    h('div', { class: 'field' }, h('label', {}, 'Email'), emailIn),
     saveBtn
   );
 
   openSheet({
-    title: 'Personal profile',
-    subtitle: 'Update your organizer display name and bio',
+    title: 'Profile',
     content: form
   });
 }
@@ -219,7 +214,9 @@ function showAccount(user) {
   history.replaceState(null, '', `/account${keepHash}`);
   document.title = 'Your account · Voice Gift';
   populateUserUI(user);
+  if (!$('.bottom-nav')) $('#app').append(bottomNav(location.hash === '#gifts' ? 'gifts' : 'me'));
   showScreen('me');
+  if (keepHash === '#gifts') requestAnimationFrame(() => $('#giftsSec').scrollIntoView({ block: 'start' }));
   loadThanks();
   return loadGifts().then(() => {
     if (keepHash === '#settings') openEditProfileSheet();
@@ -233,15 +230,14 @@ async function loadGifts() {
   try {
     const { gifts = [], stats = {} } = await api('/api/account?gifts=1');
     latestStats = stats;
-    if ($('#acctHeroVal')) {
-      $('#acctHeroVal').textContent = `${stats.totalRecordings ?? 0} voices`;
-    }
+    $('#acctHeroVal').textContent = stats.totalRecordings ?? 0;
+    $('#acctGiftCount').textContent = gifts.length;
     if ($('#rowCorpusVal')) {
       $('#rowCorpusVal').textContent = `${stats.totalRecordings ?? 0} voices · .jsonl`;
     }
     list.replaceChildren(...(gifts.length
       ? gifts.map((g) => giftItem(g, () => { toast('Gift deleted'); loadGifts(); }))
-      : [h('div', { class: 'item small muted' }, 'No gifts yet. Make your first one!')]));
+      : [h('a', { class: 'empty-gifts', href: '/new', html: `${icon.gift(28)}<span>Make your first gift</span>` })]));
   } catch (e) {
     list.replaceChildren(h('div', { class: 'item small muted' }, e.message));
   }
@@ -261,6 +257,7 @@ $('#logout').addEventListener('click', async () => {
     return toast(e.message);
   }
   toast('Logged out');
+  $('.bottom-nav')?.remove();
   showAuth('login');
 });
 

@@ -42,7 +42,9 @@ export const ENVELOPE_TYPES = {
   red: { label: 'Classic red', tint: '#D42A2A' }, loc: { label: 'Lộc gold', tint: '#E8B53A' },
   blossom: { label: 'Mai blossom', tint: '#F2C230' }, peach: { label: 'Peach blossom', tint: '#F08AA8' },
   coin: { label: 'Gold coin', tint: '#E9A93A' }, koi: { label: 'Koi', tint: '#F0663A' },
-  lantern: { label: 'Lantern', tint: '#E8452E' }
+  lantern: { label: 'Lantern', tint: '#E8452E' },
+  dragon: { label: 'Gold dragon', tint: '#E8B53A' }, scale: { label: 'Dragon scales', tint: '#D6343A' },
+  cloud: { label: 'Lucky clouds', tint: '#E46A3A' }
 };
 // The flowers on a friend's krathong (message.item = { type }), a float of banana leaf. Drawings in krathong.js.
 export const KRATHONG_TYPES = {

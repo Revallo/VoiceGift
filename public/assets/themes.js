@@ -14,14 +14,14 @@ const fullName = (r) => String(r || '').trim().replace(/\s+/g, ' '); // "Kevin S
 
 export const THEMES = {
   birthday: {
-    key: 'birthday', label: 'Birthday', bg: '#1C1A18', emoji: '🎂', scene: 'cake',
+    key: 'birthday', label: 'Birthday', bg: '#FAF8F5', emoji: '🎂', scene: 'cake',
     callName: firstName,
     people: (n) => count(n, 'person', 'people'),
     item: 'candle', items: 'candles', itemsOn: 'lit',
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
     decorate: { next: 'Next: customize gift', title: 'Customize birthday gift', lead: 'style, inscription & accents', shapeLabel: 'Cake', shapes: { ...CAKE_SHAPES, tumpeng: { label: 'Tumpeng' } }, swatchLabel: 'Flavor', swatches: FLAVORS, swatch: CAKE_SWATCH, flavor: 'strawberry', accentLabel: 'Cream', accents: CREAMS, patternLabel: 'Pattern', patterns: CAKE_PATTERNS, topperLabel: 'Topper', toppers: CAKE_TOPPERS, nameLabel: 'Title', nameMax: 20, name: (r) => fullName(r).slice(0, 20), draw: true,
       stickers: ['✨', '🕯️', '🥂', '🎁', '⭐', '🌙', '🎉', '🎈', '💫', '🌸', '👑', '🎀', '🍓', '🍒', '🧁', '🍫', '🎶', '🤍', '🌟', '🔥', '💎', '🍀', '🦋', '🎂'] },
-    inviteTitle: (name) => `Record a message for ${name}’s birthday`,
+    inviteTitle: (name) => `Wish ${name} happy birthday`,
     countLine: (n) => (n ? `${count(n, 'friend has', 'friends have')} added a candle` : 'Be the first to add a candle'),
     doneTitle: 'Your candle is on the cake',
     doneCount: (n) => `${count(n, 'candle', 'candles')} · yours is the one circled`,
@@ -62,14 +62,14 @@ export const THEMES = {
   },
 
   graduation: {
-    key: 'graduation', label: 'Graduation', bg: '#191B1F', emoji: '🎓', scene: 'bouquet',
+    key: 'graduation', label: 'Graduation', bg: '#F7F9FB', emoji: '🎓', scene: 'bouquet',
     callName: firstName,
     people: (n) => count(n, 'person', 'people'),
     item: 'flower', items: 'flowers', itemsOn: 'open',
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Nadia',
     decorate: { next: 'Next: customize gift', title: 'Customize graduation gift', lead: 'wrap, title & accents', shapeLabel: 'Bouquet', shapes: WRAP_SHAPES, swatchLabel: 'Wrap', swatches: WRAPS, swatch: WRAP_SWATCH, flavor: 'strawberry', accentLabel: 'Ribbon', accents: RIBBONS, patternLabel: 'Flowers', patterns: PETALS, topperLabel: 'Tuck in', toppers: WRAP_TOPPERS, greens: GREENS, nameLabel: 'Title', nameMax: 20, name: (r) => fullName(r).slice(0, 20), namePlaceholder: 'e.g. Nadia, S.Kom.', draw: true,
       stickers: ['🎓', '✨', '🏆', '📜', '⭐', '🥂', '💐', '🌷', '🌟', '🎉', '📚', '🥇', '👑', '💫', '🍀', '🚀', '🌸', '🎀', '🤍', '💎', '🦋', '🌙', '🌻', '🎶'] },
-    inviteTitle: (name) => `Record a message for ${name}’s graduation`,
+    inviteTitle: (name) => `Cheer ${name} on`,
     countLine: (n) => (n ? `${count(n, 'friend has', 'friends have')} added a flower` : 'Be the first to add a flower'),
     doneTitle: 'Your flower is in the bouquet',
     doneCount: (n) => `${count(n, 'flower', 'flowers')} · yours is the one circled`,
@@ -103,14 +103,14 @@ export const THEMES = {
   },
 
   wedding: {
-    key: 'wedding', label: 'Wedding', bg: '#191C1A', emoji: '💍', scene: 'lanterns',
+    key: 'wedding', label: 'Wedding', bg: '#FAF8FB', emoji: '💍', scene: 'lanterns',
     callName: (r) => String(r || '').trim(), // "Rina & Bayu": the couple, not a first name
     people: (n) => count(n, 'guest', 'guests'),
     item: 'lantern', items: 'lanterns', itemsOn: 'lit',
     recipientLabel: 'The couple', recipientPlaceholder: 'e.g. Rina & Bayu',
-    decorate: { next: 'Next: customize gift', title: 'Customize wedding gift', lead: 'lights, message & accents', shapeLabel: 'Lanterns', shapes: { ...LIGHT_SHAPES, angpao: { label: 'Angpao tree' }, river: { label: 'River lights' } }, swatchLabel: 'Lights', swatches: LIGHTS, swatch: LIGHT_SWATCH, flavor: 'vanilla', accentLabel: 'String', accents: STRINGS, patternLabel: 'Motif', patterns: MOTIFS, topperLabel: 'Mark', toppers: LIGHT_TOPPERS, nameLabel: 'Words', nameMax: 30, name: () => 'Happily ever after', draw: false,
+    decorate: { next: 'Next: customize gift', title: 'Customize wedding gift', lead: 'lights, message & accents', shapeLabel: 'Lanterns', shapes: { ...LIGHT_SHAPES, angpao: { label: 'Angpao tree' }, imlek: { label: 'Imlek angpao' }, river: { label: 'River lights' } }, swatchLabel: 'Lights', swatches: LIGHTS, swatch: LIGHT_SWATCH, flavor: 'vanilla', accentLabel: 'String', accents: STRINGS, patternLabel: 'Motif', patterns: MOTIFS, topperLabel: 'Mark', toppers: LIGHT_TOPPERS, nameLabel: 'Words', nameMax: 30, name: () => 'Happily ever after', draw: false,
       stickers: ['💍', '✨', '🥂', '🕊️', '🤍', '🕯️', '🌙', '💐', '🌹', '🌸', '⭐', '🦢', '🌷', '🎶', '💌', '🌿', '💫', '🎀', '🦋', '🎊', '💎', '👑', '💕', '🍰'] },
-    inviteTitle: (name) => `Leave a voice message for ${name}`,
+    inviteTitle: (name) => `Wish ${name} well`,
     countLine: (n) => (n ? `${count(n, 'guest has', 'guests have')} hung a lantern` : 'Be the first to hang a lantern'),
     doneTitle: 'Your lantern is hanging',
     doneCount: (n) => `${count(n, 'lantern', 'lanterns')} · yours is the one circled`,
@@ -166,14 +166,14 @@ const treatWords = (one, many, verb) => ({
 });
 // Birthday, kind "tumpeng" (an Indonesian birthday): a cone of rice with a side dish from every friend.
 const TUMPENG = {
-  scene: 'tumpeng', theme: 'tumpeng', bg: '#16170F',
+  scene: 'tumpeng', theme: 'tumpeng', bg: '#FAF9F3',
   callName: firstName,
   people: (n) => count(n, 'person', 'people'),
   item: 'dish', items: 'dishes', itemsOn: 'served',
   recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
   decorate: { next: 'Next: customize gift', title: 'Customize your tumpeng', lead: 'rice, tray & garnish', shapeLabel: 'Tumpeng', shapes: CONES, swatchLabel: 'Rice', swatches: RICES, swatch: RICE_SWATCH, flavor: 'turmeric', accentLabel: 'Tray', accents: TRAYS, patternLabel: 'Garnish', patterns: GARNISH, topperLabel: 'On top', toppers: TIPS, nameLabel: 'Title', nameMax: 24, name: (r) => fullName(r).slice(0, 24), draw: false,
     stickers: ['🌶️', '🍃', '✨', '🎉', '🎈', '🌺', '⭐', '🥥', '🍌', '🎁', '💛', '🌟', '🎶', '🙏', '🥳', '🌼', '🎀', '🍀', '💫', '🔥', '🌙', '👑', '🤍', '🍚'] },
-  inviteTitle: (name) => `Record a message for ${name}’s birthday`,
+  inviteTitle: (name) => `Wish ${name} happy birthday`,
   countLine: (n) => (n ? `${count(n, 'friend has', 'friends have')} brought a dish` : 'Be the first to bring a dish'),
   doneTitle: 'Your dish is on the tumpeng',
   doneCount: (n) => `${count(n, 'dish', 'dishes')} · yours is the one circled`,
@@ -215,7 +215,7 @@ const TUMPENG = {
 // Wedding, kind "angpao": a blossom tree where every guest hangs a red envelope (angpao / phong bì / ang pao),
 // the way guests give the couple an envelope at the door. The finale opens them all.
 const ANGPAO = {
-  scene: 'lixi', theme: 'angpao', bg: '#1E1012',
+  scene: 'lixi', theme: 'angpao', bg: '#FBF7F5',
   item: 'envelope', items: 'envelopes', itemsOn: 'hung',
   pickLabel: 'Your envelope on the tree',
   decorate: { shapeLabel: 'Lanterns', swatchLabel: 'Blossoms', swatches: BLOSSOMS, swatch: BLOSSOM_SWATCH, flavor: 'mai', accentLabel: 'Pot colour', accents: POT_COLORS, patternLabel: 'On the branches', patterns: TREE_EXTRAS, topperLabel: 'On top', toppers: TREE_TOPS,
@@ -245,7 +245,7 @@ const ANGPAO = {
 
 // Wedding, kind "river": every guest floats a little light of banana leaf and flowers down a river at night.
 const RIVER = {
-  scene: 'krathong', theme: 'river', bg: '#0B1226',
+  scene: 'krathong', theme: 'river', bg: '#F6F8FB',
   item: 'light', items: 'lights', itemsOn: 'afloat',
   pickLabel: 'The flowers on your floating light',
   decorate: { swatchLabel: 'Night', swatches: NIGHTS, swatch: NIGHT_SWATCH, flavor: 'moonlit', accentLabel: 'Far bank', accents: BANKS, patternLabel: 'Sky', patterns: SKIES, topperLabel: 'Mark', toppers: SKY_MARKS,
@@ -272,6 +272,40 @@ const RIVER = {
   finaleAction: 'Tap to float', finaleHint: 'The river carries every wish with it.'
 };
 
+// Wedding, kind "ketupat": the lanterns become woven ketupat (a Ramadan / Lebaran feel). Same scene, other words.
+const KETUPAT = {
+  item: 'ketupat', items: 'ketupat', itemsOn: 'hung',
+  decorate: { accent: 'leaf', stickers: ['🌙', '✨', '🍃', '💚', '🌟', '🕊️'] },
+  countLine: (n) => (n ? `${count(n, 'guest has', 'guests have')} hung a ketupat` : 'Be the first to hang a ketupat'),
+  doneTitle: 'Your ketupat is hanging',
+  doneCount: (n) => `${count(n, 'ketupat', 'ketupat')} · yours is the one circled`,
+  reveal: {
+    readyTitle: 'A string of ketupat,\njust for you.',
+    readySub: 'Every ketupat holds a guest’s wish, in their own voice.',
+    libraryTitle: 'The people behind the ketupat',
+    idleTitle: 'There’s a voice in every ketupat.',
+    idleSub: 'Tap a ketupat or a name below. Their words will appear here.'
+  },
+  lightingTitle: 'Your ketupat are lighting up…',
+  lightingSub: 'Every ketupat is one guest.',
+  gaveLine: (n) => `${count(n, 'guest', 'guests')} hung a ketupat for you.`,
+  progress: (i, n) => (i === n ? `All ${n} ketupat are lit` : `${i} of ${n} ketupat lit`),
+  tapHint: 'Every ketupat is a guest. Tap one to hear them.',
+  idleTitle: 'Tap a ketupat to hear who hung it',
+  allHeard: 'You heard everyone. Now let the wishes go.',
+  finaleBtn: 'Release the ketupat', finaleTitle: 'Release the ketupat',
+  finaleSub: (n) => (n === 1 ? 'The wish floats up.' : `All ${n} wishes float up together.`),
+  finaleAction: 'Tap to release', finaleHint: 'Every guest’s wish goes up with them.'
+};
+
+// Wedding, kind "imlek": the angpao tree dressed for Chinese New Year, lucky red and gold with a dragon backdrop.
+const IMLEK = {
+  ...ANGPAO, theme: 'imlek',
+  decorate: { ...ANGPAO.decorate, flavor: 'mix', accent: 'red', pattern: 'lanterns', topper: 'fireworks', backdrop: 'dragon',
+    stickers: ['🧧', '🐉', '🏮', '🍊', '🪙', '🎆', '✨', '🌸'] },
+  reveal: { ...ANGPAO.reveal, readyTitle: 'A lucky red tree,\njust for you.', keepTitle: 'Gong xi! Luck for your life together.' }
+};
+
 const BY_SHAPE = {
   birthday: { tumpeng: TUMPENG },
   graduation: {
@@ -287,6 +321,8 @@ const BY_SHAPE = {
       reveal: { readyTitle: 'A river of wishes,\njust for you.' }
     },
     angpao: ANGPAO,
+    imlek: IMLEK,
+    ketupat: KETUPAT,
     river: RIVER
   }
 };

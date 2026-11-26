@@ -1,9 +1,8 @@
-import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, addStars, copyText, colorFor, initials, toast, openSheet, closeSheet } from './common.js';
+import { $, $$, h, api, icon, showScreen, slugFromPath, fmtAgo, copyText, colorFor, initials, toast, openSheet, closeSheet } from './common.js';
 import { createScene, applyTheme } from './themes.js';
 import { friendUrl, recipientUrl, shareRow, linkbox } from './share.js';
 import { me } from './auth.js';
 
-addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
@@ -39,8 +38,8 @@ async function load() {
   // 1. invite friends
   const friends = gift.occasion === 'wedding' ? 'guests' : 'friends';
   const friend = friendUrl(gift);
-  $('#inviteTitle').textContent = `Invite ${friends} to record`;
-  $('#inviteLead').textContent = `Send this link to ${friends}. They log in, then record a 15-second wish for ${name}. Keep it a secret from ${name}!`;
+  $('#inviteActSub').textContent = friends;
+  $('#inviteLead').textContent = `Send it to ${friends}. Keep it secret from ${name}!`;
   $('#friendLink').textContent = friend.replace(/^https?:\/\//, '');
   const b = $('#copyFriend');
   b.innerHTML = icon.copy(14);
@@ -49,10 +48,13 @@ async function load() {
   $('#waBtn').replaceWith(Object.assign(shareRow(t.waFriends(name), friend), { id: 'waBtn' }));
 
   // 2. who recorded (names only: what they said is for the recipient)
-  $('#whoTitle').textContent = `Who recorded (${sentMsgs.length})`;
+  $('#voicesActCount').textContent = sentMsgs.length;
+  const pile = $('#facepile');
+  pile.replaceChildren(...messages.slice(0, 6).map((m, i) => h('i', { style: { background: colorFor(i) } }, initials(m.sender))),
+    h('span', {}, messages.length ? `${sentMsgs.length} ${sentMsgs.length === 1 ? 'voice' : 'voices'}` : `No voices yet`));
   const list = $('#list');
   list.textContent = '';
-  if (!messages.length) list.append(h('p', { class: 'small muted', style: { margin: 0 } }, `Nobody yet. Send the link above to your ${friends}.`));
+  if (!messages.length) list.append(h('p', { class: 'small muted', style: { margin: 0 } }, `Nobody yet. Invite your ${friends}.`));
   messages.forEach((m, i) => {
     list.append(h('div', { class: 'who-row' },
       h('span', { class: 'avatar', style: { background: colorFor(i) } }, initials(m.sender)),
@@ -66,18 +68,18 @@ async function load() {
   const demos = messages.filter((m) => m.demo).length;
   const demoMax = data.demoCount || 5;
   const demoBtn = $('#demoBtn');
-  demoBtn.textContent = demos ? `Remove the ${demos} demo voices` : `+ Add ${demoMax} demo voices`;
+  demoBtn.textContent = demos ? `Remove demos` : `+ ${demoMax} demo voices`;
   demoBtn.onclick = () => demoAction(demos ? 'remove-demo' : 'add-demo', demoBtn);
   const moreDemos = $('#demoMoreBtn');
   moreDemos.hidden = !(demos > 0 && demos < demoMax);
-  moreDemos.textContent = `+ Add ${demoMax - demos} more demo voices`;
+  moreDemos.textContent = `+ ${demoMax - demos} more demos`;
   moreDemos.onclick = () => demoAction('add-demo', moreDemos);
 
   // 3. send it to the recipient: their link + the PIN
   const pin = gift.verifyPin || '1234';
   const url = recipientUrl(gift, openKey);
-  $('#sendTitle').textContent = `Send it to ${name}`;
-  $('#sendLead').textContent = `When everyone has recorded (e.g. at 00:00), send ${name} this link and the PIN. ${name} logs in, then types the PIN.`;
+  $('#sendActSub').textContent = `To ${name}`;
+  $('#sendLead').textContent = `When everyone’s in (e.g. at 00:00), send ${name} the link and the PIN.`;
   $('#pinVal').textContent = pin;
   $('#recipientBox').replaceChildren(linkbox(url), shareRow(`${t.waRecipient(name)}
 PIN: ${pin}`, url));
@@ -105,8 +107,8 @@ $('#pinRow').addEventListener('click', () => {
       saveBtn.disabled = false;
     }
   } },
-    h('div', { class: 'field' }, h('label', {}, 'PIN (4 digits)'), pinIn), saveBtn);
-  openSheet({ title: 'PIN', subtitle: `${current.gift.recipient} types these 4 digits to open the gift`, content: form });
+    pinIn, saveBtn);
+  openSheet({ title: 'PIN', subtitle: `${current.gift.recipient} types it to open the gift`, content: form });
   setTimeout(() => pinIn.focus(), 60);
 });
 
@@ -138,6 +140,17 @@ async function remove(m) {
 }
 
 $('#refresh').addEventListener('click', load);
+
+// The three actions: each opens its panel in a sheet. The panel goes back into the page when the sheet closes.
+function sheetFor(panel, title) {
+  const home = panel.parentElement, next = panel.nextSibling;
+  panel.hidden = false;
+  openSheet({ title, content: panel, onClose: () => { panel.hidden = true; home.insertBefore(panel, next); } });
+}
+$('#inviteAct').addEventListener('click', () => sheetFor($('#invitePanel'), 'Invite'));
+$('#voicesAct').addEventListener('click', () => sheetFor($('#voicesPanel'), 'Who recorded'));
+$('#facepile').addEventListener('click', () => sheetFor($('#voicesPanel'), 'Who recorded'));
+$('#sendAct').addEventListener('click', () => sheetFor($('#sendPanel'), `Send it`));
 $('#deleteGift').addEventListener('click', async () => {
   if (!confirm("Delete this whole gift, with every message and recording? This can't be undone.")) return;
   try {

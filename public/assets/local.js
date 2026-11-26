@@ -41,7 +41,7 @@ export const snackKey = (type, i, local) => {
 };
 
 // ---------- drawings (static markup, never user text) ----------
-const T = (x, y, s, fill, size, extra = '') => `<text x="${x}" y="${y}" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="800" font-size="${size}" fill="${fill}" ${extra}>${s}</text>`;
+const T = (x, y, s, fill, size, extra = '') => `<text x="${x}" y="${y}" text-anchor="middle" font-family="Montserrat, system-ui, sans-serif" font-weight="800" font-size="${size}" fill="${fill}" ${extra}>${s}</text>`;
 const lines = (x1, x2, y1, y2) => { let s = ''; for (let x = x1 + 1.6; x < x2 - 0.5; x += 2.4) s += `M${x.toFixed(1)} ${y1}V${y2}`; return `<path d="${s}" stroke="rgba(0,0,0,.2)" stroke-width=".7"/>`; };
 const shine = (d) => `<path d="${d}" stroke="rgba(255,255,255,.42)" stroke-width="2" fill="none" stroke-linecap="round"/>`;
 const at = (x, y, s, inner) => `<g transform="translate(${x} ${y}) scale(${s})">${inner}</g>`;

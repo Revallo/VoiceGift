@@ -34,6 +34,10 @@
     {
       "source": "/account",
       "destination": "/account.html"
+    },
+    {
+      "source": "/gifts",
+      "destination": "/account.html"
     }
   ],
   "functions": {

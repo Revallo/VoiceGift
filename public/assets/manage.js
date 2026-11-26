@@ -156,7 +156,7 @@ $('#deleteGift').addEventListener('click', async () => {
   try {
     await api('/api/manage', { method: 'POST', json: { slug, key, action: 'delete-gift' } });
     try { localStorage.setItem('vg-mine', JSON.stringify(JSON.parse(localStorage.getItem('vg-mine') || '[]').filter((g) => g.slug !== slug))); } catch {}
-    location.href = (await me()) ? '/account' : '/';
+    location.href = (await me()) ? '/gifts' : '/';
   } catch (e) {
     toast(e.message);
   }

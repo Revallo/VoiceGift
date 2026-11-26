@@ -376,7 +376,7 @@ async function runGift(occasion, c) {
   await t.waitForSelector('[data-screen="home"]:not([hidden])');
   await t.waitForTimeout(800);
   if (await t.$('.bottom-sheet .thanks-card')) errors.push(`${occasion}: the thank-you popped up again after being seen`);
-  await t.goto(`${BASE}/account`);
+  await t.goto(`${BASE}/gifts`);
   await t.waitForSelector('#thanksArchive .thanks-card');
   if (!/disappears in 7 days/.test(await t.textContent('#thanksArchive'))) errors.push(`${occasion}: the archived thank-you has no 7-day note`);
   await shot(t, P('19b-dashboard-thanks'));
@@ -408,7 +408,7 @@ async function accountFlow(occasion, recipientLink) {
   await a.click('#openForm button[type="submit"]');
   await a.waitForURL(/\/r\/.+\?k=/); // pasting the link opens the gift's PIN page
   await a.goto(`${BASE}/`);
-  await a.click('#profileLink');
+  await a.click('.bottom-nav a[href="/gifts"]'); // the nav's Gifts icon
   await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
   await a.waitForTimeout(400);
   await shot(a, 'account-02-me', true);

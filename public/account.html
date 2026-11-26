@@ -23,7 +23,7 @@ addEventListener('error', (e) => {
 addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-reloaded'), 4000));
 </script>
 <script type="speculationrules">
-{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/account#*"]}, "eagerness": "moderate"}],
+{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/gifts"]}, "eagerness": "moderate"}],
  "prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/api/*"}}]}, "eagerness": "moderate"}]}
 </script>
 </head>
@@ -44,49 +44,40 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
     </div>
   </section>
 
-  <!-- /account: who you are, your gifts, thank-yous, settings (each opens a sheet) -->
+  <!-- /account: who you are, your numbers, settings (each opens a sheet) -->
   <section data-screen="me" hidden>
-    <header class="top-bar">
-      <span class="icon-btn ava-btn" id="acctAvatar" aria-hidden="true">S</span>
-      <span class="top-pill">Profile</span>
-      <button type="button" class="icon-btn" id="openProfileSheetBtn" aria-label="Edit profile" data-icon="edit"></button>
-    </header>
-
-    <div class="home-title">
+    <div class="me-head">
+      <span class="me-ava" id="acctAvatar" aria-hidden="true"></span>
       <h1 id="hello"></h1>
       <p class="lead" id="meEmail"></p>
     </div>
-
     <div class="stat-row">
       <div class="stat-tile"><b class="t-num" id="acctHeroVal">0</b><span>Voices</span><i data-icon="mic"></i></div>
       <div class="stat-tile alt"><b class="t-num" id="acctGiftCount">0</b><span>Gifts</span><i data-icon="gift"></i></div>
     </div>
-
-    <div class="stack" id="giftsSec" style="gap:6px">
-      <h2 class="sec-title" id="giftsTitle">Your gifts</h2>
-      <div class="list" id="gifts"></div>
+    <div class="nav-list">
+      <button type="button" class="nav-row" id="rowEditProfile">
+        <span class="nav-ico" data-icon="edit"></span>
+        <div class="nav-info"><b>Edit profile</b><small id="rowProfileSub"></small></div>
+        <span class="nav-chev" data-icon="chevronRight"></span>
+      </button>
+      <button type="button" class="nav-row danger" id="logout">
+        <span class="nav-ico" data-icon="lock"></span>
+        <div class="nav-info"><b>Log out</b><small>This device only</small></div>
+        <span class="nav-chev" data-icon="chevronRight"></span>
+      </button>
     </div>
-
-    <!-- Thank-you notes this account received: kept here for 7 days after they popped up on home -->
+  </section>
+  <!-- /gifts: the gifts you made, and the thank-yous you got (kept 7 days after they popped up on home) -->
+  <section data-screen="gifts" hidden>
+    <div class="gifts-head">
+      <h1>Your gifts</h1>
+      <a class="icon-btn make-btn" href="/new" aria-label="Make a gift" data-icon="plus"></a>
+    </div>
+    <div class="list" id="gifts"></div>
     <div class="stack" id="thanksSec" style="gap:10px" hidden>
       <div class="sec-bar"><h2>Thank-yous</h2><span class="t-label">7 days</span></div>
       <div class="stack" id="thanksArchive" style="gap:10px"></div>
-    </div>
-
-    <div class="stack" style="gap:6px">
-      <h2 class="sec-title">Account</h2>
-      <div class="nav-list">
-        <button type="button" class="nav-row" id="rowEditProfile">
-          <span class="nav-ico" data-icon="user"></span>
-          <div class="nav-info"><b>Profile</b><small id="rowProfileSub"></small></div>
-          <span class="nav-chev" data-icon="chevronRight"></span>
-        </button>
-        <button type="button" class="nav-row danger" id="logout">
-          <span class="nav-ico" data-icon="lock"></span>
-          <div class="nav-info"><b>Log out</b><small>This device only</small></div>
-          <span class="nav-chev" data-icon="chevronRight"></span>
-        </button>
-      </div>
     </div>
   </section>
 </main>

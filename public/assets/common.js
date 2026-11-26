@@ -161,13 +161,45 @@ export function topBar({ back = null, title = '', right = null, backLabel = 'Bac
 }
 
 // The floating pill at the bottom of home and the account page (ref: a soft pill with 4 icons).
+// The floating nav on home, gifts and profile: three icons, no words (the label is for screen readers).
+// The black circle is one blob behind the icons. Tapping another tab stretches it into a bar over every tab
+// between, then the page changes and the new page shrinks it back to a circle on its own tab.
+const NAV = [['home', '/', 'home', 'Home'], ['gifts', '/gifts', 'gift', 'Your gifts'], ['me', '/account', 'user', 'Profile']];
+const NAV_STEP = 60, NAV_PAD = 6, NAV_TAB = 56; // tab width + gap, the nav's padding, tab width (soft.css .tab)
 export function bottomNav(active = 'home') {
-  const tab = (key, href, ico, label, cls = '') => h('a', { class: `tab ${cls} ${active === key ? 'on' : ''}`.trim(), href, 'aria-label': label, 'aria-current': active === key ? 'page' : undefined, html: `${icon[ico](22)}<span>${label}</span>` });
-  return h('nav', { class: 'bottom-nav', 'aria-label': 'Main' },
-    tab('home', '/', 'home', 'Home'),
-    tab('make', '/new', 'plus', 'Make', 'make'),
-    tab('gifts', '/account#gifts', 'gift', 'Gifts'),
-    tab('me', '/account', 'user', 'Profile'));
+  const at = Math.max(0, NAV.findIndex(([key]) => key === active));
+  const blob = h('span', { class: 'nav-blob', 'aria-hidden': 'true' });
+  const tabs = NAV.map(([key, href, ico, label], i) => h('a', {
+    class: `tab ${i === at ? 'on' : ''}`.trim(), href, 'aria-label': label, 'aria-current': i === at ? 'page' : undefined,
+    html: icon[ico](24), onclick: (e) => go(e, i, href)
+  }));
+  const nav = h('nav', { class: 'bottom-nav', 'aria-label': 'Main' }, blob, ...tabs);
+  let wide = 0;
+  const span = (from, to, animate) => { // the blob over tabs from..to
+    const lo = Math.min(from, to), hi = Math.max(from, to);
+    blob.classList.toggle('still', !animate);
+    blob.style.left = `${NAV_PAD + lo * NAV_STEP}px`;
+    blob.style.width = `${NAV_TAB + (hi - lo) * NAV_STEP}px`;
+    const paint = () => tabs.forEach((t, i) => t.classList.toggle('lit', i >= lo && i <= hi));
+    if (animate && hi - lo < wide) setTimeout(paint, 110); else paint(); // shrinking: icons stay white until the bar has left them
+    wide = hi - lo;
+  };
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function go(e, i, href) {
+    if (i === at || e.metaKey || e.ctrlKey || e.shiftKey || calm()) return;
+    e.preventDefault();
+    span(at, i, true);
+    try { sessionStorage.setItem('vg-nav', String(at)); } catch {}
+    setTimeout(() => { location.href = href; }, 190);
+  }
+  let from = null;
+  try { from = sessionStorage.getItem('vg-nav'); sessionStorage.removeItem('vg-nav'); } catch {}
+  if (from !== null && +from !== at && NAV[+from] && !calm()) {
+    span(+from, at, false); // arrive as the bar the last page left…
+    setTimeout(() => { void blob.offsetWidth; span(at, at, true); }, 0); // …and shrink onto this tab (once the page has put the nav in)
+  } else span(at, at, false);
+  addEventListener('pageshow', (e) => { if (e.persisted) span(at, at, false); }); // back to a page kept in memory
+  return nav;
 }
 
 let activeSheet = null;

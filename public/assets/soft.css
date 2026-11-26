@@ -263,18 +263,21 @@ h1 em, .h1 em { color: var(--emerald-light); font-style: normal; }
 .app:has(> .bottom-nav) { padding-bottom: 0; }
 .app:has(> .bottom-nav) > section { padding-bottom: 18px; }
 .tab {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-width: 62px; height: 54px; padding: 0 8px; border-radius: 999px;
-  color: var(--muted); text-decoration: none; font-size: 9.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-  -webkit-tap-highlight-color: transparent;
+  position: relative; z-index: 1; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
+  color: var(--muted); text-decoration: none; -webkit-tap-highlight-color: transparent;
+  transition: color 0.16s ease, transform 0.14s ease; --ico-fill: transparent;
 }
-.tab .ico { width: 22px; height: 22px; }
-.tab.on { color: var(--text); --ico-fill: var(--wash); }
-.tab:not(.on) { --ico-fill: transparent; }
-.tab.make { min-width: 54px; width: 54px; padding: 0; background: var(--ink); color: #FFFFFF; --ico-fill: transparent; }
-.tab.make span { display: none; }
-.tab:hover { opacity: 1; color: var(--text); }
-.tab.make:hover { color: #FFFFFF; }
+.tab .ico { width: 24px; height: 24px; }
+.tab.lit { color: #FFFFFF; --ico-fill: rgba(255, 255, 255, 0.22); }
+.tab:not(.lit):hover { opacity: 1; color: var(--text); }
+.tab.lit:hover { opacity: 1; }
+.tab:active { transform: scale(0.94); }
+/* The black blob behind the current tab; bottomNav() moves it (left + width), it stretches then shrinks */
+.nav-blob {
+  position: absolute; top: 6px; left: 6px; width: 56px; height: 56px; border-radius: 999px; background: var(--ink);
+  transition: left 0.19s cubic-bezier(0.4, 0, 0.2, 1), width 0.19s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-blob.still { transition: none; }
 
 /* ---------- Inputs ---------- */
 .input {
@@ -543,6 +546,23 @@ textarea.input { border-radius: 24px; padding: 16px 20px; font-weight: 500; }
   width: 132px; height: 132px; display: grid; place-items: center; border-radius: 50%; font-size: 64px; line-height: 1;
   background: radial-gradient(circle at 35% 30%, #FFFFFF, var(--wash) 70%); box-shadow: 0 24px 50px -24px var(--emerald);
 }
+/* Profile (/account): a big avatar, the name, the email */
+.me-head { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 18px; text-align: center; }
+.me-ava {
+  width: 92px; height: 92px; display: grid; place-items: center; border-radius: 50%; margin-bottom: 6px;
+  background: var(--ink); color: #FFFFFF; font-weight: 900; font-size: 38px; box-shadow: 0 18px 40px -20px rgba(40, 24, 10, 0.6);
+}
+.me-head h1 { font-size: clamp(30px, 9vw, 40px); margin: 0; overflow-wrap: anywhere; }
+.me-head .lead { margin: 0; color: var(--soft); font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+/* Your gifts (/gifts): a big title with a + to make another */
+.gifts-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.gifts-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 36px 8px 8px; text-align: center; }
+.gifts-empty-ico { width: 96px; height: 96px; display: grid; place-items: center; border-radius: 50%; background: var(--wash); --ico-fill: #FFFFFF; margin-bottom: 8px; }
+.gifts-empty b { font-weight: 800; font-size: 18px; letter-spacing: 0.04em; text-transform: uppercase; }
+.gifts-empty p { margin: 0 0 14px; color: var(--soft); font-weight: 500; }
+.gifts-head h1 { font-size: clamp(36px, 11vw, 48px); margin: 0; }
+.make-btn { background: var(--ink); color: #FFFFFF; --ico-fill: transparent; }
+.make-btn:hover { opacity: 1; color: #FFFFFF; }
 .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .stat-tile {
   position: relative; display: flex; flex-direction: column; gap: 2px; min-height: 104px; padding: 18px; border-radius: var(--r-tile);
@@ -836,10 +856,3 @@ body.reveal-page[data-theme="birthday"] {
 .input::placeholder { color: rgba(var(--fg), 0.6); }
 /* Check your words: one surface only (the words), not a tile inside a tile */
 .record-page .birthday-player { background: transparent; box-shadow: none; padding: 4px 8px 0; border-radius: 0; }
-
-/* ==================== Moving between pages ==================== */
-/* A soft cross-fade instead of a white flash (browsers without it just load the page); the bottom nav stays put */
-@view-transition { navigation: auto; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.18s; }
-.bottom-nav { view-transition-name: bottom-nav; }
-@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }

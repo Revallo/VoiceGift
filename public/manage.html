@@ -23,7 +23,7 @@ addEventListener('error', (e) => {
 addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-reloaded'), 4000));
 </script>
 <script type="speculationrules">
-{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/account#*"]}, "eagerness": "moderate"}],
+{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/gifts"]}, "eagerness": "moderate"}],
  "prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/api/*"}}]}, "eagerness": "moderate"}]}
 </script>
 </head>
@@ -36,7 +36,7 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
   <section data-screen="main" hidden>
     <!-- One page for the organizer: the gift, then three things to do, each in a sheet -->
     <header class="top-bar">
-      <a class="icon-btn" href="/account" aria-label="Back to dashboard" data-icon="back"></a>
+      <a class="icon-btn" href="/gifts" aria-label="Back to your gifts" data-icon="back"></a>
       <span class="top-pill" id="title">Gift</span>
       <a class="icon-btn" id="editDesignLink" href="/new" aria-label="Edit design" data-icon="edit"></a>
     </header>

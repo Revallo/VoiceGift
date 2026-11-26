@@ -35,9 +35,9 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | home, logged in only (else `/login`): "Hi, name", the three gifts in a carousel you slide (tap = make that kind), "Make a gift" → `/new`, "Open a gift" (paste the link in a sheet), bottom nav (Home · + · Gifts · Profile), thank-you notes pop up |
+| `/` | `index.html` | home, logged in only (else `/login`): "Hi, name", the three gifts in a carousel you slide (tap = make that kind), "Make a gift" → `/new`, "Open a gift" (paste the link in a sheet), bottom nav, thank-you notes pop up |
 | `/new` | `create.html` + `assets/create.js` | organizer, **one screen**: a carousel of the kinds (`#kinds`, the one in the middle is the gift) + occasion tiles + For/From + PIN chip + "Customize" + slide "Create gift". Customize (`data-screen="decorate"`) is its own page: the big gift with the kinds before and after peeking in at the sides (swipe it or tap a peek = kind; dots under the name), icon tabs (Color · Accent · Pattern · Topper · Greens · Text · Stickers · Draw · Music · Backdrop · Local), one tool at a time, "Save" goes back. `?edit=slug&k=` opens Customize; its Save ("Save changes") saves and goes to `/m/…` |
-| `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: "Continue with Google" → profile: voices/gifts tiles, their gifts, thank-yous, log out; bottom nav (`/account#gifts` = the Gifts tab) |
+| `/signup`, `/login`, `/account`, `/gifts` | `account.html` + `assets/account.js` | everyone: "Continue with Google". `/account` = Profile (avatar, name, voices/gifts tiles, edit profile, log out); `/gifts` = Your gifts (their gifts, + to make one, thank-yous). Both have the bottom nav (`/account#gifts` goes to `/gifts`) |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit (top right), who recorded as faces, three big actions that each open a sheet: Invite (link + share), Voices (names, not content; demo voices), Send (recipient link + PIN) |
 | `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → 3-2-1, items light → listen → finale (blow + first slice / throw cap / release lanterns → constellation) → keepsake → thank everyone |
@@ -70,7 +70,7 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
   `name` is the text on the cake / wrap / under the lanterns; `stickers` = `[[emoji, x, y]]` (sets in
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
-  phone's back gesture works. A floating bottom nav (Home · + · Gifts · Profile) only on home and the account page.
+  phone's back gesture works. A floating bottom nav of three icons, no words (Home · Gifts · Profile; the current one sits on a black blob that stretches into a bar over the tabs it passes and shrinks onto the new tab, `bottomNav()`) only on home, `/gifts` and `/account`. Making a gift lives on home's button and the + on `/gifts`, not in the nav.
 - After checking their words, a friend may "Add a twist" (two icon tabs, no box: Mood, and their own item): a voice **mood** (`MOODS` in `voicefx.js`: Sad, Angry, Dangdut, Toa,
   Horror, Helium, Alien, 8-bit, plus 19 local ones with a `local` country, e.g. Abang Bakso, Videoke, Lion dance; the gift's country is listed first (`moodsFor()`); each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
   with Web Audio only, never baked into the WAV; the recipient's player has "🔊 Original voice" to hear it without the mood, and back) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
@@ -131,7 +131,7 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
 - Sessions: a random token in an HttpOnly, SameSite=Lax cookie (`vg_session`, 30 days); storage keeps only its sha256.
 - Moving between pages (2026-11-26): `me()` remembers the account for the tab (sessionStorage `vg-me`) so a page draws at once;
   the server is still asked in the background and a different answer reloads the page. Display only: every API checks the cookie.
-  Every page has `@view-transition` (a cross-fade, `soft.css`), speculation rules (prerender `/`, `/new`, `/account`; prefetch other
+  No animation between pages (asked 2026-11-27: pages just change). Every page has speculation rules (prerender `/`, `/new`, `/account`, `/gifts`; prefetch other
   links) and a one-shot reload if a module fails to link; `/assets/*` is served `stale-while-revalidate` (`vercel.json`).
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).

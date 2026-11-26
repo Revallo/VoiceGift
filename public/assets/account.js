@@ -53,10 +53,10 @@ function populateUserUI(user) {
   currentUser = user;
   const initial = (user.name || user.email || 'U').trim()[0].toUpperCase();
   if ($('#acctAvatar')) $('#acctAvatar').textContent = initial;
-  $('#hello').textContent = `Hi, ${(user.name || 'there').split(/\s+/)[0]}`;
+  $('#hello').textContent = user.name || 'You';
   $('#meEmail').textContent = user.email;
   if ($('#rowProfileSub')) {
-    $('#rowProfileSub').textContent = user.bio ? `${user.name} · ${user.bio}` : `${user.name} · ${user.email}`;
+    $('#rowProfileSub').textContent = user.bio || 'Name and a short line about you';
   }
   const prefs = user.prefs || {};
   if ($('#rowPrefsVal')) {
@@ -211,18 +211,18 @@ $('#rowEditProfile')?.addEventListener('click', openEditProfileSheet);
 $('#rowAsrPrefs')?.addEventListener('click', openAsrPrefsSheet);
 $('#rowAsrCorpus')?.addEventListener('click', openAsrCorpusSheet);
 
+// /account = Profile, /gifts = Your gifts: one page file, two screens, each its own address in the nav.
 function showAccount(user) {
-  const keepHash = location.hash;
-  history.replaceState(null, '', `/account${keepHash}`);
-  document.title = 'Your account · Voice Gift';
+  const gifts = location.pathname === '/gifts';
+  const hash = location.hash;
+  document.title = `${gifts ? 'Your gifts' : 'Your profile'} · Voice Gift`;
   populateUserUI(user);
-  if (!$('.bottom-nav')) $('#app').append(bottomNav(location.hash === '#gifts' ? 'gifts' : 'me'));
-  showScreen('me');
-  if (keepHash === '#gifts') requestAnimationFrame(() => $('#giftsSec').scrollIntoView({ block: 'start' }));
-  loadThanks();
+  if (!$('.bottom-nav')) $('#app').append(bottomNav(gifts ? 'gifts' : 'me'));
+  showScreen(gifts ? 'gifts' : 'me');
+  if (gifts) loadThanks();
   return loadGifts().then(() => {
-    if (keepHash === '#settings') openEditProfileSheet();
-    else if (keepHash === '#ASR') openAsrPrefsSheet();
+    if (hash === '#settings') openEditProfileSheet();
+    else if (hash === '#ASR') openAsrPrefsSheet();
   });
 }
 
@@ -239,7 +239,11 @@ async function loadGifts() {
     }
     list.replaceChildren(...(gifts.length
       ? gifts.map((g) => giftItem(g, () => { toast('Gift deleted'); loadGifts(); }))
-      : [h('a', { class: 'empty-gifts', href: '/new', html: `${icon.gift(28)}<span>Make your first gift</span>` })]));
+      : [h('div', { class: 'gifts-empty' },
+          h('span', { class: 'gifts-empty-ico', html: icon.gift(40) }),
+          h('b', null, 'No gifts yet'),
+          h('p', null, 'Make one, then invite friends to record.'),
+          h('a', { class: 'btn', href: '/new' }, 'Make a gift'))]));
   } catch (e) {
     list.replaceChildren(h('div', { class: 'item small muted' }, e.message));
   }
@@ -263,9 +267,14 @@ $('#logout').addEventListener('click', async () => {
   showAuth('login');
 });
 
+if (location.pathname === '/account' && location.hash === '#gifts') history.replaceState(null, '', '/gifts'); // old links
 me().then(async (user) => {
-  if (!user) return showAuth(location.pathname === '/signup' ? 'signup' : 'login');
-  return location.pathname === '/account' ? showAccount(user) : goOn();
+  const page = ['/account', '/gifts'].includes(location.pathname);
+  if (!user) {
+    if (page) history.replaceState(null, '', `/login?next=${location.pathname}`);
+    return showAuth(location.pathname === '/signup' ? 'signup' : 'login');
+  }
+  return page ? showAccount(user) : goOn();
 });
 
 // Once logged in, go to ?next= (same site only) or to the home page.

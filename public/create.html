@@ -22,7 +22,7 @@ addEventListener('error', (e) => {
 addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-reloaded'), 4000));
 </script>
 <script type="speculationrules">
-{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/account#*"]}, "eagerness": "moderate"}],
+{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/gifts"]}, "eagerness": "moderate"}],
  "prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/api/*"}}]}, "eagerness": "moderate"}]}
 </script>
 </head>

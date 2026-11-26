@@ -4,7 +4,7 @@ import { $, $$, h, api, icon, showScreen, slugFromPath, addStars, toast, colorFo
 import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
 import { playTune } from './music.js';
-import { ITEM_COLORS, DISH_TYPES } from './item-options.js';
+import { ITEM_COLORS, DISH_TYPES, ENVELOPE_TYPES, KRATHONG_TYPES } from './item-options.js';
 import { startRecording, micSupported, micErrorHelp } from './recorder.js';
 import { MOODS, moodOf, playVoice, moodShow } from './voicefx.js';
 
@@ -38,7 +38,7 @@ function setPhase(next) {
 
 const later = (fn, ms) => { const tm = setTimeout(fn, ms); timers.push(tm); return tm; };
 const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
-const messageColor = (i) => ITEM_COLORS[messages[i]?.flower?.color || messages[i]?.lantern?.color]?.hex || DISH_TYPES[messages[i]?.dish?.type]?.tint || colorFor(i);
+const messageColor = (i) => ITEM_COLORS[messages[i]?.flower?.color || messages[i]?.lantern?.color]?.hex || DISH_TYPES[messages[i]?.dish?.type]?.tint || (ENVELOPE_TYPES[messages[i]?.item?.type] || KRATHONG_TYPES[messages[i]?.item?.type])?.tint || colorFor(i);
 const fmtDur = (s) => { s = Math.round(s); return s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`; };
 
 function header(eyebrow, title, sub, italic = false) {
@@ -187,7 +187,7 @@ function showEmpty() {
 // ---------- it's time ----------
 function showReady() {
   setPhase('ready');
-  scene.setCandles(messages.length, { colors: messages.map((m, i) => messageColor(i)), styles: messages.map((m) => m.candle), flowers: messages.map((m) => m.flower), lanterns: messages.map((m) => m.lantern), dishes: messages.map((m) => m.dish), names: messages.map((m) => m.sender), onTap: (i) => phase === 'cake' && play(i, false) });
+  scene.setCandles(messages.length, { colors: messages.map((m, i) => messageColor(i)), styles: messages.map((m) => m.candle), flowers: messages.map((m) => m.flower), lanterns: messages.map((m) => m.lantern), dishes: messages.map((m) => m.dish), items: messages.map((m) => m.item), names: messages.map((m) => m.sender), onTap: (i) => phase === 'cake' && play(i, false) });
   messages.forEach((m, i) => { if (scene.candles[i]) scene.candles[i].dataset.mood = moodOf(m.mood); });
   scene.stage.classList.add('interactive');
   scene.setDim(0.7);
@@ -267,11 +267,22 @@ function startLighting() {
   const n = messages.length;
   const eyebrow = t.eyebrow(first);
   header(eyebrow, t.lightingTitle, t.lightingSub);
+  // The room goes dark around the gift, a 3-2-1, then every item lights with its friend's name rising from it.
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  scene.wrap.classList.add('cine');
+  const countdown = calm ? 0 : 1900;
+  if (!calm) [3, 2, 1].forEach((k, j) => later(() => {
+    scene.wrap.querySelector('.cine-count')?.remove();
+    scene.wrap.append(h('div', { class: 'cine-count', 'aria-hidden': 'true' }, String(k)));
+    tone(ac, 659.25, 0, 0.25, 0.05);
+    buzz(10);
+  }, j * 600));
+  later(() => scene.wrap.querySelector('.cine-count')?.remove(), countdown);
   const dots = messages.map(() => h('i', { style: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--face)', transition: 'background .3s' } }));
   const count = h('p', { class: 'small soft center', style: { margin: '0' } }, t.progress(0, n));
   setBottom(h('div', { class: 'row', style: { justifyContent: 'center', flexWrap: 'wrap', gap: '7px' } }, n <= 40 ? dots : []), count);
   // Each item lights with a chime and the friend's name. No voices yet: they play when the recipient taps an item.
-  let at = 300;
+  let at = 300 + countdown;
   messages.forEach((m, i) => {
     at += i === 0 ? 300 : Math.max(170, 700 * Math.pow(0.86, i));
     later(() => {
@@ -282,15 +293,36 @@ function startLighting() {
         h('span', { class: 'avatar', style: { background: messageColor(i) } }, initials(m.sender)),
         h('div', { class: 'shout' }, m.sender)));
       tone(ac, NOTES[i % NOTES.length], 0, 1.1, 0.09);
+      if (!calm) nameRise(i, m.sender);
+      buzz(12);
     }, at);
   });
   later(() => {
     [523.25, 659.25, 783.99, 1046.5].forEach((f, k) => tone(ac, f, k * 0.07, 1.9, 0.06));
+    scene.wrap.classList.add('cine-flash');
+    buzz([30, 50, 60]);
     header(eyebrow, t.greeting(first), t.gaveLine(n));
   }, at + 700);
   // Let the final lighting chime decay before the selected music begins.
   later(() => { stopMusic = playTune(ac, gift.cake?.music); }, at + 2900);
+  later(() => scene.wrap.classList.remove('cine', 'cine-flash'), at + 2600);
   later(enterScene, at + 3200);
+}
+
+// A short vibration, where the phone allows it (Android; iPhones ignore it).
+const buzz = (pattern) => { try { navigator.vibrate?.(pattern); } catch {} };
+
+// The friend's first name rises out of their item as it lights, with a little burst of light.
+function nameRise(i, sender) {
+  const item = scene.candles[i];
+  if (!item) return;
+  const w = scene.wrap.getBoundingClientRect(), r = item.getBoundingClientRect();
+  const x = r.left + r.width / 2 - w.left, y = Math.max(58, r.top - w.top + Math.min(r.height, 40) * 0.3); // room above it to rise into
+  const burst = h('i', { class: 'cine-burst', 'aria-hidden': 'true', style: { left: `${x}px`, top: `${y}px` } });
+  const name = h('span', { class: 'cine-name', 'aria-hidden': 'true', style: { left: `${Math.min(w.width - 40, Math.max(40, x))}px`, top: `${y}px` } }, String(sender || '').split(/\s+/)[0]);
+  for (const e of [burst, name]) e.style.setProperty('--c', messageColor(i));
+  scene.wrap.append(burst, name);
+  setTimeout(() => { burst.remove(); name.remove(); }, 1800);
 }
 
 // ---------- listen ----------
@@ -362,6 +394,7 @@ function stopCurrent() {
   cancelAnimationFrame(current.raf);
   if (current.src) current.src.stop();
   current.endShow?.();
+  endRing(current);
   scene.setActive(current.i, false);
   chips[current.i]?.classList.remove('on');
   chips[current.i]?.setAttribute('aria-pressed', 'false');
@@ -369,6 +402,22 @@ function stopCurrent() {
   document.body.classList.remove('birthday-paused');
   // Birthday pause suspends this page's audio clock so the effect and caption stay in sync.
   if (ac?.state === 'suspended') ac.resume().catch(() => {});
+}
+
+// Two rings around the speaking item that grow with the voice (--lvl, set on the item while it plays).
+function voiceRing(i) {
+  const item = scene.candles[i];
+  if (!item) return null;
+  const ring = h('i', { class: 'vring', 'aria-hidden': 'true' }, h('i'), h('i'));
+  ring.style.setProperty('--c', messageColor(i));
+  item.append(ring);
+  return ring;
+}
+function endRing(me) {
+  me.ring?.remove();
+  me.ring = null;
+  scene.candles[me.i]?.style.removeProperty('--lvl');
+  try { me.meter?.disconnect(); } catch {}
 }
 
 // original: play the recording as it was spoken, without the friend's mood (a mood can make words hard to follow).
@@ -454,6 +503,7 @@ async function play(i, chain, { original = false } = {}) {
   const finish = () => {
     if (current !== me) return;
     cancelAnimationFrame(me.raf);
+    endRing(me);
     words.forEach((w) => { w.className = 'done'; });
     bars.remove();
     me.endShow?.();
@@ -475,8 +525,13 @@ async function play(i, chain, { original = false } = {}) {
   let dur = m.durationSec;
   const startAt = ac.currentTime;
   if (buf) {
+    // a meter on the way out: the speaking item pulses with how loud the voice is right now
+    me.meter = ac.createAnalyser();
+    me.meter.fftSize = 512;
+    me.meter.connect(ac.destination);
+    me.ring = voiceRing(i);
     // the friend's mood is added here, while playing; the recording itself is unchanged
-    me.src = playVoice(ac, buf, mood, { onended: finish });
+    me.src = playVoice(ac, buf, mood, { dest: me.meter, onended: finish });
     rate = me.src.rate;
     lead = me.src.lead;
     dur = me.src.duration;
@@ -504,6 +559,14 @@ async function play(i, chain, { original = false } = {}) {
       progressFill.style.width = `${100 * Math.max(0, Math.min(1, el / Math.max(0.1, buf.duration)))}%`;
       elapsed.textContent = me.clock(Math.min(buf.duration, el));
     }
+    if (me.meter) {
+      const d = (me.wave ||= new Float32Array(me.meter.fftSize));
+      me.meter.getFloatTimeDomainData(d);
+      let sum = 0;
+      for (let j = 0; j < d.length; j += 4) sum += d[j] * d[j];
+      me.lvl = (me.lvl || 0) * 0.6 + Math.min(1, Math.sqrt(sum / (d.length / 4)) * 5) * 0.4;
+      scene.candles[i]?.style.setProperty('--lvl', me.lvl.toFixed(3));
+    }
     let k = -1;
     m.words.forEach((w, idx) => { if (w.start <= el) k = idx; });
     words.forEach((w, idx) => { w.className = idx < k ? 'done' : idx === k ? 'now' : ''; });
@@ -521,7 +584,7 @@ function startFinale() {
   setPhase('blow');
   setPanel(null);
   header('Last step', t.finaleTitle, t.finaleSub(messages.length), true);
-  if (t.key === 'birthday') startBlow();
+  if (t.scene === 'cake') startBlow();
   else startTap();
 }
 
@@ -587,16 +650,24 @@ function startBlow() {
       if (ts - lastPuff > 80) { lastPuff = ts; puff(); }
       out = nowOut;
     }
-    if (progress >= 1) { breath.stop(); return finishFinale(); }
+    if (progress >= 1) {
+      breath.stop();
+      if (!scene.finaleCut) return finishFinale();
+      scene.setBend(0);
+      header('Last step', t.cutTitle, t.cutSub(messages.length), true);
+      setBottom();
+      later(() => { scene.finaleCut(); noise(0.25, 1200, 0.35, 300); buzz(25); }, 500);
+      return later(finishFinale, 2300);
+    }
     requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
 
-// Graduation, wedding and tumpeng: one tap, everyone together.
+// Every scene but the cake: one tap, everyone together.
 function startTap() {
   const ring = h('button', { type: 'button', class: 'holdbtn', 'aria-label': t.finaleAction, style: { background: 'rgba(255,255,255,0.14)' } });
-  const inner = h('span', { html: t.key === 'graduation' ? icon.cap(32) : t.key === 'tumpeng' ? KNIFE : icon.sparkle(30) });
+  const inner = h('span', { html: t.scene === 'bouquet' ? icon.cap(32) : t.scene === 'tumpeng' ? KNIFE : t.scene === 'lixi' ? ENVELOPE : icon.sparkle(30) });
   inner.append(h('span', {}, t.finaleAction));
   ring.append(inner);
   setBottom(ring, h('p', { class: 'small muted center', style: { margin: '0' } }, t.finaleHint));
@@ -605,7 +676,7 @@ function startTap() {
     setPhase('finale');
     ring.classList.add('down');
     ring.disabled = true;
-    if (t.key === 'graduation') {
+    if (t.scene === 'bouquet') {
       throwCaps();
       later(finishFinale, 2300);
     } else {
@@ -620,6 +691,7 @@ function startTap() {
   });
 }
 
+const ENVELOPE = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M5 7.5q7 5 14 0"/><circle cx="12" cy="14" r="2.5"/></svg>';
 const KNIFE = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l9-9"/><path d="M12 12l7.5-7.5a2.1 2.1 0 0 1 3 3L15 15z"/></svg>';
 
 // The sound of blowing: a soft loop of breath that follows the blowing, and a small puff for each flame.
@@ -683,7 +755,7 @@ function finishFinale() {
   stopMusic();
   stopMusic = playTune(ac, gift.cake?.music, { loop: false });
   confetti();
-  if (t.key === 'wedding' && !scene.onRiver?.()) skyLanterns(); // Hội An lanterns stay on the river
+  if (t.scene === 'lanterns' && !scene.onRiver?.()) { skyLanterns(); later(() => scene.constellation?.(messages.map((m) => m.sender)), 1600); } // Hội An lanterns stay on the river
   showKeepsake();
 }
 
@@ -1050,7 +1122,15 @@ function throwCaps() {
     cap.style.setProperty('--spin', `${Math.round((Math.random() - 0.5) * 1000)}deg`);
     caps.push(cap);
   }
-  effects(caps, 4000);
+  for (let j = 0; j < 34; j++) {
+    const petal = h('i', { class: 'petal', style: {
+      left: `${Math.random() * 100}%`, background: messageColor(j % messages.length),
+      animationDelay: `${(0.5 + Math.random() * 1.6).toFixed(2)}s`, animationDuration: `${(3.2 + Math.random() * 2).toFixed(2)}s`
+    } });
+    petal.style.setProperty('--sway', `${Math.round((Math.random() - 0.5) * 120)}px`);
+    caps.push(petal);
+  }
+  effects(caps, 6500);
 }
 
 // Wedding keepsake: the released lanterns keep rising across the whole screen.

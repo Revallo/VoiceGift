@@ -36,3 +36,17 @@ export const DISH_TYPES = {
   urap: { label: 'Urap', tint: '#5E9C3A' }, sambal: { label: 'Sambal', tint: '#D8361F' },
   fish: { label: 'Fried fish', tint: '#B8742F' }, tofu: { label: 'Tofu', tint: '#E1A94A' }
 };
+// The envelope a friend hangs on the Tết tree (message.item = { type }). Drawings in lixi.js. Never white or black
+// (funerals), no zodiac, no characters that read as religious.
+export const ENVELOPE_TYPES = {
+  red: { label: 'Classic red', tint: '#D42A2A' }, loc: { label: 'Lộc gold', tint: '#E8B53A' },
+  blossom: { label: 'Mai blossom', tint: '#F2C230' }, peach: { label: 'Peach blossom', tint: '#F08AA8' },
+  coin: { label: 'Gold coin', tint: '#E9A93A' }, koi: { label: 'Koi', tint: '#F0663A' },
+  lantern: { label: 'Lantern', tint: '#E8452E' }
+};
+// The flowers on a friend's krathong (message.item = { type }), a float of banana leaf. Drawings in krathong.js.
+export const KRATHONG_TYPES = {
+  marigold: { label: 'Marigold', tint: '#F59A1E' }, lotus: { label: 'Lotus', tint: '#F38BB0' },
+  orchid: { label: 'Orchid', tint: '#B47AE0' }, jasmine: { label: 'Jasmine', tint: '#F4EEDC' },
+  rose: { label: 'Rose', tint: '#E8506A' }, butterflypea: { label: 'Butterfly pea', tint: '#5A7BE0' }
+};

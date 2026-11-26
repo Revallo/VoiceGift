@@ -1,4 +1,5 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
+// Cases are occasions, or a kind with its own scene (`occasion` + `shape`: a birthday tumpeng, a wedding angpao tree / river).
 // (create → decorate → sign up → friends sign up + record → dashboard → recipient link → log in → PIN →
 // reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop),
 // then the limits. Logging in is Google only; the test uses the local stand-in, so start the server with DEV_LOGIN=1.
@@ -84,8 +85,10 @@ async function signUpHere(p, name, email, shotName) {
 
 const CASES = {
   birthday: { recipient: 'Dimas', swatch: 9, shape: 'tower', friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
-  tumpeng: { recipient: 'Putri', swatch: 3, shape: 'tall', friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
+  tumpeng: { occasion: 'birthday', recipient: 'Putri', swatch: 3, shape: 'tumpeng', friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
   graduation: { recipient: 'Nadia', swatch: 6, shape: 'basket', friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
+  angpao: { occasion: 'wedding', recipient: 'Linh & Minh', swatch: 1, shape: 'angpao', friends: [['Bibi Lan', 'Selamat menempuh hidup baru, semoga rukun selalu.'], ['Om Hendra', 'Selamat ya Linh dan Minh, langgeng terus.']] },
+  river: { occasion: 'wedding', recipient: 'Ploy & Ken', swatch: 2, shape: 'river', friends: [['Nok', 'Selamat menikah, semoga bahagia selamanya.'], ['Budi', 'Selamat ya kalian berdua!']] },
   wedding: { recipient: 'Rina & Bayu', swatch: 6, shape: 'heart', extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };
 
@@ -103,7 +106,7 @@ async function runGift(occasion, c) {
   await logInHere(p, 'Sari', emailFor(occasion));
   await p.waitForURL(/\/new$/);
   await p.waitForSelector('#recipient');
-  await p.click(`#occasions [data-v="${occasion}"]`);
+  await p.click(`#occasions [data-v="${c.occasion || occasion}"]`);
   await p.fill('#recipient', c.recipient);
   await p.fill('#organizer', 'Sari');
   await shot(p, P('01-create-who'));

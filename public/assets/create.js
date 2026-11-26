@@ -11,10 +11,11 @@ $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const params = new URLSearchParams(location.search);
+const askedTumpeng = params.get('occasion') === 'tumpeng'; // old links: tumpeng was an occasion, now a birthday kind
 const state = {
   occasion: THEMES[params.get('occasion')] ? params.get('occasion') : 'birthday',
   flavor: '',
-  shape: params.get('shape') || 'classic', // picked on the first page, or in the decorate step
+  shape: askedTumpeng ? 'tumpeng' : params.get('shape') || 'classic', // picked on the first page, or in the decorate step
   font: NAME_FONTS[params.get('font')] ? params.get('font') : DEFAULT_FONT, // the letters of the name on the gift
   brush: 0,
   nameTouched: false,
@@ -41,7 +42,8 @@ $$('[data-back]').forEach((b) => b.addEventListener('click', () => history.back(
 // ---------- step 1 ----------
 swipeButton($('#nextBtn'));
 let whoScene;
-const sampleName = () => (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
+const SAMPLE_NAMES = { wedding: 'Rina & Bayu', graduation: 'Nadia' };
+const sampleName = () => SAMPLE_NAMES[state.occasion] || 'Dimas';
 
 // The gift is always shown at the top, so picking another occasion shows it straight away.
 function renderWhoPreview() {
@@ -64,14 +66,15 @@ const forLocal = (list) => Object.entries(list).filter(([, v]) => !v.local || v.
 
 const LEADS = {
   birthday: 'Each friend’s voice lights one candle on the cake.',
-  tumpeng: 'Each friend brings one dish to the tumpeng, with their voice.',
   graduation: 'Each friend’s voice opens one flower in the bouquet.',
   wedding: 'Each friend’s voice lights one lantern in the sky.'
 };
 let firstOccasion = true;
 function setOccasion(key) {
   state.occasion = key;
-  t = applyTheme(key);
+  t = theme(key);
+  if (!t.decorate.shapes[state.shape]) state.shape = 'classic';
+  t = applyTheme(key, state.shape);
   $$('#occasions .pick').forEach((c) => { c.classList.toggle('on', c.dataset.v === key); c.setAttribute('aria-checked', String(c.dataset.v === key)); });
   $('#pickLead').textContent = LEADS[key];
   $('#recipientLabel').textContent = t.recipientLabel;
@@ -84,7 +87,6 @@ function setOccasion(key) {
   const asked = firstOccasion && params.get('flavor');
   firstOccasion = false;
   state.flavor = asked && t.decorate.swatches[asked] ? asked : t.decorate.flavor;
-  if (!t.decorate.shapes[state.shape]) state.shape = 'classic';
   state.accent = Object.keys(t.decorate.accents)[0];
   state.pattern = Object.keys(t.decorate.patterns)[0];
   state.topper = 'none';
@@ -260,11 +262,30 @@ function wheel(box, entries, current, draw, onPick) {
 const chip = (label, style) => h('button', { type: 'button', class: 'chip', style }, label);
 const swatch = (label, style, cls = '') => h('button', { type: 'button', class: `swatch ${cls}`, 'aria-label': label, title: label }, h('i', { style }));
 
+// Some kinds draw another scene (a birthday tumpeng, a wedding angpao tree or river): then the gift is drawn again
+// with that scene's own flavours, accents, patterns and toppers, keeping the name, the stickers and the drawing.
+function switchScene() {
+  const before = t.scene;
+  t = applyTheme(state.occasion, state.shape);
+  if (t.scene === before) return false;
+  const d = t.decorate;
+  state.flavor = d.flavor;
+  state.accent = Object.keys(d.accents)[0];
+  state.pattern = Object.keys(d.patterns)[0];
+  state.topper = 'none';
+  const keep = { name: $('#cakeName').value, stickers: scene.stickers.get(), dots: scene.getDots() };
+  buildDecorate();
+  if (state.nameTouched) { $('#cakeName').value = keep.name; scene.setName(keep.name); }
+  scene.stickers.set(keep.stickers);
+  if (d.draw) scene.setDots(keep.dots);
+  return true;
+}
+
 // Swipe the big gift sideways to change its kind. Stickers and drawing keep their own gestures.
 function stepShape(dir) {
   const keys = Object.keys(t.decorate.shapes);
   state.shape = keys[(keys.indexOf(state.shape) + dir + keys.length) % keys.length];
-  scene.setShape(state.shape);
+  if (!switchScene()) scene.setShape(state.shape);
   $('#patterns').closest('.row').hidden = state.occasion === 'graduation' && isTreat(state.shape);
   scene.wrap.animate([{ transform: `translateX(${Math.sign(dir) * 70}px)`, opacity: 0.25 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
   renderShapes();
@@ -357,7 +378,10 @@ function buildKinds() {
   for (const [key, s] of Object.entries(t.decorate.shapes)) {
     const mini = h('div', { class: 'mini' });
     box.append(h('button', { type: 'button', class: 'kind', role: 'radio', 'data-v': key, onclick: () => pickShape(key) }, mini, h('span', {}, s.label)));
-    const sc = createScene(mini, { occasion: state.occasion, recipient: '', cake: { flavor: state.flavor, shape: key, name: '', greens: state.greens, local: state.local } });
+    // a kind that draws another scene shows that scene's own default flavour
+    const kt = theme(state.occasion, key);
+    const sc = createScene(mini, { occasion: state.occasion, recipient: '', cake: { flavor: kt.scene === t.scene ? state.flavor : kt.decorate.flavor, shape: key, name: '', greens: state.greens, local: state.local } });
+    sc.sceneKind = kt.scene;
     sc.setCandles(6);
     sc.lightAll();
     kindScenes.push(sc);
@@ -367,7 +391,7 @@ function renderShapes() {
   if (kindsFor !== state.occasion + state.local) buildKinds();
   else if (kindsFlavor !== state.flavor) {
     kindsFlavor = state.flavor;
-    for (const sc of kindScenes) sc.setFlavor(state.flavor);
+    for (const sc of kindScenes) if (sc.sceneKind === t.scene) sc.setFlavor(state.flavor);
   }
   const box = $('#kinds');
   for (const b of $$('#kinds .kind')) {
@@ -575,12 +599,15 @@ if (editSlug && editKey) {
   api(`/api/manage?slug=${encodeURIComponent(editSlug)}&key=${encodeURIComponent(editKey)}`).then(({ gift }) => {
     state.created = { slug: gift.slug, manageKey: editKey };
     $('#whoBack').href = `/m/${gift.slug}?k=${editKey}`;
-    setOccasion(gift.occasion);
+    const oldTumpeng = gift.occasion === 'tumpeng';
+    setOccasion(oldTumpeng ? 'birthday' : gift.occasion);
     $('#recipient').value = gift.recipient || '';
     $('#organizer').value = gift.organizer || '';
     if (/^\d{4}$/.test(gift.verifyPin || '')) { state.verifyPin = gift.verifyPin; $('#deliverySummaryVal').textContent = gift.verifyPin; }
     if (gift.cake) {
       for (const k of ['flavor', 'shape', 'font', 'accent', 'pattern', 'topper', 'greens', 'backdrop', 'music']) if (gift.cake[k]) state[k] = gift.cake[k];
+      if (oldTumpeng) state.shape = 'tumpeng';
+      t = applyTheme(state.occasion, state.shape);
       state.local = localKey(gift.cake.local); // older gifts: no country
       if (gift.cake.age) state.age = gift.cake.age;
       if (!NAME_FONTS[state.font]) state.font = DEFAULT_FONT;

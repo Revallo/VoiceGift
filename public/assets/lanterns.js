@@ -93,6 +93,7 @@ export function lanternSpots(n) {
 export function createLanterns(host, opts = {}) {
   const { wrap, stage, glow, body, layer, toStage, size, setBackdrop } = createStage(host, W, H, 'lanterns');
   glow.style.top = '-120px';
+  body.append(div('l-stars')); // two slow layers of stars behind everything
   const sky = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   sky.setAttribute('viewBox', `0 0 ${W} ${H}`);
   Object.assign(sky.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, overflow: 'visible' });
@@ -198,7 +199,8 @@ export function createLanterns(host, opts = {}) {
         btn.append(
           div('l-line', { height: `${p.len}px` }),
           Object.assign(div('l-body', { top: `${p.len}px`, left: '6px', width: `${p.w}px`, height: `${p.h}px` }), { innerHTML: '<i class="l-motif"></i>' }),
-          div('l-tassel', { top: `${p.len + p.h + 2}px` })
+          div('l-tassel', { top: `${p.len + p.h + 2}px` }),
+          div('l-trail', { top: `${p.len + p.h * 0.7}px` }) // the glow it leaves behind as it rises
         );
         if (!isSpot && names?.[p.i]) {
           const label = div('l-initial');
@@ -221,7 +223,34 @@ export function createLanterns(host, opts = {}) {
     finaleOut(i) { st.out(i, true); },
     setBend() {},
     setDim(level) { body.style.filter = stickers.layer.style.filter = level ? `saturate(${1 - 0.4 * level}) brightness(${1 - 0.4 * level})` : 'none'; },
-    reset() { lanterns.forEach((c) => c.classList.remove('out')); api.lightAll(); }
+    // After the lanterns are gone: a star for every guest, joined into one constellation, with their first names.
+    constellation(people) {
+      stage.querySelector('.constellation')?.remove();
+      const n = Math.min(people.length, MAX);
+      if (!n) return;
+      const box = div('constellation');
+      const rnd = seeded(7 + n);
+      // a gentle wave across the sky, so the line reads as one shape however many guests there are
+      const pts = Array.from({ length: n }, (_, k) => ({ x: 26 + (338 * (k + 0.5)) / n + (rnd() - 0.5) * 8, y: 92 + 46 * Math.sin(k * (n > 12 ? 0.7 : 1.25) + 0.6) + (rnd() - 0.5) * 22 }));
+      const named = n <= 14; // with more, the names are in the list right below
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      line.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      line.setAttribute('aria-hidden', 'true');
+      line.innerHTML = `<polyline class="c-line" pathLength="1" points="${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"/>`;
+      box.append(line);
+      pts.forEach((p, k) => {
+        const star = div('c-star', { left: `${p.x}px`, top: `${p.y}px`, animationDelay: `${(k * 0.14).toFixed(2)}s` });
+        if (named) {
+          const label = div('c-label' + (k % 2 ? ' up' : ''), { animationDelay: `${(0.3 + k * 0.14).toFixed(2)}s` });
+          label.textContent = String(people[k] || '').split(/\s+/)[0];
+          star.append(label);
+        }
+        box.append(star);
+      });
+      box.style.setProperty('--draw', `${(0.6 + n * 0.14).toFixed(2)}s`);
+      stage.append(box);
+    },
+    reset() { stage.querySelector('.constellation')?.remove(); lanterns.forEach((c) => c.classList.remove('out')); api.lightAll(); }
   };
 
   api.setFlavor(opts.flavor || 'vanilla');

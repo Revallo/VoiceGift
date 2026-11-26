@@ -421,6 +421,20 @@ function curvedName() {
   };
 }
 
+// One slice of the cake on a plate, in the cake's own colours (static markup, never user text).
+let sliceId = 0;
+function sliceSvg(c, cream) {
+  const id = `sl${++sliceId}`, frost = cream || c.frost;
+  return `<svg viewBox="0 0 100 90" aria-hidden="true"><defs><clipPath id="${id}"><path d="M12 42L90 38V70L12 66Z"/></clipPath></defs>
+    <ellipse cx="51" cy="76" rx="47" ry="11" fill="#000" opacity=".25"/><ellipse cx="50" cy="74" rx="46" ry="11" fill="#F4F1EC"/><ellipse cx="50" cy="73" rx="37" ry="7.5" fill="#E4DED3"/>
+    <path d="M80 24L90 38V70L80 57Z" fill="${frost}"/><path d="M80 24L90 38V70L80 57Z" fill="#000" opacity=".12"/>
+    <g clip-path="url(#${id})"><rect x="0" y="30" width="100" height="50" fill="${c.b1}"/><rect x="0" y="48" width="100" height="4" fill="${frost}"/><rect x="0" y="52" width="100" height="7" fill="${c.b2}"/><rect x="0" y="59" width="100" height="3.5" fill="${frost}"/></g>
+    <path d="M12 42L90 38V70L12 66Z" fill="none" stroke="#000" stroke-opacity=".08"/>
+    <path d="M12 42L80 24L90 38Z" fill="${frost}"/><path d="M12 42Q50 44 90 38" stroke="${c.top2}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <circle cx="69" cy="30" r="5.4" fill="#E0314B"/><path d="M66 26q3-4 6 0" stroke="#3F8A2E" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="67.4" cy="29" r="1.2" fill="#FFF" opacity=".6"/>
+  </svg>`;
+}
+
 export function createCake(host, opts = {}) {
   const { wrap, stage, glow, body, layer, toStage, size, setBackdrop } = createStage(host, W, H, opts.interactive ? 'interactive' : '');
 
@@ -489,6 +503,11 @@ export function createCake(host, opts = {}) {
   const drawing = createDrawing(body, W, H);
   const candles = [];
   const st = itemStates(candles, glow);
+  // the warm light of the burning candles on the cream: brighter the more candles are lit
+  const warm = div('cake-warm');
+  stage.insertBefore(warm, layer);
+  const glowOnly = st.updateGlow;
+  st.updateGlow = () => { glowOnly(); warm.style.setProperty('--warm', candles.length ? (st.litCount() / candles.length).toFixed(2) : '0'); };
   const stickers = createStickers(stage);
   let candlePage = 0, realCount = 0;
   const pages = div('candle-pages');
@@ -608,7 +627,13 @@ export function createCake(host, opts = {}) {
     finaleOut(i) { st.out(i); },
     setBend(strength) { stage.style.setProperty('--bend', strength ? `skewX(${(-(4 + 24 * strength)).toFixed(1)}deg) scale(${(1 - 0.18 * strength).toFixed(2)}, ${(1 - 0.3 * strength).toFixed(2)})` : 'none'); },
     setDim(level) { body.style.filter = stickers.layer.style.filter = level ? `saturate(${1 - 0.45 * level}) brightness(${1 - 0.38 * level})` : 'none'; },
-    reset() { candles.forEach((c) => c.classList.remove('out')); api.lightAll(); api.setBend(0); }
+    // After the candles are out: the first slice comes out of the cake onto a plate.
+    finaleCut() {
+      stage.querySelector('.cake-slice')?.remove();
+      const cream = accent && ACCENTS[accent]?.color?.startsWith('#') ? ACCENTS[accent].color : null;
+      stage.append(Object.assign(div('cake-slice'), { innerHTML: sliceSvg(FLAVORS[flavor] || FLAVORS.strawberry, cream) }));
+    },
+    reset() { stage.querySelector('.cake-slice')?.remove(); candles.forEach((c) => c.classList.remove('out')); api.lightAll(); api.setBend(0); }
   };
 
   setShape(opts.shape);

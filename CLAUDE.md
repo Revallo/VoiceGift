@@ -30,11 +30,11 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | URL | File | Who |
 | --- | --- | --- |
 | `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/new`, "Open your gift" (paste the link), "Dashboard" (→ `/account`) |
-| `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / tumpeng / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
+| `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
 | `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: "Continue with Google" → their gifts (dashboard links), log out |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content), 3. send it (recipient link + PIN) |
-| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → items light → listen → finale (blow / throw cap / release lanterns) → keepsake → thank everyone |
+| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → 3-2-1, items light → listen → finale (blow + first slice / throw cap / release lanterns → constellation) → keepsake → thank everyone |
 
 Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
 Grad* = graduation, Wed* = wedding; Decorate = cake editor).
@@ -42,7 +42,13 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 ## Occasions (themes)
 - `assets/themes.js` holds every occasion's words (one object per occasion) and `createScene()`, which picks
   the scene. Pages never hard-code "candle" or "birthday": add words there.
-- Scenes: `cake.js` (birthday), `tumpeng.js` (occasion `tumpeng`, an Indonesian birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
+- Only three occasions: birthday, graduation, wedding (decided 2026-11-26: a voice gift is for one person, so Tết / Loy Krathong / tumpeng
+  are not occasions). Each theme has a `scene`; a **kind** (`gift.cake.shape`) may draw another scene, through `BY_SHAPE` in `themes.js`
+  (its own words + decorate lists, `theme(occasion, shape)`): birthday `tumpeng` → `tumpeng.js`, wedding `angpao` → `lixi.js`
+  (red envelopes on a blossom tree), wedding `river` → `krathong.js` (floating lights). Pages check `t.scene`, never the occasion, for
+  scene behaviour. Old gifts with occasion `tumpeng` open as a birthday tumpeng. Changing kind in the decorate step to another scene
+  redraws the gift (`switchScene()` in `create.js`).
+- Scenes: `cake.js`, `tumpeng.js`, `bouquet.js`, `lanterns.js`, `lixi.js`, `krathong.js`, all built on `stage.js`
 - Birthday keeps one logical candle per voice, with at most six visible per group. `setActive()`/`light()` open the matching group; `lightAll()`/`reset()` restore the first group. Keep every voice/index available; do not truncate messages to match the visible candles.
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
@@ -58,7 +64,7 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
   phone's back gesture works. No bottom tab bar: the profile button sits top right.
 - After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`: Sad, Angry, Dangdut, Toa,
-  Horror, Helium, Alien, 8-bit; each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
+  Horror, Helium, Alien, 8-bit, plus 19 local ones with a `local` country, e.g. Abang Bakso, Videoke, Lion dance; the gift's country is listed first (`moodsFor()`); each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
   with Web Audio only, never baked into the WAV; the recipient's player has "🔊 Original voice" to hear it without the mood, and back) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
   **flame shape** (`CANDLES`/`FLAMES`/`FLAME_SHAPES` in `cake.js`; each pick shows only that thing, live). Saved on the message as
   `mood` and `candle {body, flame, shape}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
@@ -72,6 +78,15 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   (`BACKDROPS` with `local`) and lantern motif (`PATTERNS` with `local`), and sets the money / snacks of the bouquet kinds `money` and `snack`
   (`treat` in `bouquet.js` SHAPES; theme words per kind via `theme(occasion, shape)`). A snack bouquet friend picks `flower.snack` (`SNACK_TYPES`).
   Lanterns add `hoian` (finale: down onto a river, not up), `capiz`, `xi`. Never: flags, maps, real banknote designs, royal/religious symbols, brands.
+- Angpao tree and river lights (wedding kinds, 2026-11-26, on trial): the friend picks their envelope design (`ENVELOPE_TYPES`) or the
+  flowers on their light (`KRATHONG_TYPES`), saved as `item {type}` on the message (`cleanItem` in `lib/gifts.js`; scene method `setItemStyle`).
+  Finales: "Open the envelopes" (a gold coin pops out of each), "Float the lights".
+- The opening and finales (2026-11-26, "WOW"): the reveal dims the room around the gift (`.cine`), counts 3-2-1, and each item lights with
+  its friend's first name rising from it (`nameRise`) and a short vibration (`buzz`). While a voice plays, an analyser on the output sets
+  `--lvl` on the speaking item: rings grow with the voice (`voiceRing`) and the flame / flower / lantern swells with it. Cake: warm
+  candlelight on the cream (`.cake-warm`), curling smoke, then `finaleCut()` puts the first slice on a plate. Lanterns: two layers of
+  stars, a glowing trail as they rise, then `constellation()` joins a star per guest (names when 14 or fewer). Bouquet: petals open one
+  by one as a flower lights, and rain down with the caps.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
 

@@ -1,18 +1,17 @@
 # Ide lokal: Indonesia, Thailand, Filipina, Vietnam
 
-Semua ide elemen lokal dari riset 2026-11-25. Status: ⏳ = belum dibangun, ✅ = sudah dibangun. Semuanya masih ⏳.
+Semua ide elemen lokal dari riset 2026-11-25. Status: ⏳ = belum dibangun, ✅ = sudah dibangun, 🧪 = sudah dibangun, sedang dicoba (bisa dihapus kalau tidak cocok).
 Yang sudah ada sebelumnya: tumpeng + lauk, mood Dangdut dan Toa.
 Riset per negara (sumber lengkap): `research_notes/Ide elemen lokal Asia Tenggara/`. Ubah status di sini kalau ada yang dibangun.
 
 ## Checklist singkat
 - ✅ Lentera lokal di `lanterns.js` (2026-11-25): Hội An silk (finale: turun ke sungai lalu hanyut), Capiz shell, Red lantern 囍; motif batik kawung / Thai gold / banig / mai blossoms. Parol sengaja tidak dipakai (simbol Natal, aneh untuk pernikahan)
-- ⏳ Mood baru: Abang Bakso, Tek-tek, Odong-odong, Angklung, Gamelan, Keroncong (ID) · Luk Thung, Mor Lam, Tuk-tuk, Songkran (TH) · Videoke, Jeepney, Taho, Rondalla, Kilig (PH) · Đàn bầu/Bolero, Bánh mì!, Honk, Lân (VN)
+- 🧪 Mood baru (2026-11-26, `MOODS` di `voicefx.js`, punya `local`): Abang Bakso, Tek-tek, Odong-odong, Angklung, Gamelan, Keroncong (ID) · Luk Thung, Mor Lam, Tuk-tuk, Songkran (TH) · Videoke, Jeepney, Taho, Rondalla, Kilig (PH) · Đàn bầu, Bánh mì!, Honk, Lion dance (VN). Mood negara hadiah tampil duluan (`moodsFor`). Musiknya karangan sendiri (bukan lagu asli); Revallo dengar dulu, yang tidak cocok dihapus
 - ✅ Stiker + backdrop + motif per negara (2026-11-25): baris "Local" di langkah decorate (ditebak dari zona waktu HP), stiker negara itu tampil duluan, backdrop Batik kawung / Thai gold / Fiesta / Tết red
 - ⏳ Debut 18 Filipina (18 Candles / 18 Roses / 18 Treasures) di atas kue dan buket
 - ✅ Money bouquet + Snack bouquet (2026-11-25): uang bergaya kartun per negara (warna + simbol + angka, tanpa wajah/lambang), 6 snack viral per negara tanpa merek; teman memilih snack-nya
 - ⏳ Sisa buket wisuda lokal: boneka bertoga, sampaguita, tarpaulin "CONGRATS GRAD!" + Hari Guru 20/11, Hari Perempuan 20/10 & 8/3
-- ⏳ Scene Tết lì xì (VN): tiap suara = satu amplop merah
-- ⏳ Scene Loy Krathong (TH): tiap suara = satu krathong
+- 🧪 Amplop merah dan krathong (2026-11-26) **tidak jadi occasion sendiri** (Revallo: hadiah suara untuk satu orang; Tết = ucapan umum, Loy Krathong = ritual). Sekarang jadi jenis di Wedding: **Angpao tree** (`lixi.js`, tamu menggantung amplop, finale buka amplop) dan **River lights** (`krathong.js`, lampu bunga mengapung, tanpa dupa/kuil). Tumpeng juga pindah jadi jenis di Birthday
 - ⏳ Scene Balikbayan box (PH): tiap suara = satu barang di kardus
 - ⏳ Scene nampan pernikahan: seserahan (ID) / khan maak (TH) / mâm quả (VN)
 - ⏳ Occasion "Baby": tedak siten (ID) / thôi nôi (VN)

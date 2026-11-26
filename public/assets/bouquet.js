@@ -348,7 +348,7 @@ export function createBouquet(host, opts = {}) {
         } else {
           const bloom = div('f-bloom');
           bloom.style.setProperty('--rot', `${p.rot}deg`);
-          for (let k = 0; k < 5; k++) { const pe = div('f-petal'); pe.style.setProperty('--a', `${k * 72}deg`); bloom.append(pe); }
+          for (let k = 0; k < 5; k++) { const pe = div('f-petal'); pe.style.setProperty('--a', `${k * 72}deg`); pe.style.setProperty('--k', k); bloom.append(pe); }
           bloom.append(div('f-core'));
           btn.append(bloom);
         }

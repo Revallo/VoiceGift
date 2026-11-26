@@ -84,6 +84,44 @@ body[data-theme="tumpeng"] {
   --stage-bg: #191B12;
 }
 
+/* Wedding, angpao tree: a deep lacquer-red room, a gold accent */
+body[data-theme="angpao"] {
+  --fg: 248, 234, 226;
+  --bg: #1A0E10;
+  --bg-outer: #110809;
+  --panel: #26151A;
+  --panel-subtle: #1F1115;
+  --panel-hover: #321C22;
+  --text: #F8EAE2;
+  --emerald: #F2C14E;
+  --emerald-light: #FFD877;
+  --emerald-dark: #DDA62E;
+  --emerald-grad: linear-gradient(180deg, #FFD466, #EBB23A);
+  --on-accent: #2E1406;
+  --glow: rgba(242, 120, 80, 0.2);
+  --face: #3A2228;
+  --stage-bg: #221216;
+}
+
+/* Wedding, river lights: a night-river room, a moon-gold accent */
+body[data-theme="river"] {
+  --fg: 230, 236, 250;
+  --bg: #0B1020;
+  --bg-outer: #070A15;
+  --panel: #141B30;
+  --panel-subtle: #10162A;
+  --panel-hover: #1C243D;
+  --text: #E8EDFA;
+  --emerald: #FFD98A;
+  --emerald-light: #FFE7B0;
+  --emerald-dark: #E9BF62;
+  --emerald-grad: linear-gradient(180deg, #FFE3A0, #F2C46A);
+  --on-accent: #2A1E06;
+  --glow: rgba(255, 217, 138, 0.18);
+  --face: #222B45;
+  --stage-bg: #0F1528;
+}
+
 /* Built from the colours above, so they sit on body, where each occasion sets its own */
 body {
   --line: rgba(var(--fg), 0.09);
@@ -1001,6 +1039,60 @@ textarea.input { padding: 14px 16px; min-height: 112px; line-height: 1.55; resiz
 .candle .c-smoke { position: absolute; left: 10px; width: 10px; height: 10px; border-radius: 50%; background: rgba(225, 214, 224, 0.55); filter: blur(2px); opacity: 0; }
 .candle.out .c-smoke { animation: vg-rise 2s ease-out 3 both; }
 .candle.out .c-smoke.s2 { left: 7px; width: 8px; height: 8px; animation-delay: 0.35s; }
+
+/* Angpao tree (wedding kind): every voice is a red envelope on the blossom tree (lixi.js) */
+.stage.lixi .glow { background: radial-gradient(circle, rgba(255, 190, 90, 0.34) 0%, rgba(230, 60, 60, 0.12) 42%, rgba(0, 0, 0, 0) 70%); }
+.lx-name { color: #FFE08A; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
+.lx-fairy { fill: #FFE6A3; opacity: 0.55; animation: vg-twinkle 1.6s ease-in-out infinite alternate; }
+.lx-fairy:nth-child(3n) { animation-delay: -0.6s; }
+.envelope { position: absolute; padding: 0; margin: 0; border: 0; background: transparent; cursor: default; transform-origin: 50% 0; animation: vg-swing var(--swing, 3s) ease-in-out var(--swing-at, 0s) infinite alternate; -webkit-tap-highlight-color: transparent; }
+.envelope .e-thread { position: absolute; left: 50%; top: 0; width: 1.2px; margin-left: -0.6px; background: #E8B53A; opacity: 0.8; }
+.envelope .e-body { position: absolute; left: 0; right: 0; transform-origin: 50% 0; filter: brightness(0.45) saturate(0.6); transition: filter 0.6s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.envelope .e-svg, .mini-envelope .e-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35)); }
+.envelope.lit .e-body { filter: none; }
+.envelope.lit .e-svg { filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 7px color-mix(in srgb, var(--c, #D42A2A) 55%, transparent)); }
+.envelope.spot .e-body { border: 1.5px dashed rgba(255, 255, 255, 0.35); border-radius: 4px; background: rgba(255, 255, 255, 0.04); filter: none; }
+.stage.interactive .envelope.lit { cursor: pointer; }
+.envelope.active .e-body { transform: scale(1.16); }
+.envelope.speaking .e-body { animation: vg-env-talk 0.3s ease-in-out infinite alternate; }
+.envelope.mine .e-body { outline: 2px solid var(--emerald-light); outline-offset: 4px; border-radius: 5px; }
+.envelope .e-coin { position: absolute; left: 50%; top: 30%; width: 60%; aspect-ratio: 1; margin-left: -30%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #FFF3B0, #F2C14E 55%, #B9852A); box-shadow: 0 0 10px 3px rgba(255, 210, 90, 0.6); opacity: 0; }
+.envelope.out .e-body { animation: vg-env-open 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) var(--open-at, 0s) both; }
+.envelope.out .e-coin { animation: vg-coin-pop 1.4s cubic-bezier(0.2, 1.2, 0.4, 1) var(--open-at, 0s) both; }
+.mini-envelope { flex: 0 0 auto; }
+@keyframes vg-env-talk { from { transform: scale(1.14) rotate(-5deg); } to { transform: scale(1.2) rotate(5deg); } }
+@keyframes vg-env-open { 0% { transform: none; } 40% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(1.05); } }
+@keyframes vg-coin-pop { 0% { transform: translateY(0) scale(0.4); opacity: 0; } 30% { opacity: 1; } 60% { transform: translateY(-34px) scale(1); opacity: 1; } 100% { transform: translateY(-46px) scale(0.9); opacity: 0; } }
+@keyframes vg-twinkle { from { opacity: 0.25; } to { opacity: 0.9; } }
+
+/* River lights (wedding kind): every voice is a floating light on the night river (krathong.js) */
+.stage.krathongs .glow { background: radial-gradient(circle, rgba(255, 210, 130, 0.28) 0%, rgba(90, 120, 220, 0.12) 45%, rgba(0, 0, 0, 0) 70%); }
+.kt-name { color: #FFEBB8; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
+.stage.krathongs .kt-reflect { animation: vg-shimmer 3s ease-in-out infinite alternate; }
+.stage.krathongs .kt-star { animation: vg-twinkle 2.4s ease-in-out infinite alternate; }
+.stage.krathongs .kt-far { animation: vg-far-rise 9s linear infinite; }
+.krathong { position: absolute; padding: 0; margin: 0; border: 0; background: transparent; cursor: default; animation: vg-bob var(--bob, 3s) ease-in-out var(--bob-at, 0s) infinite alternate; -webkit-tap-highlight-color: transparent; }
+.mini-krathong { position: relative; }
+.krathong .k-body { position: absolute; inset: 0; filter: brightness(0.5) saturate(0.6); transition: filter 0.6s ease, transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.k-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.4)); }
+.k-flame { position: absolute; left: 50%; top: 9%; width: 10%; height: 15%; margin-left: -5%; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 72%, #FFFFFF 0%, #FFF1B8 30%, #F6B93B 65%, #FF7A3D 100%); transform-origin: 50% 100%; opacity: 0; transition: opacity 0.4s; }
+.krathong .k-glow { position: absolute; left: 0; right: 0; bottom: -10%; height: 40%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 200, 110, 0.5), rgba(255, 200, 110, 0)); opacity: 0; transition: opacity 0.6s; }
+.krathong.lit .k-body { filter: none; }
+.krathong.lit .k-flame, .mini-krathong .k-flame { opacity: 1; animation: vg-flicker 1.1s ease-in-out infinite alternate; box-shadow: 0 0 8px 3px rgba(246, 185, 59, 0.55); }
+.krathong.lit .k-glow { opacity: 1; }
+.krathong.spot .k-body { filter: none; }
+.krathong.spot .k-body::after { content: ''; position: absolute; left: 8%; right: 8%; bottom: 10%; height: 36%; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.04); }
+.krathong.spot .k-flame { display: none; }
+.stage.interactive .krathong.lit { cursor: pointer; }
+.krathong.active .k-body { transform: translateY(-5px) scale(1.15); }
+.krathong.speaking .k-body { animation: vg-dish-talk 0.4s ease-in-out infinite alternate; }
+.krathong.mine::before { content: ''; position: absolute; inset: -6px; border: 2px solid var(--emerald-light); border-radius: 50%; z-index: 1; }
+.krathong.out { animation: vg-float-away 7s cubic-bezier(0.35, 0, 0.6, 1) var(--away-at, 0s) both; }
+.mini-krathong { flex: 0 0 auto; }
+@keyframes vg-bob { from { translate: 0 0; rotate: -2deg; } to { translate: 0 -3px; rotate: 2deg; } }
+@keyframes vg-shimmer { from { opacity: 0.55; } to { opacity: 1; } }
+@keyframes vg-far-rise { from { transform: translateY(0); opacity: 0.9; } to { transform: translateY(-40px); opacity: 0.2; } }
+@keyframes vg-float-away { 0% { transform: none; } 100% { transform: translate(var(--away-x, 300px), var(--away-y, -100px)) scale(0.3); opacity: 0; } }
 
 /* bouquet: every voice is a flower */
 .flower { position: absolute; padding: 0; margin: 0; border: 0; border-radius: 50%; background: transparent; cursor: default; -webkit-tap-highlight-color: transparent; }
@@ -2086,6 +2178,9 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .picks:has(> .pick:nth-child(4)) .pick { padding-inline: 2px; }
 .picks:has(> .pick:nth-child(4)) .pick b { font-size: 0.86rem; }
 .picks:has(> .pick:nth-child(4)) .pick small { font-size: 0.66rem; white-space: nowrap; }
+/* five or more: back to rows of three, with room for the words */
+.picks:has(> .pick:nth-child(5)) { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.picks:has(> .pick:nth-child(5)) .pick small { white-space: normal; line-height: 1.2; }
 .pick { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 12px 6px 10px; border-radius: 18px; cursor: pointer; background: var(--panel); border: 1.5px solid var(--line); color: var(--text); font: inherit; transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease; }
 .pick:active { transform: scale(0.97); }
 .pick .em { font-size: 1.7rem; line-height: 1; }
@@ -2292,7 +2387,7 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .fx-disco { top: -30%; width: 46px; height: 150%; background: linear-gradient(180deg, hsl(var(--h) 95% 65% / 0.55), transparent 80%); mix-blend-mode: screen; transform-origin: 50% 0; animation: vg-disco 0.9s ease-in-out infinite alternate; filter: blur(2px); }
 .fx-emoji { font-size: 34px; animation: vg-dance 0.45s ease-in-out infinite alternate; }
 .fx-emoji.r { animation-delay: -0.22s; }
-.stage-wrap.mood-dangdut .candle.lit, .stage-wrap.mood-dangdut .flower.lit, .stage-wrap.mood-dangdut .lantern.lit, .stage-wrap.mood-dangdut .dish.lit { animation: vg-beat 0.454s ease-in-out infinite; }
+.stage-wrap.mood-dangdut .candle.lit, .stage-wrap.mood-dangdut .flower.lit, .stage-wrap.mood-dangdut .lantern.lit, .stage-wrap.mood-dangdut .dish.lit, .stage-wrap.mood-dangdut .envelope.lit, .stage-wrap.mood-dangdut .krathong.lit { animation: vg-beat 0.454s ease-in-out infinite; }
 @keyframes vg-disco { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
 @keyframes vg-dance { from { transform: translateY(0) rotate(-10deg); } to { transform: translateY(-8px) rotate(10deg); } }
 @keyframes vg-beat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
@@ -2309,7 +2404,7 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 @keyframes vg-ghost { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 0.75; } 50% { translate: 230px -24px; } 85% { opacity: 0.6; } 100% { translate: 470px 6px; opacity: 0; } }
 /* Helium: balloons rise, the speaking item floats up */
 .fx-balloon { bottom: -50px; font-size: 30px; animation: vg-balloon 3.2s ease-in both; }
-.stage-wrap.mood-helium .candle.speaking, .stage-wrap.mood-helium .flower.speaking, .stage-wrap.mood-helium .lantern.speaking, .stage-wrap.mood-helium .dish.speaking { translate: 0 -16px; transition: translate 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.stage-wrap.mood-helium .candle.speaking, .stage-wrap.mood-helium .flower.speaking, .stage-wrap.mood-helium .lantern.speaking, .stage-wrap.mood-helium .dish.speaking, .stage-wrap.mood-helium .envelope.speaking, .stage-wrap.mood-helium .krathong.speaking { translate: 0 -16px; transition: translate 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
 @keyframes vg-balloon { 0% { transform: translate(0, 0) rotate(-6deg); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(var(--sway, 0px), -420px) rotate(8deg); opacity: 0.9; } }
 /* Alien: a UFO flies in and beams the gift */
 .fx-ufo { left: calc(50% - 22px); top: 6px; font-size: 44px; animation: vg-ufo 1s cubic-bezier(0.3, 1.3, 0.5, 1) both, vg-hover 0.8s ease-in-out 1s infinite alternate; }
@@ -2323,6 +2418,34 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .stage-wrap.mood-arcade .stage { filter: contrast(1.25) saturate(1.5); }
 @keyframes vg-coin { 0% { transform: translateY(20px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-16px); opacity: 0; } }
 @keyframes vg-fadein { from { opacity: 0; } to { opacity: 1; } }
+/* Local moods (voicefx.js): a few shared pieces */
+.fx-tint { inset: 0; background: var(--tint); animation: vg-fadein 0.8s ease-out both; }
+.fx-corner { left: 12px; top: 10px; font-size: 38px; }
+.fx-corner.r { left: auto; right: 12px; animation-delay: -0.4s; }
+.fx-corner.big { font-size: 54px; }
+.fx-corner.bob { animation: vg-dance 0.45s ease-in-out infinite alternate; }
+.fx-corner.shake { animation: vg-shake 0.12s linear infinite; }
+.fx-corner.sway { transform-origin: 50% 100%; animation: vg-sway-big 0.5s ease-in-out infinite alternate; }
+.fx-word { left: 0; right: 0; top: 13%; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; color: #FFF; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45), 0 0 14px rgba(0, 0, 0, 0.35); animation: vg-word 1.4s cubic-bezier(0.3, 1.5, 0.5, 1) var(--at, 0s) both; }
+.fx-rise { bottom: -30px; font-size: 22px; color: #FFF; opacity: 0; text-shadow: 0 0 8px rgba(0, 0, 0, 0.3); animation: vg-rise-up var(--dur, 3s) ease-out var(--at, 0s) infinite; }
+.fx-across { top: var(--y, 60%); right: -70px; font-size: 42px; animation: vg-across var(--dur, 3s) linear var(--at, 0s) both; }
+.fx-wave.mid { left: calc(50% - 15px); top: 45%; }
+.fx-rain.drop { width: 3px; height: 12px; border-radius: 3px; background: linear-gradient(180deg, transparent, rgba(150, 215, 255, 0.95)); }
+.fx-rain.confetti { width: 7px; height: 7px; border-radius: 1px; background: hsl(var(--h) 90% 55%); }
+.fx-splash { font-size: 40px; opacity: 0; animation: vg-word 0.9s cubic-bezier(0.3, 1.5, 0.5, 1) var(--at, 0s) both; }
+.fx-lyrics { left: 10%; right: 10%; bottom: 10px; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+.fx-lyrics::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #FF5FA2, #5FC8FF); transform-origin: 0 50%; animation: vg-lyrics var(--voice) linear var(--lead) both; }
+.fx-score { left: 0; right: 0; top: 30%; text-align: center; font-family: ui-monospace, monospace; font-weight: 800; font-size: 40px; color: #FFE45C; text-shadow: 3px 3px 0 #C0306A; opacity: 0; animation: vg-word 1.2s cubic-bezier(0.3, 1.5, 0.5, 1) calc(var(--lead) + var(--voice) + 0.85s) both; }
+.fx-moon { right: 18px; top: 12px; font-size: 44px; filter: drop-shadow(0 0 16px rgba(255, 240, 190, 0.8)); animation: vg-fadein 1.5s ease-out both; }
+.stage-wrap.mood-keroncong .scenebody, .stage-wrap.mood-danbau .scenebody { filter: sepia(0.45) saturate(0.8) !important; }
+.stage-wrap.mood-tuktuk .stage, .stage-wrap.mood-jeepney .stage, .stage-wrap.mood-honk .stage { animation: vg-shake 0.14s linear 4; }
+.stage-wrap:is(.mood-odong, .mood-lukthung, .mood-morlam, .mood-lion, .mood-keroncong, .mood-rondalla) :is(.candle, .flower, .lantern, .dish, .envelope, .krathong).lit { animation: vg-beat 0.46s ease-in-out infinite; }
+.stage-wrap.mood-kilig :is(.candle, .flower, .lantern, .dish, .envelope, .krathong).speaking { animation: vg-sway 0.35s ease-in-out infinite alternate; }
+@keyframes vg-word { 0% { transform: scale(0.3); opacity: 0; } 25% { transform: scale(1.12); opacity: 1; } 75% { transform: scale(1); opacity: 1; } 100% { transform: scale(1) translateY(-8px); opacity: 0; } }
+@keyframes vg-rise-up { 0% { transform: translateY(0) scale(0.7); opacity: 0; } 15% { opacity: 0.95; } 100% { transform: translateY(-300px) translateX(14px) scale(1.15); opacity: 0; } }
+@keyframes vg-across { from { transform: translateX(0); } to { transform: translateX(-540px); } }
+@keyframes vg-sway-big { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+@keyframes vg-lyrics { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 /* The "make it yours" step on the friend's page: moods, candles, flames */
 .twist { display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid var(--line-strong); border-radius: 22px; background: var(--panel); }
@@ -2423,3 +2546,115 @@ h1, .h1, .calm-title, .hero-balance-val, .shout, .sheet-title, .choice-text b, .
 .candle-pages button:disabled { opacity: .4; cursor: default; }
 .candle-pages button:focus-visible { outline: 2px solid var(--emerald-light); outline-offset: 2px; }
 .candle-page-label { text-align: center; color: var(--soft); font-size: 12px; line-height: 1.4; }
+
+/* ---------- Local touches (local.js): money & snack bouquets, local lanterns, the river ---------- */
+/* Money and snack bouquets: each voice is a fan of notes or a snack pack on a stick, instead of a flower */
+.flower.treat { border-radius: 12px; }
+.flower.treat .t-art { position: absolute; inset: -6% 2% -16%; transform: rotate(var(--rot, 0deg)) scale(0.5); transform-origin: 50% 85%; filter: saturate(0.3) brightness(0.6) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3)); transition: transform 0.55s cubic-bezier(0.3, 1.6, 0.5, 1), filter 0.5s ease; }
+.stage[data-treat="money"] .flower.treat .t-art { inset: -16% -14% -12%; }
+.flower.treat.lit .t-art { transform: rotate(var(--rot, 0deg)) scale(1); filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35)); }
+.flower.treat.active .t-art { transform: rotate(var(--rot, 0deg)) scale(1.16); filter: drop-shadow(0 0 10px var(--c)); }
+.flower.treat.speaking .t-art { animation: vg-treat-sway 0.5s ease-in-out infinite alternate; }
+/* an empty place (no voice yet): the snack / notes faded and small, like a closed bud */
+.flower.treat.spot .t-art { transform: rotate(var(--rot, 0deg)) scale(0.62); filter: saturate(0.25) brightness(0.75); opacity: 0.55; }
+.flower.treat.mine::before { border-radius: 14px; }
+@keyframes vg-treat-sway { 0% { transform: rotate(calc(var(--rot, 0deg) - 7deg)) scale(1.16); } 100% { transform: rotate(calc(var(--rot, 0deg) + 7deg)) scale(1.22); } }
+.mini-snack { position: relative; flex: 0 0 auto; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3)); }
+
+/* Hội An silk lantern: round, ribbed, narrow gold caps and a long red tassel */
+.stage.lanterns[data-shape="hoian"] .l-body { border-radius: 50% / 46%; }
+.stage.lanterns[data-shape="hoian"] .l-body::before, .stage.lanterns[data-shape="hoian"] .l-body::after { left: 32%; width: 36%; height: 4px; background: #B8862E; }
+.stage.lanterns[data-shape="hoian"] .l-tassel { width: 3px; height: 15px; margin-left: -1.5px; background: #9E2F25; }
+.stage.lanterns[data-shape="hoian"] .lantern.lit .l-tassel { background: #D2442F; }
+/* Capiz: a pearly ball of small translucent shell squares, the friend's colour shining through */
+.stage.lanterns[data-shape="capiz"] .l-body { border-radius: 50%; background: repeating-linear-gradient(0deg, rgba(110, 80, 50, 0.38) 0 0.8px, transparent 0.8px 7px), repeating-linear-gradient(90deg, rgba(110, 80, 50, 0.38) 0 0.8px, transparent 0.8px 7px), radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.6), transparent 55%) 0 0 / 7px 7px, color-mix(in srgb, var(--c) 40%, #EFE6D6); }
+.stage.lanterns[data-shape="capiz"] .lantern.lit .l-body { background: repeating-linear-gradient(0deg, rgba(150, 110, 60, 0.32) 0 0.8px, transparent 0.8px 7px), repeating-linear-gradient(90deg, rgba(150, 110, 60, 0.32) 0 0.8px, transparent 0.8px 7px), radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.7), transparent 55%) 0 0 / 7px 7px, radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 64%), color-mix(in srgb, var(--c) 50%, #FFF6E6); }
+/* Red lantern: lucky red with wide gold caps, a faint gold 囍; the friend's colour is the tassel */
+.stage.lanterns[data-shape="xi"] .l-body { border-radius: 50% / 44%; container-type: size; background: linear-gradient(90deg, rgba(0, 0, 0, 0.3), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.3)), repeating-linear-gradient(90deg, transparent 0 6px, rgba(0, 0, 0, 0.12) 6px 7px), #C8202B; }
+.stage.lanterns[data-shape="xi"] .lantern.lit .l-body { background: radial-gradient(ellipse at 50% 58%, rgba(255, 214, 120, 0.75), rgba(255, 214, 120, 0) 62%), repeating-linear-gradient(90deg, transparent 0 6px, rgba(0, 0, 0, 0.08) 6px 7px), #E0262F; box-shadow: 0 0 16px 3px rgba(255, 80, 60, 0.55), 0 0 42px 12px rgba(255, 80, 60, 0.2); }
+.stage.lanterns[data-shape="xi"] .l-body::before, .stage.lanterns[data-shape="xi"] .l-body::after { left: 14%; width: 72%; height: 6px; background: #E7B32E; }
+.stage.lanterns[data-shape="xi"] .l-motif::after { content: '囍'; position: absolute; inset: 0; display: grid; place-items: center; color: #F6C445; opacity: 0.3; font: 700 62cqh/1 serif; }
+.stage.lanterns[data-shape="xi"] .l-initial { color: #FFE7A0; text-shadow: 0 1px 2px #5A0A10; }
+.stage.lanterns[data-shape="xi"] .l-tassel { width: 4px; height: 13px; margin-left: -2px; background: var(--c); }
+
+/* Local lantern motifs */
+.stage[data-motif="kawung"] .l-motif { background: radial-gradient(ellipse 1.5px 2.5px at 50% 30%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px, radial-gradient(ellipse 1.5px 2.5px at 50% 70%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px, radial-gradient(ellipse 2.5px 1.5px at 30% 50%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px, radial-gradient(ellipse 2.5px 1.5px at 70% 50%, rgba(70, 38, 16, 0.5) 92%, transparent) 0 0 / 11px 11px; }
+.stage[data-motif="laithai"] .l-motif { background: repeating-linear-gradient(45deg, rgba(231, 179, 46, 0.65) 0 1px, transparent 1px 5px), repeating-linear-gradient(-45deg, rgba(231, 179, 46, 0.65) 0 1px, transparent 1px 5px); }
+.stage[data-motif="banig"] .l-motif { background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.34) 0 2.5px, transparent 2.5px 5px), repeating-linear-gradient(90deg, rgba(110, 30, 70, 0.26) 0 2.5px, transparent 2.5px 5px); }
+.stage[data-motif="blossom"] .l-motif { background: radial-gradient(circle, #FFF6C8 0 0.9px, transparent 1.2px) 0 0 / 11px 11px, radial-gradient(circle at 50% 28%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 28% 52%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 72% 52%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 38% 74%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px, radial-gradient(circle at 62% 74%, rgba(255, 206, 60, 0.85) 0 1.3px, transparent 1.7px) 0 0 / 11px 11px; }
+
+/* The river: Hội An lanterns come down onto it and drift away with the current */
+.lanterns .river .rv-wave { animation: vg-ripple 4s ease-in-out infinite alternate; }
+.stage.lanterns[data-shape="hoian"] .lantern.out { animation: vg-river 7.5s cubic-bezier(0.35, 0, 0.6, 1) var(--river-at, 0s) both; }
+@keyframes vg-ripple { from { transform: translateX(-6px); } to { transform: translateX(6px); } }
+@keyframes vg-river {
+  0% { transform: none; }
+  30% { transform: translate(var(--river-dx, 0px), var(--river-dy, 120px)) scale(0.62); }
+  38% { transform: translate(var(--river-dx, 0px), calc(var(--river-dy, 120px) - 3px)) scale(0.62); }
+  100% { transform: translate(calc(var(--river-dx, 0px) + 160px), calc(var(--river-dy, 120px) + 4px)) scale(0.46); opacity: 0; }
+}
+
+/* The sticker tray: the country's stickers come first, then a thin line */
+.sticker-sep { flex: 0 0 auto; width: 1px; align-self: stretch; margin: 8px 4px; background: var(--line-strong); }
+
+/* ---------- The WOW layer (2026-11-26) ---------- */
+/* 1. The opening: the room goes dark around the gift, a 3-2-1, and each friend's name rises from their item */
+.stage-wrap.cine, .reveal-page #cake .stage-wrap.cine { z-index: 5; box-shadow: 0 0 0 100vmax rgba(4, 3, 8, 0.55), 0 0 60px rgba(0, 0, 0, 0.6); animation: vg-cine-in 1.4s cubic-bezier(0.2, 0.8, 0.3, 1) both; transition: box-shadow 1s ease; }
+.stage-wrap.cine-flash::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 55%, rgba(255, 236, 190, 0.55), rgba(255, 236, 190, 0) 65%); animation: vg-cine-flash 1.4s ease-out both; z-index: 7; }
+.cine-count { position: absolute; inset: 0; display: grid; place-items: center; z-index: 8; pointer-events: none; background: radial-gradient(circle at 50% 50%, rgba(8, 6, 12, 0.78), rgba(8, 6, 12, 0.5) 70%); font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 120px; line-height: 1; color: #FFFFFF; -webkit-text-stroke: 1.5px rgba(255, 246, 224, 0.6); text-shadow: 0 0 34px rgba(255, 200, 100, 0.8), 0 4px 0 rgba(0, 0, 0, 0.35); animation: vg-count 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.cine-name { position: absolute; z-index: 8; transform: translate(-50%, -100%); pointer-events: none; white-space: nowrap; padding: 3px 9px; border-radius: 999px; background: rgba(10, 8, 14, 0.62); border: 1px solid color-mix(in srgb, var(--c) 70%, transparent); color: #FFF; font-weight: 700; font-size: 12.5px; box-shadow: 0 0 14px color-mix(in srgb, var(--c) 45%, transparent); animation: vg-name-rise 1.7s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.cine-burst { position: absolute; z-index: 7; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; pointer-events: none; border: 2px solid var(--c); box-shadow: 0 0 18px var(--c); animation: vg-burst 0.9s ease-out both; }
+@keyframes vg-cine-in { from { transform: scale(0.93); filter: brightness(0.4); } to { transform: none; filter: none; } }
+@keyframes vg-cine-flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes vg-count { 0% { transform: scale(1.7); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(0.92); opacity: 0.2; } }
+@keyframes vg-name-rise { 0% { opacity: 0; margin-top: 6px; } 18% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; margin-top: -34px; } }
+@keyframes vg-burst { from { transform: scale(0.3); opacity: 1; } to { transform: scale(4.5); opacity: 0; } }
+
+/* 5. The speaking item breathes with the voice: --lvl (0..1) is set on it while it plays */
+.vring { position: absolute; left: 50%; top: 46%; width: max(56px, 125%); aspect-ratio: 1; transform: translate(-50%, -50%); pointer-events: none; z-index: 3; }
+.vring i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--c, #FFD877); box-shadow: 0 0 14px color-mix(in srgb, var(--c, #FFD877) 65%, transparent), inset 0 0 10px color-mix(in srgb, var(--c, #FFD877) 35%, transparent); transform: scale(calc(0.55 + var(--lvl, 0) * 0.85)); opacity: calc(0.12 + var(--lvl, 0) * 1.1); transition: transform 0.08s linear, opacity 0.08s linear; }
+.vring i + i { border-width: 1.5px; transform: scale(calc(0.7 + var(--lvl, 0) * 1.7)); opacity: calc(var(--lvl, 0) * 0.7); }
+.candle .vring { top: 10px; width: 64px; }
+.lantern .vring { top: 62%; }
+.candle.speaking .c-flamewrap { scale: calc(1 + var(--lvl, 0) * 0.55); }
+.lantern.speaking .l-body { box-shadow: 0 0 calc(16px + var(--lvl, 0) * 30px) calc(3px + var(--lvl, 0) * 8px) color-mix(in srgb, var(--c) 70%, transparent); }
+.flower.speaking .f-bloom { scale: calc(1 + var(--lvl, 0) * 0.22); }
+.dish.speaking .d-food, .envelope.speaking .e-body, .krathong.speaking .k-body { scale: calc(1 + var(--lvl, 0) * 0.18); }
+
+/* 2. The cake: candlelight on the cream, curling smoke, the first slice */
+.cake-warm { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: var(--warm, 0); transition: opacity 0.7s ease; background: radial-gradient(58% 36% at 50% 40%, rgba(255, 196, 110, 0.42), rgba(255, 150, 70, 0.12) 55%, rgba(0, 0, 0, 0) 78%); animation: vg-warm 1.8s ease-in-out infinite alternate; }
+@keyframes vg-warm { from { filter: brightness(0.85); transform: scale(1); } to { filter: brightness(1.15); transform: scale(1.03); } }
+.candle.out .c-smoke { animation: vg-wisp 2.6s ease-out 2 both; }
+.candle.out .c-smoke.s2 { animation-delay: 0.45s; }
+@keyframes vg-wisp { 0% { transform: translate(0, 0) scale(0.6); opacity: 0; } 15% { opacity: 0.75; } 40% { transform: translate(5px, -22px) scale(1.2); } 70% { transform: translate(-5px, -44px) scale(1.8); opacity: 0.35; } 100% { transform: translate(4px, -64px) scale(2.4); opacity: 0; } }
+.cake-slice { position: absolute; left: 268px; top: 188px; width: 112px; z-index: 4; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35)); animation: vg-slice 1.2s cubic-bezier(0.25, 1.25, 0.45, 1) both; }
+.cake-slice svg { display: block; width: 100%; height: auto; }
+@keyframes vg-slice { 0% { transform: translate(-110px, -40px) scale(0.45) rotate(-14deg); opacity: 0; } 25% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+
+/* 3. Lanterns: a deep sky, a glowing trail as they rise, then the guests' names as a constellation */
+.l-stars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.l-stars::before, .l-stars::after { content: ''; position: absolute; inset: -20% 0 0; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 1px, transparent 1.6px), radial-gradient(circle, rgba(255, 240, 210, 0.6) 0 0.8px, transparent 1.3px); background-size: 97px 83px, 61px 53px; background-position: 13px 7px, 41px 29px; opacity: 0.45; animation: vg-stars 60s linear infinite; }
+.l-stars::after { background-size: 151px 127px, 113px 97px; background-position: 70px 40px, 5px 60px; opacity: 0.3; animation-duration: 110s; animation-direction: reverse; }
+@keyframes vg-stars { from { transform: translateY(0); } to { transform: translateY(20%); } }
+.lantern .l-trail { position: absolute; left: 50%; width: 30%; margin-left: -15%; height: 70px; border-radius: 50%; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 75%, transparent), transparent); filter: blur(4px); opacity: 0; pointer-events: none; }
+.lantern.out .l-trail { opacity: 0.85; transition: opacity 0.8s ease; }
+.constellation { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.constellation svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.constellation .c-line { fill: none; stroke: rgba(255, 236, 190, 0.45); stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 1; animation: vg-draw var(--draw, 3s) ease-in-out 0.3s forwards; }
+.c-star { position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: #FFF8E2; box-shadow: 0 0 8px 3px rgba(255, 226, 150, 0.75); opacity: 0; animation: vg-star-in 0.7s ease-out both, vg-twinkle 2.2s ease-in-out 1s infinite alternate; }
+.c-label { position: absolute; left: 50%; top: 9px; transform: translateX(-50%); white-space: nowrap; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; color: rgba(255, 245, 220, 0.85); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); opacity: 0; animation: vg-fadein 0.8s ease-out both; }
+.c-label.up { top: auto; bottom: 9px; }
+@keyframes vg-draw { to { stroke-dashoffset: 0; } }
+@keyframes vg-star-in { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.8); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+/* 4. The bouquet: petals open one by one as a flower lights, and rain down with the caps */
+.flower .f-petal { transform: rotate(var(--a)) translateY(-18%) scale(0.5, 0.3); transition: transform 0.8s cubic-bezier(0.3, 1.6, 0.5, 1) calc(var(--k, 0) * 70ms); }
+.flower.lit .f-petal, .flower.spot .f-petal { transform: rotate(var(--a)) translateY(-52%); }
+.flower.lit .f-core { animation: vg-core-pop 0.7s cubic-bezier(0.3, 1.8, 0.5, 1) 0.15s both; }
+@keyframes vg-core-pop { 0% { transform: scale(0.4); } 100% { transform: none; } }
+.confetti .petal { width: 13px; height: 9px; border-radius: 70% 0 70% 0; opacity: 0.95; animation-name: vg-petal-fall; animation-timing-function: ease-in; }
+@keyframes vg-petal-fall { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 50% { transform: translate(var(--sway, 30px), 50vh) rotate(260deg); } 100% { transform: translate(calc(var(--sway, 30px) * -0.4), 105vh) rotate(560deg); opacity: 0.85; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-wrap.cine, .cine-name, .cine-burst, .cake-warm, .l-stars::before, .l-stars::after { animation: none; }
+}

@@ -8,7 +8,7 @@ import { loadGift, loadMessages, createMessage, findMessage, updateMessage, dele
 import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
 import { requireUser } from '../lib/accounts.js';
 import { LIMITS, countRecording } from '../lib/limits.js';
-import { cleanFlower, cleanLantern, cleanDish } from '../lib/gifts.js';
+import { cleanFlower, cleanLantern, cleanDish, cleanItem } from '../lib/gifts.js';
 
 async function authorized(body) {
   if (!isSlug(body.slug)) throw new HttpError(404, 'Gift not found');
@@ -100,6 +100,7 @@ export default route({
     msg.flower = cleanFlower(body.flower);
     msg.lantern = cleanLantern(body.lantern);
     msg.dish = cleanDish(body.dish);
+    msg.item = cleanItem(body.item);
     msg.sentAt = new Date().toISOString();
     await updateMessage(path, msg);
     send(res, 200, { ok: true, edited: msg.edited, corrections: msg.corrections });

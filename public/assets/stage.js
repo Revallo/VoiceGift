@@ -61,7 +61,16 @@ export const BACKDROPS = {
   garden: { label: 'Garden', bg: 'linear-gradient(180deg, #2F4F63 0 62%, #35583F 62% 100%)' },
   sky: { label: 'Blue sky', bg: 'radial-gradient(ellipse 70px 24px at 22% 22%, #FFFFFF33 98%, transparent), radial-gradient(ellipse 90px 28px at 78% 34%, #FFFFFF2B 98%, transparent), linear-gradient(180deg, #27507A, #41708F)' },
   sunset: { label: 'Sunset', bg: 'linear-gradient(180deg, #342B60, #84455F 62%, #A8743F)' },
-  night: { label: 'Starry night', bg: 'radial-gradient(circle at 16% 18%, #FFF 0 1.5px, transparent 2px), radial-gradient(circle at 68% 12%, #FFF 0 2px, transparent 2.5px), radial-gradient(circle at 88% 42%, #FFF 0 1.5px, transparent 2px), radial-gradient(circle at 36% 38%, #FFF 0 1.5px, transparent 2px), linear-gradient(180deg, #16215A, #3B3F8F)' }
+  night: { label: 'Starry night', bg: 'radial-gradient(circle at 16% 18%, #FFF 0 1.5px, transparent 2px), radial-gradient(circle at 68% 12%, #FFF 0 2px, transparent 2.5px), radial-gradient(circle at 88% 42%, #FFF 0 1.5px, transparent 2px), radial-gradient(circle at 36% 38%, #FFF 0 1.5px, transparent 2px), linear-gradient(180deg, #16215A, #3B3F8F)' },
+  // Local backdrops, shown only for their country (gift.cake.local). Muted, so the gift stays the star.
+  // Batik kawung: four oval "palm fruit" petals around a dot, in soga brown.
+  kawung: { label: 'Batik kawung', local: 'id', bg: 'radial-gradient(circle at 50% 50%, #9A7448 0 2px, transparent 2.6px) 0 0 / 40px 40px, radial-gradient(ellipse 4.6px 7.6px at 50% 29%, #4E3826 94%, transparent) 0 0 / 40px 40px, radial-gradient(ellipse 4.6px 7.6px at 50% 71%, #4E3826 94%, transparent) 0 0 / 40px 40px, radial-gradient(ellipse 7.6px 4.6px at 29% 50%, #4E3826 94%, transparent) 0 0 / 40px 40px, radial-gradient(ellipse 7.6px 4.6px at 71% 50%, #4E3826 94%, transparent) 0 0 / 40px 40px, radial-gradient(circle at 0 0, #6B4E33 0 1.6px, transparent 2.2px) 0 0 / 40px 40px, linear-gradient(180deg, #33241A, #271B13)' },
+  // Thai gold: a fine gold lattice on deep plum, like lacquer-and-gold work.
+  thaigold: { label: 'Thai gold', local: 'th', bg: 'radial-gradient(circle, #E7B32E55 0 1.6px, transparent 2.2px) 0 0 / 22px 22px, repeating-linear-gradient(45deg, #E7B32E22 0 1px, transparent 1px 15.5px), repeating-linear-gradient(-45deg, #E7B32E22 0 1px, transparent 1px 15.5px), linear-gradient(180deg, #3A1D3E, #26142C)' },
+  // Fiesta: a string of banderitas (paper bunting) across the top of the night.
+  fiesta: { label: 'Fiesta', local: 'ph', bg: 'conic-gradient(from 150deg at 50% 0, #E85D75 0 60deg, transparent 0) 0 6px / 36px 20px repeat-x, conic-gradient(from 150deg at 50% 0, #F4C531 0 60deg, transparent 0) 12px 6px / 36px 20px repeat-x, conic-gradient(from 150deg at 50% 0, #4FB3D9 0 60deg, transparent 0) 24px 6px / 36px 20px repeat-x, linear-gradient(#FFFFFF55, #FFFFFF55) 0 5px / 100% 1px no-repeat, linear-gradient(180deg, #1E2B4A, #2C2244)' },
+  // Tết: lucky red with small gold blossoms.
+  tet: { label: 'Tết red', local: 'vn', bg: 'radial-gradient(circle at 30% 30%, #F6C445 0 1.6px, transparent 2.1px) 0 0 / 40px 40px, radial-gradient(circle at 75% 70%, #F6C44588 0 1.4px, transparent 1.9px) 0 0 / 40px 40px, radial-gradient(ellipse at 50% 0, #A3242A, transparent 70%), linear-gradient(180deg, #6E1218, #4A0C12)' }
 };
 
 // The thing standing on the gift (gift.cake.topper): an emoji, the age, or the couple's initials.

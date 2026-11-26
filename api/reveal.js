@@ -38,7 +38,8 @@ export default route({
           candle: m.candle || null,
           flower: m.flower || null,
           lantern: m.lantern || null,
-          dish: m.dish || null
+          dish: m.dish || null,
+          item: m.item || null
         };
       });
     send(res, 200, {

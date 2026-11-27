@@ -2,6 +2,7 @@
 import { colorFor } from './common.js';
 import { ITEM_COLORS, FLOWER_TYPES } from './item-options.js';
 import { div, seeded, createStage, createDrawing, createStickers, createTopper, itemStates, nameText } from './stage.js';
+import { moneySvg, snackSvg, snackKey } from './local.js';
 
 // Wrap colours. The keys are the same as the cake flavours so the API stays the same.
 export const WRAPS = {
@@ -154,8 +155,13 @@ export const SHAPES = {
   classic: { label: 'Soft wrap' },
   box: { label: 'Flower box' },
   basket: { label: 'Basket' },
-  tied: { label: 'Hand-tied' }
+  tied: { label: 'Hand-tied' },
+  // Each voice is a fan of folded notes / a snack instead of a flower, in the soft wrap. The money and the
+  // snacks follow the gift's country (gift.cake.local, see local.js).
+  money: { label: 'Money bouquet', treat: 'money' },
+  snack: { label: 'Snack bouquet', treat: 'snack' }
 };
+export const isTreat = (shape) => Boolean(SHAPES[shape]?.treat);
 
 const full = { left: '0', top: '0', width: `${W}px`, height: `${H}px` };
 
@@ -165,8 +171,19 @@ function bow(P, x, y) {
   P({ left: `${x + 3}px`, top: `${y - 8}px`, width: '56px', height: '32px', borderRadius: '50%', transform: 'rotate(-18deg)' }, 'bow');
   P({ left: `${x - 11}px`, top: `${y + 14}px`, width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(16deg)', transformOrigin: '50% 0' }, 'bow');
   P({ left: `${x + 1}px`, top: `${y + 14}px`, width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(-16deg)', transformOrigin: '50% 0' }, 'bow');
-  P({ left: `${x - 10}px`, top: `${y}px`, width: '20px', height: '20px', borderRadius: '50%', background: '#D9A93A', boxShadow: 'inset -3px -3px 0 rgba(0,0,0,0.15)' });
+  P({ left: `${x - 10}px`, top: `${y}px`, width: '20px', height: '20px', borderRadius: '50%', background: '#D9A93A' });
 }
+
+// The country's motif, printed lightly on the wrapping paper (gift.cake.local): the same patterns as the local
+// lanterns and backdrops, scaled up for paper. Faint, so the name on the wrap stays easy to read.
+const kawung = (c, s) => { const a = (s * 0.13).toFixed(1), b = (s * 0.22).toFixed(1); return ['50% 25%', '50% 75%', '25% 50%', '75% 50%'].map((at, i) => `radial-gradient(ellipse ${i < 2 ? `${a}px ${b}px` : `${b}px ${a}px`} at ${at}, ${c} 94%, transparent) 0 0 / ${s}px ${s}px`).join(', ') + `, radial-gradient(circle at 50% 50%, ${c} 0 ${(s * 0.05).toFixed(1)}px, transparent ${(s * 0.07).toFixed(1)}px) 0 0 / ${s}px ${s}px`; };
+const blossoms = (petal, heart, s) => ['50% 30%', '31% 46%', '69% 46%', '38% 68%', '62% 68%'].map((at) => `radial-gradient(circle at ${at}, ${petal} 0 2.6px, transparent 3.1px) 0 0 / ${s}px ${s}px`).join(', ') + `, radial-gradient(circle at 50% 50%, ${heart} 0 1.8px, transparent 2.3px) 0 0 / ${s}px ${s}px`;
+export const WRAP_MOTIFS = {
+  id: kawung('rgba(92, 56, 26, 0.45)', 44),
+  th: 'radial-gradient(circle, rgba(201, 150, 28, 0.7) 0 2px, transparent 2.5px) 0 0 / 16px 16px, repeating-linear-gradient(45deg, rgba(201, 150, 28, 0.5) 0 1.2px, transparent 1.2px 11.3px), repeating-linear-gradient(-45deg, rgba(201, 150, 28, 0.5) 0 1.2px, transparent 1.2px 11.3px)',
+  ph: 'repeating-linear-gradient(45deg, rgba(232, 87, 122, 0.32) 0 6px, transparent 6px 12px), repeating-linear-gradient(-45deg, rgba(63, 163, 122, 0.26) 0 6px, transparent 6px 12px)',
+  vn: blossoms('rgba(240, 176, 20, 0.8)', 'rgba(214, 90, 20, 0.75)', 30)
+};
 
 // Builds a shape: B() = behind the flowers, F() = in front. Second argument = the wrap colour it takes.
 // Returns where the name goes.
@@ -213,7 +230,7 @@ export function createBouquet(host, opts = {}) {
   glow.style.top = '-130px';
   const P = (parent, style) => { const d = div('p', style); parent.append(d); return d; };
 
-  const backEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
+  const backEl = div('b-parts', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
   body.append(backEl);
   const stemsEl = div('', { position: 'absolute', inset: '0' });
   body.append(stemsEl);
@@ -242,9 +259,9 @@ export function createBouquet(host, opts = {}) {
   // front cone, in front of the flowers (clicks pass through to them)
   const front = div('', { position: 'absolute', inset: '0', pointerEvents: 'none' });
   stage.append(front);
-  const frontEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces in front of the flowers
+  const frontEl = div('b-parts', { position: 'absolute', inset: '0' }); // the shape's pieces in front of the flowers
   front.append(frontEl);
-  const nameEl = div('p', { textAlign: 'center', lineHeight: '1.25', whiteSpace: 'nowrap', overflow: 'hidden' });
+  const nameEl = div('p b-name', { textAlign: 'center', lineHeight: '1.25', whiteSpace: 'nowrap', overflow: 'hidden' });
   const nameFit = nameText(nameEl, true);
   const drawing = createDrawing(front, W, H);
 
@@ -252,12 +269,20 @@ export function createBouquet(host, opts = {}) {
   let flavor = opts.flavor;
   let accent = opts.accent;
   let nameSize = null;
-  let currentShape = 'classic', lastLayout = null;
+  let currentShape = 'classic', lastLayout = null, local = opts.local;
   function setShape(shape) {
     currentShape = SHAPES[shape] ? shape : 'classic';
+    stage.dataset.treat = SHAPES[currentShape].treat || '';
     backEl.textContent = frontEl.textContent = '';
     parts = {};
-    const add = (parent) => (style, role) => { const d = div('p', style); parent.append(d); if (role) (parts[role] ||= []).push(d); return d; };
+    // every piece gets the brown outline: a clipped piece through a wrapper around it, a see-through sheen none
+    const add = (parent) => (style, role) => {
+      const sheen = String(style.background || '').startsWith('rgba');
+      const d = div(sheen ? 'p hl' : 'p', style);
+      if (style.clipPath && !sheen) { const w = div('ol-wrap'); w.append(d); parent.append(w); } else parent.append(d);
+      if (role) (parts[role] ||= []).push(d);
+      return d;
+    };
     const n = buildShape(SHAPES[shape] ? shape : 'classic', add(backEl), add(frontEl));
     nameSize = n.size || null;
     Object.assign(nameEl.style, { left: `${n.left ?? 62}px`, top: `${n.top}px`, width: `${n.width ?? 266}px`, transform: n.rotate ? `rotate(${n.rotate}deg)` : '' });
@@ -280,13 +305,18 @@ export function createBouquet(host, opts = {}) {
       const c = WRAPS[f] || WRAPS.strawberry;
       const paint = (role, bg) => (parts[role] || []).forEach((d) => (d.style.background = bg));
       const ribbon = ACCENTS[accent]?.color?.startsWith('#') ? ACCENTS[accent].color : c.bow;
-      for (const role of ['back', 'back2', 'front', 'front2']) paint(role, c[role]);
+      // the country's motif is printed on the paper that faces you (and, softer, on the paper behind)
+      const motif = WRAP_MOTIFS[local];
+      stage.dataset.wrapmotif = motif ? local : '';
+      for (const role of ['back', 'back2', 'front', 'front2']) paint(role, motif && role !== 'back2' ? `${motif}, ${c[role]}` : c[role]);
       paint('bow', ribbon);
       (parts.handle || []).forEach((d) => (d.style.borderColor = c.back));
       paint('weave', `repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 16px), repeating-linear-gradient(90deg, ${c.front} 0 14px, ${c.front2} 14px 22px)`);
       nameEl.style.color = c.text;
     },
     setShape,
+    // The country: which money / which snacks (only the money and snack bouquets change).
+    setLocal(k) { local = k; api.setFlavor(flavor); if (lastLayout && SHAPES[currentShape].treat) api.setCandles(lastLayout.n, lastLayout.options); },
     setAccent(k) { accent = k; api.setFlavor(flavor); },
     setPattern(k) { stage.dataset.petal = PATTERNS[k] ? k : 'round'; },
     setTopper(k) { setTucked(TOPPERS[k]); tuck.hidden = !TOPPERS[k]?.emoji; },
@@ -299,6 +329,10 @@ export function createBouquet(host, opts = {}) {
     setFlowerStyle(i, style) {
       const flower = flowers[i];
       if (!flower) return;
+      if (SHAPES[currentShape].treat === 'snack' && style) {
+        const type = snackKey(style.snack, i, local);
+        if (flower.dataset.snack !== type) { flower.dataset.snack = type; flower.querySelector('.t-art').innerHTML = snackSvg(type); } // static markup
+      }
       if (ITEM_COLORS[style?.color]) flower.style.setProperty('--c', ITEM_COLORS[style.color].hex);
       if (FLOWER_TYPES[style?.type]) flower.dataset.petal = style.type;
     },
@@ -309,8 +343,10 @@ export function createBouquet(host, opts = {}) {
       flowers.length = 0;
       const total = Math.min(Math.max(n, spots), 40);
       const pos = flowerSpots(total, currentShape);
-      stemsEl.innerHTML = currentShape === 'classic'
-        ? `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${pos.map(p => `<path d="M${p.x} ${p.y + p.s * .24} Q${195 + (p.x - 195) * .4} 199 195 278" fill="none" stroke="#638959" stroke-width="2.4" stroke-linecap="round"/>`).join('')}</svg>`
+      const treat = SHAPES[currentShape].treat;
+      // stems in the soft wrap; money and snacks sit on wooden sticks
+      stemsEl.innerHTML = currentShape === 'classic' || treat
+        ? `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${pos.map(p => `<path d="M${p.x} ${p.y + p.s * .24} Q${195 + (p.x - 195) * .4} 199 195 278" fill="none" stroke="${treat ? '#D8B98A' : '#638959'}" stroke-width="${treat ? 2 : 2.4}" stroke-linecap="round"/>`).join('')}</svg>`
         : '';
       const els = [];
       for (const p of pos.slice().sort((a, b) => a.y - b.y)) {
@@ -322,11 +358,21 @@ export function createBouquet(host, opts = {}) {
         if (!isSpot && names?.[p.i]) btn.setAttribute('aria-label', `Play ${names[p.i]}'s message`);
         Object.assign(btn.style, { left: `${(p.x - p.s / 2).toFixed(1)}px`, top: `${(p.y - p.s / 2).toFixed(1)}px`, width: `${p.s}px`, height: `${p.s}px` });
         btn.style.setProperty('--c', (colors && colors[p.i]) || colorFor(p.i));
-        const bloom = div('f-bloom');
-        bloom.style.setProperty('--rot', `${p.rot}deg`);
-        for (let k = 0; k < 5; k++) { const pe = div('f-petal'); pe.style.setProperty('--a', `${k * 72}deg`); bloom.append(pe); }
-        bloom.append(div('f-core'));
-        btn.append(bloom);
+        if (treat) {
+          // a fan of notes / a snack pack, tilted a little like the flowers
+          btn.classList.add('treat');
+          const art = div('t-art');
+          art.style.setProperty('--rot', `${(p.rot - 15) * 0.6}deg`);
+          if (treat === 'snack') btn.dataset.snack = snackKey(styles?.[p.i]?.snack, p.i, local);
+          art.innerHTML = treat === 'money' ? moneySvg(local) : snackSvg(btn.dataset.snack); // static markup
+          btn.append(art);
+        } else {
+          const bloom = div('f-bloom');
+          bloom.style.setProperty('--rot', `${p.rot}deg`);
+          for (let k = 0; k < 5; k++) { const pe = div('f-petal'); pe.style.setProperty('--a', `${k * 72}deg`); pe.style.setProperty('--k', k); bloom.append(pe); }
+          bloom.append(div('f-core'));
+          btn.append(bloom);
+        }
         if (onTap && !isSpot) btn.addEventListener('click', () => onTap(p.i));
         layer.append(btn);
         els[p.i] = btn;

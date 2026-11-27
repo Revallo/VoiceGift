@@ -3,16 +3,19 @@ import { BRUSHES, NAME_FONTS, DEFAULT_FONT, BACKDROPS } from './stage.js';
 import { TUNES, playTune } from './music.js';
 import { THEMES, theme, createScene, applyTheme } from './themes.js';
 import { me, forgetMe, loginBox } from './auth.js';
+import { LOCALES, detectLocal, localKey } from './local.js';
+import { isTreat } from './bouquet.js';
 
 addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const params = new URLSearchParams(location.search);
+const askedTumpeng = params.get('occasion') === 'tumpeng'; // old links: tumpeng was an occasion, now a birthday kind
 const state = {
   occasion: THEMES[params.get('occasion')] ? params.get('occasion') : 'birthday',
   flavor: '',
-  shape: params.get('shape') || 'classic', // picked on the first page, or in the decorate step
+  shape: askedTumpeng ? 'tumpeng' : params.get('shape') || 'classic', // picked on the first page, or in the decorate step
   font: NAME_FONTS[params.get('font')] ? params.get('font') : DEFAULT_FONT, // the letters of the name on the gift
   brush: 0,
   nameTouched: false,
@@ -20,6 +23,7 @@ const state = {
   created: null,
   verifyPin: String(1000 + Math.floor(Math.random() * 9000)), // the organizer can change it
   accent: '', pattern: '', topper: 'none', greens: 'leaf', age: 21, backdrop: 'party', music: 'none',
+  local: detectLocal(), // the country's touches (local.js); a guess from the phone, changed in the decorate step
   sketch: false
 };
 $('#deliverySummaryVal').textContent = state.verifyPin;
@@ -30,71 +34,105 @@ const MAX_STICKERS = 30;
 function go(screen) {
   history.pushState({ screen }, '');
   showScreen(screen);
+  if (screen === 'decorate') renderPeeks();
 }
 history.replaceState({ screen: 'who' }, '');
-window.addEventListener('popstate', (e) => { stopPreview(); showScreen(e.state?.screen || 'who'); });
+window.addEventListener('popstate', (e) => {
+  stopPreview();
+  const to = e.state?.screen || 'who';
+  showScreen(to);
+  if (to === 'who') renderCarousel(); // the kinds now show the design made in Customize
+});
 $$('[data-back]').forEach((b) => b.addEventListener('click', () => history.back()));
 
-// ---------- step 1 ----------
-swipeButton($('#nextBtn'));
-let whoScene;
-const sampleName = () => (state.occasion === 'wedding' ? 'Rina & Bayu' : state.occasion === 'graduation' ? 'Nadia' : 'Dimas');
+// ---------- the first screen ----------
+swipeButton($('#createBtn'));
+const SAMPLE_NAMES = { wedding: 'Rina & Bayu', graduation: 'Nadia' };
+const sampleName = () => SAMPLE_NAMES[state.occasion] || 'Dimas';
+const recipientOr = () => $('#recipient').value.trim() || sampleName();
 
-// The gift is always shown at the top, so picking another occasion shows it straight away.
-function renderWhoPreview() {
-  const host = $('#whoPreview');
-  host.textContent = '';
-  const rec = $('#recipient').value.trim() || sampleName();
-  whoScene = createScene(host, {
-    occasion: state.occasion,
-    recipient: rec,
-    cake: decor(t.decorate.name(rec))
-  });
-  whoScene.setCandles(state.occasion === 'birthday' ? 6 : 8);
-  whoScene.lightAll();
+// The kinds of the picked occasion, as big live gifts you slide: the one in the middle is the gift.
+// The middle one carries the design made in Customize; its neighbours show their own look.
+let kindScenes = [];
+function renderCarousel() {
+  const box = $('#kinds');
+  const rec = recipientOr();
+  kindScenes = [];
+  wheel(box, Object.entries(t.decorate.shapes), state.shape, (key, s) => {
+    const mini = h('div', { class: 'mini' });
+    const el = h('button', { type: 'button', class: 'kind', role: 'radio', 'aria-label': s.label }, mini);
+    const kt = theme(state.occasion, key);
+    const mine = key === state.shape;
+    const cake = mine && scene
+      ? { ...decor($('#cakeName').value || kt.decorate.name(rec)), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
+      : { flavor: kt.scene === t.scene && !kt.decorate.accent ? state.flavor : kt.decorate.flavor, shape: key, font: state.font, name: kt.decorate.name(rec), greens: state.greens, local: state.local,
+        accent: kt.decorate.accent, pattern: kt.decorate.pattern, topper: kt.decorate.topper, backdrop: kt.decorate.backdrop || (kt.scene === t.scene ? state.backdrop : 'party') };
+    const sc = createScene(mini, { occasion: state.occasion, recipient: rec, cake });
+    sc.setCandles(state.occasion === 'birthday' ? 6 : 8);
+    sc.lightAll();
+    sc.kindKey = key;
+    kindScenes.push(sc);
+    return el;
+  }, (k) => setShape(k));
+  for (const el of box.children) el.setAttribute('aria-checked', String(el.dataset.v === state.shape));
+  showKindName();
+}
+function showKindName() {
+  const label = t.decorate.shapes[state.shape]?.label || '';
+  $('#kindName').textContent = label;
+  $('#decorKindName').textContent = label;
+  for (const el of $('#kinds').children) el.setAttribute('aria-checked', String(el.dataset.v === state.shape));
+  const keys = Object.keys(t.decorate.shapes);
+  $('#kindDots').replaceChildren(...keys.map((k) => h('i', { class: k === state.shape ? 'on' : '' })));
+}
+// In Customize the kinds before and after peek in at the sides, so it's plain the gift can be swiped.
+function renderPeeks() {
+  if (!scene || $('[data-screen="decorate"]').hidden) return;
+  const keys = Object.keys(t.decorate.shapes), at = keys.indexOf(state.shape), rec = recipientOr();
+  for (const [id, dir] of [['#kindPrev', -1], ['#kindNext', 1]]) {
+    const key = keys[(at + dir + keys.length) % keys.length], kt = theme(state.occasion, key);
+    const mini = h('div', { class: 'mini' });
+    $(id).replaceChildren(mini);
+    $(id).setAttribute('aria-label', `${dir < 0 ? 'Previous' : 'Next'} kind: ${kt.decorate.shapes[key]?.label || key}`);
+    const sc = createScene(mini, { occasion: state.occasion, recipient: rec, cake: { flavor: kt.decorate.flavor, shape: key, font: state.font, name: kt.decorate.name(rec), greens: state.greens, local: state.local,
+      accent: kt.decorate.accent, pattern: kt.decorate.pattern, topper: kt.decorate.topper, backdrop: kt.decorate.backdrop || (kt.scene === t.scene ? state.backdrop : 'party') } });
+    sc.setCandles(state.occasion === 'birthday' ? 6 : 8);
+    sc.lightAll();
+  }
 }
 
 // Everything picked in the decorate step, as stored in gift.cake.
-const decor = (name) => ({ flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name, accent: state.accent, pattern: state.pattern, topper: state.topper, greens: state.greens, age: state.age, backdrop: state.backdrop, music: state.music });
+const decor = (name) => ({ flavor: state.flavor || t.decorate.flavor, shape: state.shape, font: state.font, name, accent: state.accent, pattern: state.pattern, topper: state.topper, greens: state.greens, age: state.age, backdrop: state.backdrop, music: state.music, local: state.local });
+// Lists with local entries (backdrops, lantern motifs) show only the ones of the picked country.
+const forLocal = (list) => Object.entries(list).filter(([, v]) => !v.local || v.local === state.local);
 
-const LEADS = {
-  birthday: 'Each friend’s voice lights one candle on the cake.',
-  tumpeng: 'Each friend brings one dish to the tumpeng, with their voice.',
-  graduation: 'Each friend’s voice opens one flower in the bouquet.',
-  wedding: 'Each friend’s voice lights one lantern in the sky.'
-};
 let firstOccasion = true;
 function setOccasion(key) {
   state.occasion = key;
-  t = applyTheme(key);
-  $$('#occasions .pick').forEach((c) => { c.classList.toggle('on', c.dataset.v === key); c.setAttribute('aria-checked', String(c.dataset.v === key)); });
-  $('#pickLead').textContent = LEADS[key];
-  $('#recipientLabel').textContent = t.recipientLabel;
+  t = theme(key);
+  if (!t.decorate.shapes[state.shape]) state.shape = 'classic';
+  t = applyTheme(key, state.shape);
+  $$('#occasions .occ').forEach((c) => { c.classList.toggle('on', c.dataset.v === key); c.setAttribute('aria-checked', String(c.dataset.v === key)); });
   $('#recipient').placeholder = t.recipientPlaceholder;
-  const nb = $('#nextBtn');
-  const nbSpan = nb.querySelector('span');
-  if (nbSpan) nbSpan.textContent = t.decorate.next;
-  else nb.textContent = t.decorate.next;
   // the first time, take the flavor picked on the first page (?flavor=), if this scene has it
   const asked = firstOccasion && params.get('flavor');
   firstOccasion = false;
   state.flavor = asked && t.decorate.swatches[asked] ? asked : t.decorate.flavor;
-  if (!t.decorate.shapes[state.shape]) state.shape = 'classic';
-  state.accent = Object.keys(t.decorate.accents)[0];
-  state.pattern = Object.keys(t.decorate.patterns)[0];
-  state.topper = 'none';
+  state.accent = t.decorate.accent || Object.keys(t.decorate.accents)[0];
+  state.pattern = t.decorate.pattern || Object.keys(t.decorate.patterns)[0];
+  state.topper = t.decorate.topper || 'none';
+  state.backdrop = t.decorate.backdrop || (BACKDROPS[state.backdrop]?.local ? state.backdrop : 'party');
   state.greens = 'leaf';
   state.nameTouched = false;
-  renderWhoPreview();
   buildDecorate();
+  renderCarousel();
 }
-$$('#occasions .pick').forEach((c) => c.addEventListener('click', () => { if (c.dataset.v !== state.occasion) setOccasion(c.dataset.v); }));
+$$('#occasions .occ').forEach((c) => c.addEventListener('click', () => { if (c.dataset.v !== state.occasion) setOccasion(c.dataset.v); }));
 $('#recipient').addEventListener('input', () => {
-  const rec = $('#recipient').value.trim() || sampleName();
-  if (whoScene) {
-    whoScene.setName(t.decorate.name(rec));
-    whoScene.setNames?.(rec);
-  }
+  const rec = recipientOr();
+  for (const sc of kindScenes) { sc.setName(theme(state.occasion, sc.kindKey).decorate.name(rec)); sc.setNames?.(rec); }
+  if (!state.nameTouched) { $('#cakeName').value = t.decorate.name(rec); scene.setName($('#cakeName').value); }
+  scene.setNames?.(rec);
 });
 
 // Logged in: "Your name" starts as the account's name.
@@ -118,48 +156,48 @@ $('#openDeliverySheetBtn').addEventListener('click', () => {
     closeSheet();
     toast('PIN saved');
   } },
-    h('div', { class: 'field' }, h('label', {}, 'PIN (4 digits)'), pinIn,
-      h('span', { class: 'tiny muted' }, 'You send this PIN with their link. Without it, the gift won’t open.')),
-    errEl,
+    pinIn, errEl,
     h('button', { type: 'submit', class: 'btn' }, 'Save'));
-  openSheet({ title: 'PIN for the gift', subtitle: 'They type these 4 digits to open the gift', content: form });
+  openSheet({ title: 'PIN', subtitle: 'Send it with their link. It opens the gift.', content: form });
   setTimeout(() => pinIn.focus(), 60);
 });
 
-$('#whoForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const recipient = $('#recipient').value.trim();
-  const organizer = $('#organizer').value.trim();
+// Names first: both are needed before the gift is made.
+function checkNames() {
   const err = $('#whoError');
   let msg = '';
-  if (!recipient) msg = 'Please enter who the gift is for.';
-  else if (!organizer) msg = 'Please enter your name.';
+  if (!$('#recipient').value.trim()) msg = 'Who is it for?';
+  else if (!$('#organizer').value.trim()) msg = 'Add your name.';
   err.hidden = !msg;
   err.textContent = msg;
-  if (msg) return;
+  if (msg) (msg.startsWith('Who') ? $('#recipient') : $('#organizer')).focus();
+  return !msg;
+}
+$('#whoForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (checkNames()) saveGift();
+});
+
+// Customize: its own page. The gift there already carries the recipient's name.
+$('#customizeBtn').addEventListener('click', () => {
   unlockAudio(); // inside the tap, so sliding the music strip can already play
-  if (!state.nameTouched) $('#cakeName').value = t.decorate.name(recipient);
-  scene.setName($('#cakeName').value);
-  scene.setNames?.(recipient);
+  if (!state.nameTouched) { $('#cakeName').value = t.decorate.name(recipientOr()); scene.setName($('#cakeName').value); }
+  scene.setNames?.(recipientOr());
   go('decorate');
-  requestAnimationFrame(renderShapes); // the strip has a width now, so the picked kind can be centred
+});
+$('#saveDecorBtn').addEventListener('click', () => {
+  if (state.created) { if (checkNames()) saveGift(); else history.back(); } // editing: save straight away
+  else history.back();
 });
 
 // ---------- step 2 ----------
 let scene;
 function buildDecorate() {
   const d = t.decorate;
-  $('#shapeLabel').textContent = d.shapeLabel;
-  $('#swatchLabel').textContent = d.swatchLabel;
-  $('#accentLabel').textContent = d.accentLabel;
-  $('#patternLabel').textContent = d.patternLabel;
-  $('#topperLabel').textContent = d.topperLabel;
-  $('#nameLabel').textContent = d.nameLabel;
-  $('#drawRow').hidden = !d.draw;
   const name = $('#cakeName');
   name.maxLength = d.nameMax;
   name.placeholder = d.namePlaceholder || '';
-  name.value = d.name($('#recipient').value.trim());
+  name.value = d.name(recipientOr());
   name.style.fontSize = d.nameMax > 20 ? '14px' : '';
 
   const host = $('#decorCake');
@@ -195,11 +233,28 @@ function buildDecorate() {
   $('#undoDraw').disabled = true;
   scene.stage.classList.add('editing');
   scene.stickers.onRender = wireStickers;
-  renderShapes();
+  renderLocals();
+  showKindName();
+  renderTools();
   renderFonts();
   renderSwatches();
   renderDetails();
   renderStickerTray();
+}
+
+// The country shows on the gift itself: the cake's mat and garland, the print on the bouquet's wrap, what hangs
+// over a wedding. Its stickers come first in the tray, its backdrop and lantern motif join the strips, and a
+// money / snack bouquet uses its money and snacks. It never swaps the backdrop: that stays the organizer's pick.
+function renderLocals() {
+  wheel($('#locals'), Object.entries(LOCALES), state.local, (k, v) => chip(v.label), (k) => {
+    state.local = k;
+    scene.setLocal?.(k);
+    if (BACKDROPS[state.backdrop]?.local && BACKDROPS[state.backdrop].local !== k) { state.backdrop = 'party'; scene.setBackdrop(state.backdrop); }
+    if (t.decorate.patterns[state.pattern]?.local && t.decorate.patterns[state.pattern].local !== k) { state.pattern = Object.keys(t.decorate.patterns)[0]; scene.setPattern(state.pattern); }
+    renderDetails();
+    renderStickerTray();
+    renderPeeks();
+  });
 }
 
 // A sideways strip that you slide: whichever item stops in the middle is the chosen one.
@@ -237,15 +292,42 @@ function wheel(box, entries, current, draw, onPick) {
 const chip = (label, style) => h('button', { type: 'button', class: 'chip', style }, label);
 const swatch = (label, style, cls = '') => h('button', { type: 'button', class: `swatch ${cls}`, 'aria-label': label, title: label }, h('i', { style }));
 
-// Swipe the big gift sideways to change its kind. Stickers and drawing keep their own gestures.
+// Some kinds draw another scene (a birthday tumpeng, a wedding angpao tree or river): then the gift is drawn again
+// with that scene's own flavours, accents, patterns and toppers, keeping the name, the stickers and the drawing.
+function switchScene() {
+  const before = t.scene, beforeTheme = t.theme || t.key, hadBackdrop = t.decorate.backdrop;
+  t = applyTheme(state.occasion, state.shape);
+  if (t.scene === before && (t.theme || t.key) === beforeTheme) return false;
+  const d = t.decorate;
+  state.flavor = d.flavor;
+  state.accent = d.accent || Object.keys(d.accents)[0];
+  state.pattern = d.pattern || Object.keys(d.patterns)[0];
+  state.topper = d.topper || 'none';
+  if (d.backdrop) state.backdrop = d.backdrop;
+  else if (hadBackdrop && state.backdrop === hadBackdrop) state.backdrop = 'party';
+  const keep = { name: $('#cakeName').value, stickers: scene.stickers.get(), dots: scene.getDots() };
+  buildDecorate();
+  if (state.nameTouched) { $('#cakeName').value = keep.name; scene.setName(keep.name); }
+  scene.stickers.set(keep.stickers);
+  if (d.draw) scene.setDots(keep.dots);
+  return true;
+}
+
+// A new kind: from the carousel on the first screen, or by swiping the big gift in Customize.
+function setShape(k) {
+  if (k === state.shape) return;
+  state.shape = k;
+  if (!switchScene()) { scene.setShape(k); renderTools(); }
+  showKindName();
+  renderPeeks();
+}
 function stepShape(dir) {
   const keys = Object.keys(t.decorate.shapes);
-  state.shape = keys[(keys.indexOf(state.shape) + dir + keys.length) % keys.length];
-  scene.setShape(state.shape);
+  setShape(keys[(keys.indexOf(state.shape) + dir + keys.length) % keys.length]);
   scene.wrap.animate([{ transform: `translateX(${Math.sign(dir) * 70}px)`, opacity: 0.25 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'ease-out' });
-  renderShapes();
-  renderWhoPreview();
 }
+$('#kindPrev').addEventListener('click', () => stepShape(-1));
+$('#kindNext').addEventListener('click', () => stepShape(1));
 let swipeFrom = null;
 $('#decorCake').addEventListener('pointerdown', (e) => {
   swipeFrom = state.sketch || e.target.closest('.sticker') ? null : e.clientX;
@@ -262,11 +344,10 @@ $('#decorCake').addEventListener('pointercancel', () => (swipeFrom = null));
 function renderDetails() {
   const d = t.decorate;
   wheel($('#accents'), Object.entries(d.accents), state.accent, (k, v) => swatch(v.label, { background: v.color }), (k) => { state.accent = k; scene.setAccent(k); });
-  wheel($('#patterns'), Object.entries(d.patterns), state.pattern, (k, v) => chip(v.label), (k) => { state.pattern = k; scene.setPattern(k); });
+  wheel($('#patterns'), forLocal(d.patterns), state.pattern, (k, v) => chip(v.label), (k) => { state.pattern = k; scene.setPattern(k); });
   wheel($('#toppers'), Object.entries(d.toppers), state.topper, (k, v) => chip(v.emoji ? `${v.emoji} ${v.label}` : v.label), (k) => { state.topper = k; scene.setTopper(k, state.age); showAge(); });
-  $('#greensRow').hidden = !d.greens;
   if (d.greens) wheel($('#greens'), Object.entries(d.greens), state.greens, (k, v) => chip(v.label), (k) => { state.greens = k; scene.setGreens?.(k); });
-  wheel($('#backdrops'), Object.entries(BACKDROPS), state.backdrop, (k, v) => chip(v.label), (k) => { state.backdrop = k; scene.setBackdrop(k); });
+  wheel($('#backdrops'), forLocal(BACKDROPS), state.backdrop, (k, v) => chip(v.label), (k) => { state.backdrop = k; scene.setBackdrop(k); });
   wheel($('#tunes'), Object.entries(TUNES), state.music, (k, v) => chip(v.label), (k) => { state.music = k; if (tuneAc?.state === 'running') startTune(); });
   $('#ageRange').value = state.age;
   showAge();
@@ -312,63 +393,54 @@ $('#musicPlay').addEventListener('click', () => {
 
 $('#sketchToggle').addEventListener('click', () => {
   state.sketch = !state.sketch;
-  $('#sketchToggle').textContent = state.sketch ? '✓ Done' : '✏️ Draw';
+  $('#sketchToggle').textContent = state.sketch ? 'Done' : 'Draw';
   $('#brushes').hidden = $('#clearDraw').hidden = $('#undoDraw').hidden = !state.sketch;
   if (state.hit) state.hit.hidden = !state.sketch;
 });
 
-// The kinds of cake / bouquet / lanterns: a sideways strip of small live pictures. Tapping one (or swiping
-// the big gift) picks it; the strip is never rebuilt on a pick, so it stays where you scrolled it.
-// Changing the kind keeps the drawing and the stickers. A new flavour only recolours the small pictures in
-// place (never a rebuild), so the strip doesn't jump back to the start and slide over again.
-let kindsFor = '', kindsFlavor = '', kindsTimer = 0, kindScenes = [];
-function buildKinds() {
-  const box = $('#kinds');
-  kindsFor = state.occasion;
-  kindsFlavor = state.flavor;
-  kindScenes = [];
-  box.textContent = '';
-  for (const [key, s] of Object.entries(t.decorate.shapes)) {
-    const mini = h('div', { class: 'mini' });
-    box.append(h('button', { type: 'button', class: 'kind', role: 'radio', 'data-v': key, onclick: () => pickShape(key) }, mini, h('span', {}, s.label)));
-    const sc = createScene(mini, { occasion: state.occasion, recipient: '', cake: { flavor: state.flavor, shape: key, name: '', greens: state.greens } });
-    sc.setCandles(6);
-    sc.lightAll();
-    kindScenes.push(sc);
-  }
+// The tools, one at a time: a strip of icon tabs, the picked tool's row under it. No long page to scroll.
+const TOOL_ICONS = { color: 'palette', accent: 'ribbon', pattern: 'pattern', topper: 'crown', greens: 'leaf', text: 'text', stickers: 'sticker', draw: 'pen', music: 'music', backdrop: 'image', local: 'globe' };
+let tool = 'color';
+function renderTools() {
+  const d = t.decorate;
+  const tools = [
+    ['color', d.swatchLabel],
+    ['accent', d.accentLabel],
+    // a money or snack bouquet has no petals to pick
+    !(state.occasion === 'graduation' && isTreat(state.shape)) && ['pattern', d.patternLabel],
+    ['topper', d.topperLabel],
+    d.greens && ['greens', 'Greens'],
+    ['text', d.nameLabel],
+    ['stickers', 'Stickers'],
+    d.draw && ['draw', 'Draw'],
+    ['music', 'Music'],
+    ['backdrop', 'Backdrop'],
+    ['local', 'Local']
+  ].filter(Boolean);
+  if (!tools.some(([k]) => k === tool)) tool = 'color';
+  $('#toolTabs').replaceChildren(...tools.map(([k, label]) => h('button', {
+    type: 'button', class: `tool-tab ${k === tool ? 'on' : ''}`, role: 'tab', 'data-tool': k, 'aria-selected': String(k === tool),
+    onclick: () => showTool(k), html: `${icon[TOOL_ICONS[k]](22)}<span></span>`
+  })));
+  $$('#toolTabs .tool-tab').forEach((b, i) => (b.lastChild.textContent = tools[i][1]));
+  showTool(tool);
 }
-function renderShapes() {
-  if (kindsFor !== state.occasion) buildKinds();
-  else if (kindsFlavor !== state.flavor) {
-    kindsFlavor = state.flavor;
-    for (const sc of kindScenes) sc.setFlavor(state.flavor);
-  }
-  const box = $('#kinds');
-  for (const b of $$('#kinds .kind')) {
-    const on = b.dataset.v === state.shape;
-    b.classList.toggle('on', on);
-    b.setAttribute('aria-checked', String(on));
-    // only slide when the picked one isn't already in view (a picked kind stays where it is)
-    if (on && (b.offsetLeft < box.scrollLeft || b.offsetLeft + b.offsetWidth > box.scrollLeft + box.clientWidth)) {
-      box.scrollTo({ left: b.offsetLeft - (box.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' });
-    }
-  }
-}
-function pickShape(key) {
-  if (key === state.shape) return;
-  const keys = Object.keys(t.decorate.shapes);
-  stepShape(keys.indexOf(key) - keys.indexOf(state.shape));
+function showTool(k) {
+  tool = k;
+  for (const b of $$('#toolTabs .tool-tab')) { const on = b.dataset.tool === k; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); }
+  for (const p of $$('#decorTools .tool-pane')) p.hidden = p.dataset.tool !== k;
+  if (k !== 'draw' && state.sketch) $('#sketchToggle').click(); // leaving Draw stops drawing, so the gift can be swiped again
 }
 
 // The letters of the name: each choice is written in its own font.
 function renderFonts() {
   wheel($('#fonts'), Object.entries(NAME_FONTS), state.font, (k, f) => { const b = chip(f.label, f.css); b.classList.add('font-chip'); return b; },
-    (k) => { state.font = k; scene.setFont(k); renderWhoPreview(); });
+    (k) => { state.font = k; scene.setFont(k); });
 }
 
 function renderSwatches() {
   const d = t.decorate;
-  wheel($('#flavors'), Object.entries(d.swatches), state.flavor, (k, f) => swatch(f.label, d.swatch(f)), (k) => { state.flavor = k; scene.setFlavor(k); clearTimeout(kindsTimer); kindsTimer = setTimeout(renderShapes, 400); });
+  wheel($('#flavors'), Object.entries(d.swatches), state.flavor, (k, f) => swatch(f.label, d.swatch(f)), (k) => { state.flavor = k; scene.setFlavor(k); });
   wheel($('#brushes'), BRUSHES.map((c, i) => [String(i), c]), String(state.brush), (k, c) => swatch(`Brush color ${Number(k) + 1}`, { background: c }, 'brush'), (k) => { state.brush = Number(k); });
 }
 
@@ -376,11 +448,14 @@ function renderSwatches() {
 function renderStickerTray() {
   const tray = $('#stickerTray');
   tray.textContent = '';
-  for (const emoji of t.decorate.stickers) {
+  const own = LOCALES[localKey(state.local)].stickers;
+  const all = [...own, ...t.decorate.stickers.filter((e) => !own.includes(e))];
+  all.forEach((emoji, i) => {
+    if (own.length && i === own.length) tray.append(h('i', { class: 'sticker-sep', 'aria-hidden': 'true' }));
     const btn = h('button', { type: 'button', class: 'sticker-btn', 'aria-label': `Add sticker ${emoji}`, onclick: () => { if (!dragged) addSticker(emoji); dragged = false; } }, emoji);
     dragFromTray(btn, emoji);
     tray.append(btn);
-  }
+  });
 }
 
 // Slide a sticker up out of the tray and drop it on the gift, exactly where it should go.
@@ -490,16 +565,21 @@ $('#undoDraw').addEventListener('click', () => {
 });
 
 // Create the gift (then its page opens), or save the changes when editing from the gift's page.
-$('#createBtn').addEventListener('click', async () => {
+let saving = false;
+async function saveGift() {
+  if (saving) return;
   if (!state.created && !(await me())) return askAccount(); // a new gift needs an account
-  const btn = $('#createBtn');
+  const btn = state.created ? $('#saveDecorBtn') : $('#createBtn');
+  const label = btn.querySelector('span') || btn;
+  const was = label.textContent;
   const err = $('#createError');
-  const label = state.created ? 'Save changes' : 'Create the gift';
+  saving = true;
   btn.disabled = true;
-  btn.textContent = state.created ? 'Saving…' : 'Creating…';
+  label.textContent = state.created ? 'Saving…' : 'Creating…';
   err.hidden = true;
   try {
     const recTrim = $('#recipient').value.trim();
+    if (!state.nameTouched) $('#cakeName').value = t.decorate.name(recTrim);
     const body = {
       recipient: recTrim,
       organizer: $('#organizer').value.trim(),
@@ -518,11 +598,13 @@ $('#createBtn').addEventListener('click', async () => {
     if (e.status === 401) { forgetMe(); return askAccount(); } // logged out in another tab
     err.textContent = e.message;
     err.hidden = false;
+    if (state.created && $('[data-screen="decorate"]:not([hidden])')) toast(e.message);
   } finally {
+    saving = false;
     btn.disabled = false;
-    btn.textContent = state.created ? 'Save changes' : label;
+    label.textContent = was;
   }
-});
+}
 
 // ---------- account (only when logged out) ----------
 // Log in (Google), then back to step 2, which creates the gift.
@@ -530,7 +612,7 @@ function askAccount() {
   $('#accountLead').textContent = 'Log in to keep it. You’ll find its dashboard on any phone you log in on.';
   $('#accountBox').replaceChildren(loginBox({
     onDone: () => {
-      window.addEventListener('popstate', () => $('#createBtn').click(), { once: true });
+      window.addEventListener('popstate', () => saveGift(), { once: true });
       history.back();
     }
   }));
@@ -546,21 +628,27 @@ if (editSlug && editKey) {
   api(`/api/manage?slug=${encodeURIComponent(editSlug)}&key=${encodeURIComponent(editKey)}`).then(({ gift }) => {
     state.created = { slug: gift.slug, manageKey: editKey };
     $('#whoBack').href = `/m/${gift.slug}?k=${editKey}`;
-    setOccasion(gift.occasion);
+    const oldTumpeng = gift.occasion === 'tumpeng';
+    setOccasion(oldTumpeng ? 'birthday' : gift.occasion);
     $('#recipient').value = gift.recipient || '';
     $('#organizer').value = gift.organizer || '';
     if (/^\d{4}$/.test(gift.verifyPin || '')) { state.verifyPin = gift.verifyPin; $('#deliverySummaryVal').textContent = gift.verifyPin; }
     if (gift.cake) {
       for (const k of ['flavor', 'shape', 'font', 'accent', 'pattern', 'topper', 'greens', 'backdrop', 'music']) if (gift.cake[k]) state[k] = gift.cake[k];
+      if (oldTumpeng) state.shape = 'tumpeng';
+      t = applyTheme(state.occasion, state.shape);
+      state.local = localKey(gift.cake.local); // older gifts: no country
       if (gift.cake.age) state.age = gift.cake.age;
       if (!NAME_FONTS[state.font]) state.font = DEFAULT_FONT;
       buildDecorate();
-      renderWhoPreview();
       if (gift.cake.name) { state.nameTouched = true; $('#cakeName').value = gift.cake.name; scene.setName(gift.cake.name); }
       if (Array.isArray(gift.cake.dots)) scene.setDots(gift.cake.dots);
       if (Array.isArray(gift.cake.stickers)) scene.stickers.set(gift.cake.stickers);
     }
-    $('#createBtn').textContent = 'Save changes';
+    $('#saveDecorBtn').textContent = 'Save changes';
+    $('#createBtn span').textContent = 'Save changes';
+    $('#whoPill').textContent = 'Edit gift';
+    renderCarousel();
     go('decorate');
   }).catch(() => {});
 }

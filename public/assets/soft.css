@@ -1,0 +1,956 @@
+/* ==========================================================================================================
+   Soft (2026-11-26): the app's look, loaded after app.css on every page.
+   A clean light page with a soft pastel wash per occasion, one family (Montserrat), capitals for titles and
+   labels, black pill buttons, round icon buttons, no bordered boxes. The gift scenes keep their own CSS.
+   Type roles (never capitals for captions, inputs or what people typed):
+     display  900 caps   page hero          title   800 caps   sections, sheets, top bar
+     label    700 caps   small labels       button  800 caps   every pill / slide button
+     body     500        sentences, inputs  num     900 tabular PIN, timer, counts
+   ========================================================================================================== */
+
+/* A fallback with Montserrat's size and line metrics, so text doesn't jump when the font arrives */
+@font-face {
+  font-family: 'Montserrat Fallback';
+  src: local('Arial');
+  size-adjust: 112.8%;
+  ascent-override: 85.8%;
+  descent-override: 22.3%;
+  line-gap-override: 0%;
+}
+
+:root, body[data-theme="birthday"] {
+  --fg: 22, 20, 26;
+  --bg: #FAF8F5;
+  --bg-outer: #ECE7E1;
+  --panel: #FFFFFF;
+  --panel-subtle: #F4F1ED;
+  --panel-hover: #EFEBE6;
+  --text: #16141A;
+  --ink: #16141A;
+  --face: #EEE8E2;
+  --display: 'Montserrat', 'Montserrat Fallback', system-ui, sans-serif;
+  --sans: 'Montserrat', 'Montserrat Fallback', system-ui, sans-serif;
+  --tile: rgba(22, 20, 26, 0.045);
+  --shadow-soft: 0 10px 30px -14px rgba(40, 24, 10, 0.28);
+  --r-tile: 28px;
+  /* birthday: peach and pink */
+  --emerald: #FF7A59;
+  --emerald-light: #E5532F;
+  --emerald-dark: #E5532F;
+  --emerald-grad: linear-gradient(180deg, #FF9473, #FF7A59);
+  --on-accent: #FFFFFF;
+  --glow: rgba(255, 140, 100, 0.28);
+  --wash: #FFD9C6;
+  --wash2: #FFC9DC;
+  --stage-bg: #FFF0E8;
+}
+body[data-theme="graduation"] {
+  --fg: 22, 20, 26; --bg: #F7F9FB; --bg-outer: #E4EAF0; --panel: #FFFFFF; --panel-subtle: #EFF3F7; --panel-hover: #E8EEF4;
+  --text: #16141A; --face: #E4EAF1;
+  --emerald: #4F7CF0; --emerald-light: #2F5BD6; --emerald-dark: #2F5BD6; --emerald-grad: linear-gradient(180deg, #6A92F5, #4F7CF0);
+  --on-accent: #FFFFFF; --glow: rgba(79, 124, 240, 0.22);
+  --wash: #CFE8DA; --wash2: #CADBFF; --stage-bg: #EAF1FB;
+}
+body[data-theme="wedding"] {
+  --fg: 22, 20, 26; --bg: #FAF8FB; --bg-outer: #EAE4EE; --panel: #FFFFFF; --panel-subtle: #F4F0F6; --panel-hover: #EEE8F1;
+  --text: #16141A; --face: #EDE6F0;
+  --emerald: #A673DA; --emerald-light: #8650C2; --emerald-dark: #8650C2; --emerald-grad: linear-gradient(180deg, #B98BE4, #A673DA);
+  --on-accent: #FFFFFF; --glow: rgba(166, 115, 218, 0.24);
+  --wash: #E3D3FA; --wash2: #FFD6E2; --stage-bg: #F3ECFA;
+}
+body[data-theme="tumpeng"] {
+  --fg: 22, 20, 26; --bg: #FAF9F3; --bg-outer: #ECE9DC; --panel: #FFFFFF; --panel-subtle: #F3F1E7; --panel-hover: #ECEADD;
+  --text: #16141A; --face: #EBE8DA;
+  --emerald: #E0A21B; --emerald-light: #A87400; --emerald-dark: #A87400; --emerald-grad: linear-gradient(180deg, #F0B93A, #E0A21B);
+  --on-accent: #FFFFFF; --glow: rgba(224, 162, 27, 0.24);
+  --wash: #FFE7A8; --wash2: #CFEBC3; --stage-bg: #F7F2DE;
+}
+body[data-theme="angpao"], body[data-theme="imlek"] {
+  --fg: 22, 20, 26; --bg: #FBF7F5; --bg-outer: #EFE3DF; --panel: #FFFFFF; --panel-subtle: #F7EEEB; --panel-hover: #F1E5E1;
+  --text: #16141A; --face: #F1E3DF;
+  --emerald: #D62B36; --emerald-light: #B51F2A; --emerald-dark: #B51F2A; --emerald-grad: linear-gradient(180deg, #E5434D, #D62B36);
+  --on-accent: #FFFFFF; --glow: rgba(214, 43, 54, 0.2);
+  --wash: #FFD0C8; --wash2: #FFE6A6; --stage-bg: #FCEDE8;
+}
+body[data-theme="imlek"] { --wash: #FFB9B0; --wash2: #FFD979; }
+body[data-theme="river"] {
+  --fg: 22, 20, 26; --bg: #F6F8FB; --bg-outer: #E2E8F1; --panel: #FFFFFF; --panel-subtle: #EDF1F7; --panel-hover: #E6ECF4;
+  --text: #16141A; --face: #E2E8F1;
+  --emerald: #3E6FD8; --emerald-light: #2A55B5; --emerald-dark: #2A55B5; --emerald-grad: linear-gradient(180deg, #5A86E2, #3E6FD8);
+  --on-accent: #FFFFFF; --glow: rgba(62, 111, 216, 0.2);
+  --wash: #CFE0FF; --wash2: #FFE9B8; --stage-bg: #E8EFFA;
+}
+body {
+  --line: rgba(var(--fg), 0.08);
+  --line-strong: rgba(var(--fg), 0.14);
+  --soft: rgba(var(--fg), 0.78);
+  --muted: rgba(var(--fg), 0.55);
+  --tint: color-mix(in srgb, var(--emerald) 14%, transparent);
+  --gold: var(--emerald-light);
+  --gold-soft: var(--tint);
+  --gold-border: var(--line-strong);
+}
+
+html, body { color-scheme: light; font-family: var(--sans); font-weight: 500; }
+body { background: var(--bg-outer); }
+@media (max-width: 519px) { html, body { background: var(--bg); } }
+::selection { background: var(--wash); }
+
+/* The page: a soft wash of the occasion's two pastels at the top, fading into the page colour */
+.app {
+  background:
+    radial-gradient(70% 30% at 8% 0%, var(--wash), transparent 72%),
+    radial-gradient(60% 28% at 100% 6%, var(--wash2), transparent 70%),
+    var(--bg);
+  background-attachment: local;
+}
+@media (min-width: 520px) {
+  .app { border: 0; box-shadow: 0 30px 80px -30px rgba(40, 24, 10, 0.45), 0 0 0 7px #16141A, 0 0 0 8.5px rgba(0, 0, 0, 0.25); }
+  .app::before { background: #16141A; border: 0; box-shadow: none; }
+}
+.app > section { gap: 20px; }
+
+/* ---------- Type ---------- */
+h1, .h1, .calm-title, .pick-title h1, .home-title h1, .t-display {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(34px, 10vw, 44px);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--text);
+}
+h1.small-h1 { font-size: 28px; }
+h2, .sheet-title, .step-title, .top-title, .sec-bar h2, .sec-bar .sec-title, .t-title {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-wrap: balance;
+}
+h3 { font-weight: 800; font-size: 15px; }
+.eyebrow, .field > label, .label, .seen-label, .pick-label, .t-label, .sheet-sub.caps {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 11.5px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lead, .calm-tip, .pick-title p { font-size: 15px; line-height: 1.5; font-weight: 500; color: var(--soft); text-wrap: pretty; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.tiny { font-size: 12px; }
+h1 em, .h1 em { color: var(--emerald-light); font-style: normal; }
+.t-num, .pin-input, .timer, .pin-digit { font-variant-numeric: tabular-nums; font-weight: 900; }
+/* never capitals: what people typed, and the words of a voice */
+.caption, .caption *, textarea, .input, .seen-caption, .thanks-card p, .names, .stage * { text-transform: none; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  min-height: 56px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.btn > span, .btn-label { display: block; text-box: trim-both cap alphabetic; }
+.btn:not(.ghost):not(.emerald-track):not(.link) {
+  background: var(--ink);
+  color: #FFFFFF;
+  box-shadow: 0 14px 28px -16px rgba(22, 20, 26, 0.7);
+  text-shadow: none;
+}
+.btn:not(.ghost):not(.emerald-track):not(.link):hover:not(:disabled) { background: #2C2932; }
+.btn.ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px rgba(var(--fg), 0.16); }
+.btn.ghost:hover:not(:disabled) { background: var(--tile); box-shadow: inset 0 0 0 2px rgba(var(--fg), 0.24); }
+.btn.sm { min-height: 40px; padding: 0 16px; font-size: 12px; letter-spacing: 0.06em; }
+.btn.link { background: none; color: var(--text); text-decoration: underline; text-decoration-color: var(--line-strong); }
+.btn.accent { background: var(--emerald) !important; color: var(--on-accent) !important; }
+.btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .tab:focus-visible { outline: 3px solid var(--emerald); outline-offset: 2px; }
+
+/* The slide button: a black pill with a white knob that you push to the right */
+.btn.emerald-track {
+  background: var(--ink);
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 999px;
+  min-height: 64px;
+  padding: 6px 20px 6px 6px;
+  box-shadow: 0 16px 30px -16px rgba(22, 20, 26, 0.75);
+}
+.btn.emerald-track .knob {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+.btn.emerald-track:hover:not(:disabled) { background: #2C2932; }
+.btn.emerald-track > span { color: #FFFFFF; font-weight: 800; padding-right: 52px; }
+
+/* Round icon buttons (back, profile, close) */
+.icon-btn, .backbtn[data-icon], .sheet-close {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.14s ease;
+}
+.icon-btn:active, .backbtn[data-icon]:active { transform: scale(0.94); }
+.icon-btn.ghost { visibility: hidden; box-shadow: none; }
+.icon-btn.dark { background: var(--ink); color: #FFFFFF; }
+.backbtn[data-icon="back"], .backbtn.small[data-icon="back"] { width: 46px; height: 46px; padding: 0; border: 0; gap: 0; font-size: 0; }
+.backbtn[data-icon="back"]::after { content: none; }
+.backbtn svg, .backbtn.small svg { width: 20px; height: 20px; }
+.sheet-close { width: 38px; height: 38px; box-shadow: none; background: var(--tile); }
+
+/* ---------- The top bar ---------- */
+.top-bar, .nav-header {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 2px 0 0;
+}
+.top-bar > :nth-child(2), .nav-header > :nth-child(2) { justify-self: center; min-width: 0; max-width: 100%; }
+.top-bar > :last-child, .nav-header > :last-child:not(:first-child) { justify-self: end; }
+.top-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.top-pill {
+  display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px;
+  background: #FFFFFF; box-shadow: var(--shadow-soft); font-weight: 700; font-size: 12px; letter-spacing: 0.06em;
+  text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+
+/* ---------- The bottom nav (home, account) ---------- */
+.bottom-nav {
+  position: sticky;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 20;
+  align-self: center;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: 0 16px 40px -14px rgba(40, 24, 10, 0.35), 0 0 0 1px rgba(var(--fg), 0.05);
+}
+.app:has(> .bottom-nav) { padding-bottom: 0; }
+.app:has(> .bottom-nav) > section { padding-bottom: 18px; }
+.tab {
+  position: relative; z-index: 1; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%;
+  color: var(--muted); text-decoration: none; -webkit-tap-highlight-color: transparent;
+  transition: color 0.16s ease, transform 0.14s ease; --ico-fill: transparent;
+}
+.tab .ico { width: 24px; height: 24px; }
+.tab.lit { color: #FFFFFF; --ico-fill: rgba(255, 255, 255, 0.22); }
+.tab:not(.lit):hover { opacity: 1; color: var(--text); }
+.tab.lit:hover { opacity: 1; }
+.tab:active { transform: scale(0.94); }
+/* The black blob behind the current tab; bottomNav() moves it (left + width), it stretches then shrinks */
+.nav-blob {
+  position: absolute; top: 6px; left: 6px; width: 56px; height: 56px; border-radius: 999px; background: var(--ink);
+  transition: left 0.19s cubic-bezier(0.4, 0, 0.2, 1), width 0.19s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-blob.still { transition: none; }
+
+/* ---------- Inputs ---------- */
+.input {
+  min-height: 56px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.07), 0 8px 22px -16px rgba(40, 24, 10, 0.4);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+textarea.input { border-radius: 24px; padding: 16px 20px; font-weight: 500; }
+.input::placeholder { color: rgba(var(--fg), 0.32); font-weight: 500; }
+.input:focus { box-shadow: 0 0 0 2.5px var(--ink); border: 0; background: #FFFFFF; }
+.field { gap: 8px; }
+.field > label { padding-left: 18px; }
+/* An input with its small label inside the pill, on the left (FOR · FROM) */
+.pill-field {
+  display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 0 8px 0 20px; border-radius: 999px;
+  background: #FFFFFF; box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.07), 0 8px 22px -16px rgba(40, 24, 10, 0.4);
+}
+.pill-field:focus-within { box-shadow: 0 0 0 2.5px var(--ink); }
+.pill-field > span { flex: 0 0 auto; width: 48px; font-weight: 800; font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.pill-field .input { flex: 1; min-height: 54px; padding: 0 8px 0 0; background: transparent; box-shadow: none; border-radius: 0; }
+.pill-field .input:focus { box-shadow: none; }
+
+/* ---------- Surfaces: no bordered boxes. A soft tile only where something really needs a surface ---------- */
+.card, .panel, .stat-card, .hero-card, .settings-group, .gift-item, .thanks-card, .choice, .twist, .check, .linkbox,
+.recipient-pill, .list .item, .bento-card, .inapp-hint, .diff-line, .pin-row, .nav-list, .nav-row {
+  border: 0 !important;
+  box-shadow: none;
+}
+.card, .panel { background: transparent; padding: 0; border-radius: 0; }
+.tile, .linkbox, .stat-card, .diff-line, .recipient-pill, .inapp-hint, .thanks-card {
+  background: var(--tile);
+  border-radius: var(--r-tile);
+}
+.linkbox { min-height: 58px; padding: 6px 6px 6px 20px; border-radius: 999px; }
+.linkbox span { font-weight: 700; font-size: 14px; }
+.linkbox button { height: 46px; padding: 0 18px; border-radius: 999px; background: var(--ink); color: #FFFFFF; font-weight: 800; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.linkbox button span { color: #FFFFFF; }
+.linkbox button:hover { background: #2C2932; }
+
+/* Rows in a list: separated by space and a hairline, no boxes */
+.nav-list { background: transparent; border-radius: 0; padding: 0; gap: 0; }
+.nav-row {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 10px 2px;
+  background: transparent; border-radius: 0; color: var(--text); text-align: left; font: inherit; cursor: pointer;
+  border-bottom: 1px solid var(--line) !important;
+}
+.nav-row:last-child { border-bottom: 0 !important; }
+.nav-ico { flex: 0 0 46px; width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; background: var(--wash); color: var(--text); --ico-fill: #FFFFFF; }
+.nav-info b { font-weight: 800; font-size: 14px; letter-spacing: 0.02em; text-transform: uppercase; }
+.nav-info small { color: var(--muted); font-size: 13px; }
+
+/* ---------- Chips, swatches, picks ---------- */
+.chip {
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: var(--text);
+  box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.08);
+  font-weight: 700;
+  font-size: 13px;
+}
+.chip:hover:not(:disabled):not(.on) { background: #FFFFFF; box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.2); }
+.chip.on, .wheel > .chip.on { background: var(--ink); color: #FFFFFF; box-shadow: none; border: 0; }
+.wheel > .chip { height: 44px; padding: 0 16px; }
+.swatch i { box-shadow: inset 0 0 0 1.5px rgba(var(--fg), 0.1); }
+.wheel { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+
+/* ---------- The bottom sheet ---------- */
+.sheet-backdrop { background: rgba(22, 20, 26, 0.32); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.bottom-sheet { background: var(--bg); border: 0 !important; border-radius: 32px 32px 0 0; box-shadow: 0 -20px 60px -20px rgba(22, 20, 26, 0.35); color: var(--text); }
+.sheet-handle { background: rgba(var(--fg), 0.16); }
+.sheet-sub { color: var(--muted); font-size: 13.5px; text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+/* ---------- Toast, badges, loaders ---------- */
+.toast { background: var(--ink); color: #FFFFFF; font-weight: 700; box-shadow: 0 14px 34px -12px rgba(22, 20, 26, 0.6); }
+.badge-pill { border: 0; background: #FFFFFF; box-shadow: var(--shadow-soft); color: var(--text); font-weight: 800; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.badge-pill.gold, .badge-pill.green { background: var(--wash); color: var(--text); }
+.spinner, .spinner::before, .spinner::after { background: var(--ink); border-radius: 50%; }
+.avatar { color: #FFFFFF; font-weight: 800; }
+
+/* ---------- The gift on every page: a soft rounded window, no frame ---------- */
+/* The gift stands on the page: no card, no colour, no shadow behind it. Only a backdrop the friend
+   picked (Night, Sunset…, stage.js setBackdrop) makes it a rounded scene. */
+.stage-wrap { border: 0; border-radius: 0; background: none; box-shadow: none; }
+.stage-wrap:not(.with-backdrop) .glow { display: none; } /* its big soft light would show the old box's edges */
+/* A picked backdrop, and the river's own night, fade into the page at the edges: no hard box. The fade sits on the
+   frame (masking the scaled stage itself leaves a hairline at its edge); in the reveal's dark room, where the frame
+   carries the dimming shadow, it moves onto the stage. */
+.stage-wrap.with-backdrop:not(.cine), .stage-wrap:not(.cine):has(> .stage.krathongs),
+.stage-wrap.cine.with-backdrop > .stage, .stage-wrap.cine > .stage.krathongs {
+  -webkit-mask-image: linear-gradient(90deg, transparent 2%, #000 12%, #000 88%, transparent 98%), linear-gradient(180deg, transparent 2%, #000 12%, #000 88%, transparent 98%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 2%, #000 12%, #000 88%, transparent 98%), linear-gradient(180deg, transparent 2%, #000 12%, #000 88%, transparent 98%);
+  mask-composite: intersect;
+}
+/* The reveal's dark room: the gift's own area goes dark too (a soft warm light behind it), so no bright box shows */
+.stage-wrap.cine, .reveal-page #cake .stage-wrap.cine {
+  border-radius: 0; /* square, so the dark around it and the dark on it meet without a seam */
+  box-shadow: 0 0 0 100vmax rgba(4, 3, 8, 0.55);
+  background: radial-gradient(closest-side, rgba(255, 214, 160, 0.16), transparent), rgba(4, 3, 8, 0.55);
+  transition: box-shadow 1s ease, background 1s ease;
+}
+
+/* ---------- Consent: a round tick, no box ---------- */
+.check { background: transparent; padding: 6px 2px; border-radius: 0; font-size: 13.5px; color: var(--soft); gap: 12px; }
+.check input { width: 24px; height: 24px; accent-color: var(--ink); }
+.check:has(input:checked) { background: transparent; color: var(--text); }
+
+/* Small text links */
+.linkbtn { color: var(--text); font-weight: 800; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-nav, .icon-btn, .btn { transition: none; }
+}
+
+/* ==================== Create (/new): one screen, then Customize on its own page ==================== */
+.make-title { font-size: 40px; margin: 2px 0 -6px; }
+/* The kinds: big live gifts in a row you slide; the one in the middle is the gift, its neighbours peek in */
+.kind-carousel {
+  display: flex; align-items: center; gap: 6px; margin: -10px -16px -26px; padding: 10px calc(50% - 31%) 34px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+@media (min-width: 520px) { .kind-carousel { margin-inline: -18px; } }
+.kind-carousel::-webkit-scrollbar { display: none; }
+.kind-carousel > .kind {
+  flex: 0 0 62%; display: block; padding: 0; border: 0; background: none; border-radius: 34px; cursor: pointer;
+  scroll-snap-align: center; opacity: 0.45; transform: scale(0.8);
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.kind-carousel > .kind.on { opacity: 1; transform: scale(1); }
+.kind-carousel .mini { pointer-events: none; border-radius: 34px; overflow: visible; background: none; }
+.kind-name { margin: -10px 0 0; text-align: center; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); min-height: 15px; }
+
+/* The occasion: three round tiles with a cute icon */
+.occ-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.occ {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 72px;
+  border: 0; border-radius: 24px; background: #FFFFFF; color: var(--text); cursor: pointer; font: inherit;
+  box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.06); --ico-fill: var(--wash);
+  font-weight: 800; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  transition: transform 0.14s ease, background 0.2s ease;
+}
+.occ i { display: grid; place-items: center; height: 28px; }
+.occ .ico { width: 28px; height: 28px; }
+.occ:active { transform: scale(0.96); }
+.occ.on { background: var(--ink); color: #FFFFFF; box-shadow: 0 14px 26px -16px rgba(22, 20, 26, 0.8); --ico-fill: var(--emerald); }
+
+.make-form { gap: 10px; }
+.make-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.soft-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 14px;
+  border: 0; border-radius: 999px; background: var(--wash); color: var(--text); cursor: pointer; font: inherit;
+  font-weight: 800; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; --ico-fill: #FFFFFF;
+  -webkit-tap-highlight-color: transparent; transition: transform 0.14s ease;
+}
+.soft-btn:active { transform: scale(0.97); }
+.soft-btn i { display: grid; place-items: center; }
+.soft-btn b { font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 0.12em; }
+.make-form .btn.emerald-track { margin-top: 6px; }
+.err { color: #D6342B; font-weight: 700; margin: 0; padding-left: 18px; }
+
+/* Customize */
+.top-bar.wide-right { grid-template-columns: 46px minmax(0, 1fr) auto; }
+.save-btn { min-height: 46px !important; padding: 0 20px !important; }
+[data-screen="decorate"] { gap: 12px; }
+/* The gift in the middle, the kinds before and after peeking in at the edges: it can be swiped */
+[data-screen="decorate"] .stage-showcase.decor-kinds {
+  --cw: min(74%, 38dvh); position: relative; display: flex; justify-content: center; align-items: center;
+  margin-inline: -16px; overflow: hidden; padding: 4px 0 10px;
+}
+@media (min-width: 520px) { [data-screen="decorate"] .stage-showcase.decor-kinds { margin-inline: -18px; } }
+#decorCake { width: var(--cw); }
+.kind-peek {
+  position: absolute; top: 50%; width: calc(var(--cw) * 0.8); padding: 0; border: 0; background: none; cursor: pointer;
+  transform: translateY(-50%); opacity: 0.5; border-radius: 28px; transition: opacity 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.kind-peek:active { opacity: 0.75; }
+.kind-peek.prev { right: calc(50% + var(--cw) / 2 + 10px); }
+.kind-peek.next { left: calc(50% + var(--cw) / 2 + 10px); }
+.kind-peek .mini { pointer-events: none; background: none; overflow: visible; }
+.kind-switch { display: flex; flex-direction: column; align-items: center; gap: 7px; margin-top: -8px; }
+.kind-switch b { text-align: center; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+.kind-dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 70%; }
+.kind-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(var(--fg), 0.18); transition: width 0.2s ease, background 0.2s ease; }
+.kind-dots i.on { width: 18px; border-radius: 3px; background: var(--ink); }
+/* The country on the gift: the cake's mat and garland, what hangs over a wedding */
+.cake-local svg, .local-drape svg { display: block; }
+.local-drape { position: absolute; left: 0; top: 0; right: 0; height: 80px; pointer-events: none; z-index: 0; }
+.icon-btn.small { width: 38px; height: 38px; }
+.icon-btn.small .ico { width: 18px; height: 18px; }
+.icon-btn.flip .ico { transform: scaleX(-1); }
+.icon-btn:disabled { opacity: 0.35; cursor: default; }
+
+.tool-tabs {
+  display: flex; gap: 4px; margin: 0 -16px; padding: 4px 16px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+  overscroll-behavior-x: contain;
+}
+@media (min-width: 520px) { .tool-tabs { margin: 0 -18px; padding: 4px 18px; } }
+.tool-tabs::-webkit-scrollbar { display: none; }
+.tool-tab {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  min-width: 66px; height: 66px; padding: 0 8px; border: 0; border-radius: 22px; background: transparent; color: var(--muted);
+  cursor: pointer; font: inherit; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  --ico-fill: transparent; transition: background 0.15s ease, color 0.15s ease;
+}
+.tool-tab span { max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool-tab.on { background: #FFFFFF; color: var(--text); box-shadow: var(--shadow-soft); --ico-fill: var(--wash); }
+.decor-tools { flex: 1; min-height: 0; display: block; overflow-y: auto; scrollbar-width: none; padding: 6px 0 12px; }
+.decor-tools::-webkit-scrollbar { display: none; }
+.tool-pane { display: flex; flex-direction: column; gap: 12px; }
+.tool-pane > .row { gap: 10px; }
+.tool-pane .wheel { min-height: 56px; }
+.tool-hint { margin: 0; text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.draw-row { justify-content: center; }
+.age-row { padding: 0 6px; }
+.age-row input[type="range"] { accent-color: var(--ink); }
+.age-row b { width: 36px; text-align: right; font-size: 18px; }
+#musicPlay { flex: 0 0 auto; }
+.sticker-btn { border: 0; background: #FFFFFF; box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.06); border-radius: 18px; }
+/* Colours as round blobs; the picked one gets an ink ring */
+.swatch { width: 52px; height: 52px; border-radius: 50%; border: 0; background: transparent; box-shadow: none; }
+.swatch i { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(var(--fg), 0.08), 0 6px 14px -8px rgba(40, 24, 10, 0.5); }
+.swatch.on { background: transparent; box-shadow: 0 0 0 2.5px var(--ink); }
+.swatch.brush i { width: 30px; height: 30px; }
+.wheel > .swatch { opacity: 0.7; transform: scale(0.9); }
+.wheel > .swatch.on { opacity: 1; transform: scale(1.08); }
+.sticker-btn { width: 52px; height: 52px; font-size: 28px; }
+.slider { padding-block: 4px; }
+.tool-pane[data-tool="music"] > .row { flex-direction: column; align-items: stretch; }
+.tool-pane[data-tool="music"] #musicPlay { align-self: center; }
+.tool-pane[data-tool="music"] .wheel { width: 100%; flex: none; }
+
+/* ==================== Home ==================== */
+.brand-pill {
+  display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 16px 0 6px; border-radius: 999px; background: #FFFFFF;
+  box-shadow: var(--shadow-soft); font-weight: 900; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
+}
+.brand-pill i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: #FFFFFF; }
+.top-bar > .brand-pill { justify-self: start; grid-column: 1 / 3; }
+.ava-btn { background: var(--emerald); color: #FFFFFF; font-weight: 900; font-size: 16px; }
+.ava-btn:hover { opacity: 1; }
+.home-title { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.home-title h1 { font-size: clamp(40px, 12vw, 52px); margin: 0; }
+.home-title .lead { margin: 0; color: var(--soft); font-weight: 600; font-size: 15px; }
+.gift-carousel {
+  display: flex; align-items: center; gap: 4px; margin: -6px -16px -20px; padding: 8px calc(50% - 31%) 30px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+@media (min-width: 520px) { .gift-carousel { margin-inline: -18px; } }
+.gift-carousel::-webkit-scrollbar { display: none; }
+.gift-carousel > .home-gift {
+  position: static; flex: 0 0 62%; width: auto; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  border-radius: 34px; box-shadow: none; text-decoration: none; color: var(--text); scroll-snap-align: center;
+  opacity: 0.45; transform: scale(0.8); transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gift-carousel > .home-gift.on { opacity: 1; transform: scale(1); }
+.gift-carousel > .home-gift:hover { opacity: 1; }
+.home-gift .mini { width: 100%; pointer-events: none; }
+.home-gift > span { font-weight: 800; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.home-gift.on > span { color: var(--text); }
+.home-actions { display: grid; gap: 10px; }
+.home-actions .btn { width: 100%; }
+.home-actions .btn i { display: grid; place-items: center; }
+.open-form { gap: 12px; }
+
+/* ==================== Login and account ==================== */
+.auth-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; margin-top: 4vh; }
+.auth-wrap h1 { margin: 8px 0 0; }
+.auth-wrap .lead { margin: 0 0 8px; max-width: 30ch; }
+.auth-wrap #authBox { width: 100%; text-align: left; }
+.auth-emoji {
+  width: 132px; height: 132px; display: grid; place-items: center; border-radius: 50%; font-size: 64px; line-height: 1;
+  background: radial-gradient(circle at 35% 30%, #FFFFFF, var(--wash) 70%); box-shadow: 0 24px 50px -24px var(--emerald);
+}
+/* Profile (/account): a big avatar, the name, the email */
+.me-head { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 18px; text-align: center; }
+.me-ava {
+  width: 92px; height: 92px; display: grid; place-items: center; border-radius: 50%; margin-bottom: 6px;
+  background: var(--ink); color: #FFFFFF; font-weight: 900; font-size: 38px; box-shadow: 0 18px 40px -20px rgba(40, 24, 10, 0.6);
+}
+.me-head h1 { font-size: clamp(30px, 9vw, 40px); margin: 0; overflow-wrap: anywhere; }
+.me-head .lead { margin: 0; color: var(--soft); font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+/* Your gifts (/gifts): a big title with a + to make another */
+.gifts-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.gifts-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 36px 8px 8px; text-align: center; }
+.gifts-empty-ico { width: 96px; height: 96px; display: grid; place-items: center; border-radius: 50%; background: var(--wash); --ico-fill: #FFFFFF; margin-bottom: 8px; }
+.gifts-empty b { font-weight: 800; font-size: 18px; letter-spacing: 0.04em; text-transform: uppercase; }
+.gifts-empty p { margin: 0 0 14px; color: var(--soft); font-weight: 500; }
+.gifts-head h1 { font-size: clamp(36px, 11vw, 48px); margin: 0; }
+.make-btn { background: var(--ink); color: #FFFFFF; --ico-fill: transparent; }
+.make-btn:hover { opacity: 1; color: #FFFFFF; }
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-tile {
+  position: relative; display: flex; flex-direction: column; gap: 2px; min-height: 104px; padding: 18px; border-radius: var(--r-tile);
+  background: var(--wash); overflow: hidden; --ico-fill: #FFFFFF;
+}
+.stat-tile.alt { background: var(--wash2); }
+.stat-tile b { font-size: 38px; line-height: 1; letter-spacing: -0.02em; }
+.stat-tile span { font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); margin-top: auto; }
+.stat-tile i { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.6); }
+.sec-title { margin: 6px 0 2px; }
+.list:has(> .gift-item), #gifts { display: flex; flex-direction: column; gap: 0; }
+.gift-item {
+  display: flex; flex-direction: row; align-items: center; gap: 14px; padding: 10px 0; border-radius: 0; background: transparent;
+  border-bottom: 1px solid var(--line) !important;
+}
+.gift-item:last-child { border-bottom: 0 !important; }
+.gift-item-ava { flex: 0 0 52px; height: 52px; border-radius: 50%; background: var(--wash); color: var(--text); --ico-fill: #FFFFFF; display: grid; place-items: center; }
+.gift-item[data-occasion="graduation"] .gift-item-ava { background: #D7E7FF; }
+.gift-item[data-occasion="wedding"] .gift-item-ava { background: #EADCFB; }
+.gift-item-open {
+  flex: 1; min-width: 0; height: auto; margin: 0; padding: 4px 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  border-radius: 0; background: none !important; color: var(--text); text-decoration: none;
+}
+.gift-item-open b { font-weight: 800; font-size: 16px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gift-item-open span { color: var(--muted); font-size: 13px; font-weight: 600; }
+.gift-item-del { flex: 0 0 40px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--tile); color: var(--muted); }
+.gift-item-del:hover { color: #D6342B; background: #FCE4E2; }
+.empty-gifts {
+  display: flex; align-items: center; gap: 12px; padding: 18px; border-radius: var(--r-tile); background: var(--tile); color: var(--text);
+  font-weight: 800; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none;
+}
+.nav-row.danger { color: #D6342B; }
+.nav-row.danger .nav-ico { background: #FCE4E2; color: #D6342B; }
+.nav-row.danger b { color: #D6342B; }
+.nav-chev { color: var(--muted); }
+.thanks-card { padding: 16px 18px; }
+.thanks-new { background: var(--ink); color: #FFFFFF; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ==================== The friend's page (/g/…) ==================== */
+.calm-page { gap: 18px; padding-top: 0; }
+.calm-title { font-size: clamp(32px, 9.5vw, 42px); }
+.signed-in { margin: -2px 0 0 20px; font-size: 12.5px; }
+.say-ideas { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0 !important; background: none; }
+.idea { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.06); font-weight: 700; font-size: 13px; }
+.say-lang { margin: -6px 0 0; text-align: center; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.private-note { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; color: var(--muted); }
+.private-note .ico { flex-shrink: 0; }
+
+/* The one big button: a black circle with a white mic that breathes in the occasion's colour */
+.mic-big {
+  width: 120px; height: 120px; margin: 18px auto 14px; background: var(--ink); color: #FFFFFF;
+  box-shadow: 0 0 0 10px var(--wash), 0 24px 40px -18px rgba(22, 20, 26, 0.7);
+}
+.mic-big:hover { box-shadow: 0 0 0 12px var(--wash), 0 24px 44px -16px rgba(22, 20, 26, 0.75); }
+.mic-big::before, .mic-big::after { border-color: var(--emerald) !important; }
+.mic-big.waiting { opacity: 0.4; }
+
+/* Recording */
+.rec-pill { gap: 8px; }
+.rec-pill b { font-weight: 800; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: #F0453A; }
+@keyframes vg-recdot { 50% { opacity: 0.3; } }
+.timer { font-family: var(--display); font-weight: 900; font-size: 84px; letter-spacing: -0.03em; color: var(--text); text-align: center; }
+.rec-progress { background: var(--tile); border-radius: 999px; }
+.rec-progress i { background: var(--ink); border-radius: 999px; }
+.meter i { background: var(--ink); border-radius: 999px; }
+.recbtn { background: #F0453A; color: #FFFFFF; border: 0; box-shadow: 0 0 0 10px #FDE1DE, 0 20px 36px -18px rgba(240, 69, 58, 0.8); }
+
+/* Check your words: the gift, then the voice and its words on a soft tile, as the recipient will see it */
+.record-page .seen-clip { gap: 14px; }
+:is(.reveal-page, .record-page) .birthday-player {
+  --text: #16141A; --muted: rgba(22, 20, 26, 0.55); --soft: rgba(22, 20, 26, 0.75); --emerald-light: var(--ink);
+  padding: 18px 18px 16px; border: 0; border-radius: var(--r-tile); background: #FFFFFF; color: var(--text);
+  box-shadow: 0 18px 40px -26px rgba(40, 24, 10, 0.45);
+}
+:is(.reveal-page, .record-page) .birthday-letter-label { color: var(--muted); font-weight: 800; letter-spacing: 0.12em; }
+:is(.reveal-page, .record-page) .birthday-player .name { font-weight: 800; font-size: 15px; }
+:is(.reveal-page, .record-page) .birthday-player .caption { font-family: var(--sans); font-weight: 600; font-size: 21px; line-height: 1.5; letter-spacing: -0.01em; }
+:is(.reveal-page, .record-page) .birthday-player .caption span { color: rgba(22, 20, 26, 0.4); }
+:is(.reveal-page, .record-page) .birthday-player .caption span.done { color: var(--text); }
+:is(.reveal-page, .record-page) .birthday-player .caption span.now { color: var(--text); background: linear-gradient(transparent 62%, var(--wash) 62%); }
+.record-page .seen-play, .seen-play { width: 48px; height: 48px; background: var(--ink); color: #FFFFFF; }
+.record-page .caption-editor label { color: var(--muted); font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding-left: 0; }
+.record-page #captionText {
+  min-height: 140px; border: 0; border-radius: 22px; background: var(--wash); color: var(--text);
+  font-family: var(--sans); font-weight: 600; font-size: 21px; line-height: 1.5; padding: 16px 18px 34px; box-shadow: none;
+}
+.record-page #captionText:focus { outline: 2.5px solid var(--ink); outline-offset: 2px; }
+.record-page #captionText::placeholder { color: rgba(22, 20, 26, 0.4); }
+.record-page .edit-badge { color: var(--soft); font-weight: 800; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.record-page .caption-edit-hint { color: var(--muted); font-size: 13px; font-weight: 600; }
+.record-page #resetAsrBtn { color: var(--text); }
+.diff-line { padding: 12px 16px; font-weight: 600; }
+
+/* The twist: no box. Two icon tabs, then round tiles you tap */
+.twist { flex-direction: column; gap: 12px; padding: 0; background: transparent; }
+.twist-head { display: flex; align-items: baseline; justify-content: space-between; }
+.twist-head b { font-weight: 800; font-size: 18px; letter-spacing: 0.01em; text-transform: uppercase; }
+.twist-head small { font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.twist-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border-radius: 999px; background: var(--tile); }
+.twist-tabs:has(> [hidden]) { grid-template-columns: 1fr; }
+.twist-tab {
+  display: flex; align-items: center; justify-content: center; gap: 8px; height: 46px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--muted); font: inherit; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+  --ico-fill: transparent;
+}
+.twist-tab i { display: grid; place-items: center; }
+.twist-tab.on { background: #FFFFFF; color: var(--text); box-shadow: var(--shadow-soft); --ico-fill: var(--wash); }
+.twist-pane { display: flex; flex-direction: column; gap: 10px; }
+.twist-pane .stack { gap: 10px !important; }
+.twist .pick-label { margin-top: 4px; }
+.pick-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 4px 16px 8px; }
+.pick-row::-webkit-scrollbar { display: none; }
+.twist .pick, .pick-row > .pick {
+  flex: 0 0 auto; min-width: 76px; padding: 0; gap: 6px; border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none;
+  display: flex; flex-direction: column; align-items: center; color: var(--soft); font-weight: 700; font-size: 11.5px;
+}
+.pick-row > .pick > :first-child:not(span:only-child) {
+  width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; background: #FFFFFF;
+  box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.06), 0 8px 18px -12px rgba(40, 24, 10, 0.45);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.pick-row > .pick .pick-emoji { font-size: 30px; }
+.pick-row > .pick.on { color: var(--text); }
+.pick-row > .pick.on > :first-child:not(span:only-child) { box-shadow: 0 0 0 3px var(--ink), 0 10px 22px -12px rgba(40, 24, 10, 0.55); transform: scale(1.04); }
+.pick-row > .pick .item-color { width: 64px; height: 64px; border: 0; }
+.pick-row > .pick .mini-candle { width: 64px; height: 64px; }
+
+/* ==================== The organizer's page (/m/…) ==================== */
+.dash { gap: 16px; }
+.dash-scene #cake { width: min(100%, 330px); }
+.facepile-row {
+  display: flex; align-items: center; justify-content: center; gap: 0; margin: -4px auto 0; padding: 6px 14px 6px 8px; border: 0; border-radius: 999px;
+  background: #FFFFFF; box-shadow: var(--shadow-soft); font: inherit; cursor: pointer; color: var(--text);
+}
+.facepile-row i { width: 30px; height: 30px; margin-right: -8px; display: grid; place-items: center; border-radius: 50%; border: 2.5px solid #FFFFFF; color: #FFFFFF; font-style: normal; font-weight: 800; font-size: 11px; }
+.facepile-row span { margin-left: 16px; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+.facepile-row i:empty, .facepile-row:not(:has(i)) span { margin-left: 4px; }
+.dash-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dash-act {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 120px; padding: 16px 14px; border: 0; border-radius: var(--r-tile);
+  background: var(--wash); color: var(--text); font: inherit; text-align: left; cursor: pointer; --ico-fill: #FFFFFF;
+  transition: transform 0.14s ease;
+}
+.dash-act:nth-child(2) { background: var(--wash2); }
+.dash-act:active { transform: scale(0.97); }
+.dash-act i { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.65); margin-bottom: auto; }
+.dash-act b { margin-top: 12px; font-weight: 900; font-size: 18px; letter-spacing: 0.01em; text-transform: uppercase; }
+.dash-act small { font-weight: 700; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--soft); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-act.dark { background: var(--ink); color: #FFFFFF; --ico-fill: var(--emerald); }
+.dash-act.dark i { background: rgba(255, 255, 255, 0.12); }
+.dash-act.dark small { color: rgba(255, 255, 255, 0.65); }
+.dash-panel { gap: 14px; }
+.dash-panel .lead { margin: 0; }
+.who-row { padding: 10px 0; border-top: 1px solid var(--line); gap: 12px; }
+.who-row .avatar { width: 40px; height: 40px; border-radius: 50%; font-size: 13px; }
+.who-row b { font-weight: 800; }
+.who-row .del { width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--tile); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.demo-row { gap: 8px; }
+.demo-row .soft-btn { min-height: 42px; font-size: 11px; background: var(--tile); }
+.pin-row { padding: 6px 0; }
+.nav-val { font-weight: 900; font-size: 18px; letter-spacing: 0.12em; }
+.delete-link { color: #D6342B !important; align-self: center; width: auto; min-height: 44px; font-size: 12px; text-decoration: none; }
+/* Share buttons: round app icons, no boxes */
+.sharerow { gap: 4px; }
+.share-app { border: 0; background: transparent; color: var(--soft); font-family: var(--sans); font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 0; }
+.share-app:hover { background: transparent; color: var(--text); }
+.share-ico { width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 10px 20px -12px rgba(22, 20, 26, 0.5); }
+.more .share-ico { background: var(--ink); }
+.btn.link { background: none !important; box-shadow: none !important; }
+
+/* ==================== The recipient's page (/r/…) ==================== */
+body.reveal-page[data-theme="birthday"] {
+  --bg: #FAF8F5; --bg-outer: #ECE7E1; --panel: #FFFFFF; --panel-hover: #EFEBE6; --text: #16141A;
+  --soft: rgba(22, 20, 26, 0.78); --muted: rgba(22, 20, 26, 0.55);
+  --emerald: #FF7A59; --emerald-light: #E5532F; --emerald-dark: #E5532F; --emerald-grad: linear-gradient(180deg, #FF9473, #FF7A59);
+  --on-accent: #FFFFFF; --glow: rgba(255, 140, 100, 0.28);
+}
+.reveal-page .app, .reveal-page[data-theme] .app {
+  background:
+    radial-gradient(70% 30% at 8% 0%, var(--wash), transparent 72%),
+    radial-gradient(60% 28% at 100% 6%, var(--wash2), transparent 70%),
+    var(--bg);
+}
+/* PIN */
+.verify-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; margin-top: 2vh; }
+.verify-wrap h1 { margin: 2px 0 6px; }
+.verify-lock { color: var(--text); --ico-fill: #FFFFFF; }
+.verify-form { width: 100%; align-items: center; gap: 14px; }
+.verify-form .err { padding: 0; text-align: center; }
+.pin-box-row { gap: 12px; justify-content: center; }
+.pin-digit, .reveal-page .pin-digit {
+  width: 64px; height: 72px; border: 0; border-radius: 24px; background: #FFFFFF; color: var(--text);
+  box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.08), 0 10px 22px -16px rgba(40, 24, 10, 0.5);
+  font-family: var(--sans); font-weight: 900; font-size: 30px; text-align: center;
+}
+.pin-digit:focus { box-shadow: 0 0 0 2.5px var(--ink); outline: 0; }
+.pin-digit.filled { background: var(--wash); box-shadow: none; }
+.pin-digit::placeholder { color: rgba(var(--fg), 0.2); }
+
+/* The scene */
+.reveal-page [data-screen="scene"] { gap: 16px; }
+.reveal-page .top-pill i { display: grid; place-items: center; }
+.sound-on { cursor: default; }
+.reveal-head { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.reveal-page #title {
+  font-family: var(--display); font-weight: 900 !important; font-size: clamp(34px, 10vw, 44px) !important; line-height: 0.98;
+  letter-spacing: -0.015em; text-transform: uppercase; color: var(--text); font-style: normal !important;
+}
+.reveal-page .birthday-name { display: block; color: var(--emerald-light); font-weight: 900; font-style: normal; }
+.reveal-page #sub { max-width: 300px; font-size: 14px; font-weight: 600; color: var(--soft) !important; }
+.reveal-page #birthdayDedication, .reveal-dedication { margin: 0; text-align: center; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.reveal-dedication:empty { display: none; }
+.reveal-page[data-reveal-phase] .birthday-eyebrow { display: none !important; }
+.reveal-page .birthday-ready-note p, .reveal-page .birthday-open-hint { color: var(--soft); font-size: 13px; font-weight: 600; }
+.reveal-page .birthday-facepile .avatar { border-color: var(--bg); }
+.reveal-page .birthday-idle { background: var(--tile); border: 0 !important; border-radius: var(--r-tile); }
+.reveal-page .birthday-idle > span { background: #FFFFFF; color: var(--text); }
+/* the player */
+:is(.reveal-page, .record-page) .birthday-play { background: var(--ink); color: #FFFFFF; border-radius: 999px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; height: 48px; }
+:is(.reveal-page, .record-page) .birthday-play:hover { background: #2C2932; }
+:is(.reveal-page, .record-page) .birthday-progress { background: var(--tile); height: 5px; border-radius: 999px; }
+:is(.reveal-page, .record-page) .birthday-progress > i { background: var(--ink); }
+:is(.reveal-page, .record-page) .birthday-times { color: var(--muted); font-weight: 700; }
+:is(.reveal-page, .record-page) .birthday-next { color: var(--text); }
+:is(.reveal-page, .record-page) .birthday-player .bars i { background: var(--ink) !important; }
+:is(.reveal-page, .record-page) .birthday-player .mood-tag { color: var(--soft); font-weight: 700; }
+:is(.reveal-page, .record-page) .birthday-player .mood-switch { color: var(--text); border: 0; background: var(--tile); border-radius: 999px; font-weight: 800; }
+/* who recorded: round faces with their names, no boxes */
+.reveal-page .birthday-library-head b { font-weight: 800; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.reveal-page .birthday-library-head > span, .reveal-page #heard { color: var(--muted); font-weight: 700; }
+.friend, .reveal-page .birthday-library .friend {
+  border: 0 !important; background: transparent !important; border-radius: 22px; color: var(--text); box-shadow: none;
+}
+.friend .avatar, .reveal-page .birthday-library .friend .avatar { width: 48px; height: 48px; border-radius: 50%; font-size: 15px; font-weight: 800; box-shadow: 0 8px 16px -10px rgba(40, 24, 10, 0.6); }
+.friend.on, .reveal-page .birthday-library .friend.on { background: #FFFFFF !important; box-shadow: var(--shadow-soft); }
+.friend.on span, .reveal-page .birthday-library .friend.on > span:not(.avatar):not(.tick) { color: var(--text) !important; }
+.reveal-page .birthday-library .friend > span:not(.avatar):not(.tick) { color: var(--soft); font-weight: 700; }
+.friend .tick, .reveal-page .birthday-library .tick { background: var(--ink); color: #FFFFFF; border-radius: 50%; }
+.reveal-page .birthday-heard-track { background: var(--tile); height: 5px; border-radius: 999px; }
+.reveal-page .birthday-heard-track > i { background: var(--ink); }
+.reveal-page .listen-actions > .btn { font-size: 12px; }
+/* the finale button you hold */
+.holdbtn { width: 132px; height: 132px; border: 0; border-radius: 50%; padding: 6px; background: var(--wash); box-shadow: 0 20px 40px -20px rgba(22, 20, 26, 0.6); }
+.holdbtn > span { border-radius: 50%; background: var(--ink); color: #FFFFFF !important; font-weight: 800; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+/* keepsake */
+.reveal-page .birthday-keepsake, .reveal-page .panel.row { padding: 16px; gap: 14px; border-radius: var(--r-tile); background: var(--wash) !important; border: 0 !important; }
+.reveal-page .birthday-keepsake .avatar { background: #FFFFFF !important; color: var(--text) !important; border-radius: 50%; width: 46px; height: 46px; }
+.birthday-keep-title { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.names span { border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.06); font-weight: 700; padding: 6px 12px 6px 8px; }
+.names span i { border-radius: 50%; }
+.names .more { border-radius: 999px; border: 0; background: var(--tile); font-weight: 800; }
+.row.even > .btn { flex: 1 1 0; }
+/* thank everyone */
+.thanks-opt { border: 0 !important; border-radius: var(--r-tile); background: var(--tile); padding: 16px; }
+.thanks-opt:hover:not(:disabled) { background: var(--wash); }
+.thanks-opt b { font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 14px; }
+/* the 3-2-1 in the dark room: the app's own type */
+.cine-count { font-family: var(--display); font-weight: 900; -webkit-text-stroke: 0; }
+
+/* ==================== New kinds ==================== */
+/* Ketupat (wedding, a Ramadan feel): a diamond of woven young palm leaf instead of a paper lantern.
+   The weave is fixed; the friend's colour is the glow when it lights up. */
+.stage.lanterns[data-shape="ketupat"] .l-body {
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background:
+    repeating-linear-gradient(45deg, rgba(60, 92, 28, 0.38) 0 1.2px, transparent 1.2px 7px),
+    repeating-linear-gradient(-45deg, rgba(60, 92, 28, 0.38) 0 1.2px, transparent 1.2px 7px),
+    linear-gradient(135deg, #B9D877, #86B54B 55%, #6E9A3A);
+}
+.stage.lanterns[data-shape="ketupat"] .lantern.lit .l-body {
+  background:
+    radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--c) 55%, #FFFFFF) 0%, transparent 60%),
+    repeating-linear-gradient(45deg, rgba(60, 92, 28, 0.32) 0 1.2px, transparent 1.2px 7px),
+    repeating-linear-gradient(-45deg, rgba(60, 92, 28, 0.32) 0 1.2px, transparent 1.2px 7px),
+    linear-gradient(135deg, #D2EB95, #9BC95C 55%, #7FAE45);
+  box-shadow: none;
+}
+.stage.lanterns[data-shape="ketupat"] .l-body::before, .stage.lanterns[data-shape="ketupat"] .l-body::after { display: none; }
+.stage.lanterns[data-shape="ketupat"] .lantern.lit { filter: drop-shadow(0 0 8px var(--c)) drop-shadow(0 0 18px color-mix(in srgb, var(--c) 45%, transparent)); }
+/* the two leaf ends hanging below */
+.stage.lanterns[data-shape="ketupat"] .l-tassel { width: 4px; height: 16px; margin-left: -4px; border-radius: 0 0 4px 4px; background: #7FAE45; transform: rotate(14deg); transform-origin: 50% 0; box-shadow: 5px 1px 0 #6E9A3A; }
+.stage.lanterns[data-shape="ketupat"] .l-initial { color: #2F4A14; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55); }
+/* Listening: the two actions stack, so long finale words ("Blow out the candles") fit */
+.reveal-page .listen-actions > .btn, .reveal-page .listen-actions > .btn.ghost { flex: 1 1 100%; }
+.pin-box-row { display: flex; }
+/* Contrast: small labels inside the pills and placeholders stay readable (≥ 4.5:1 on white) */
+.pill-field > span { color: rgba(var(--fg), 0.66); }
+.input::placeholder { color: rgba(var(--fg), 0.6); }
+/* Check your words: one surface only (the words), not a tile inside a tile */
+.record-page .birthday-player { background: transparent; box-shadow: none; padding: 4px 8px 0; border-radius: 0; }
+
+/* ==================== The cute look (2026-11-27): flat colours and a warm brown outline, like a sticker ==================== */
+:root {
+  --ol: #5B3A29; --olw: 3.4px;
+  --olf: drop-shadow(2.3px 0 0 var(--ol)) drop-shadow(-2.3px 0 0 var(--ol)) drop-shadow(0 2.3px 0 var(--ol)) drop-shadow(0 -2.3px 0 var(--ol));
+  /* a thinner outline for the small things (dishes, envelopes, floating lights) */
+  --olt: drop-shadow(1.4px 0 0 var(--ol)) drop-shadow(-1.4px 0 0 var(--ol)) drop-shadow(0 1.4px 0 var(--ol)) drop-shadow(0 -1.4px 0 var(--ol));
+}
+/* a piece cut out with clip-path is outlined by the wrapper around it (a filter runs before the cut) */
+.ol-wrap { position: absolute; inset: 0; filter: var(--olf); pointer-events: none; }
+.ol-wrap > .p { pointer-events: auto; }
+
+/* Cake: every piece outlined, shading gone. Drips are outlined on their sides and bottom only, below the cream's
+   edge, so the cream flows into them. */
+.cake-parts > .p { box-shadow: inset 0 0 0 var(--olw) var(--ol) !important; }
+.cake-parts > .p.drip {
+  box-shadow: inset 0 calc(var(--olw) * -1) 0 var(--ol) !important;
+  background-image: linear-gradient(90deg, var(--ol) 0 var(--olw), transparent var(--olw) calc(100% - var(--olw)), var(--ol) calc(100% - var(--olw))) !important;
+  background-size: 100% calc(100% - 9px) !important; background-position: 0 100% !important; background-repeat: no-repeat !important;
+}
+.cake-parts > .p.bead { box-shadow: inset 0 0 0 1.6px var(--ol) !important; }
+.cake-parts > .p.hl { box-shadow: none !important; }
+.cake-face { z-index: 0; }
+
+/* Candles: an outlined stick and a flat two-tone flame with a brown edge */
+.stage .candle .c-body { box-shadow: inset 0 0 0 1.8px var(--ol); border-radius: 3px; }
+.stage .candle .c-flamewrap .c-flame {
+  background: radial-gradient(ellipse at 50% 74%, #FFF3B8 0 30%, var(--f3) 31% 100%);
+  box-shadow: inset 0 0 0 1.8px var(--ol), 0 0 14px 5px var(--fg-glow);
+}
+.stage .candle .c-flamewrap:is(.fs-heart, .fs-star) .c-flame { box-shadow: none; }
+
+/* Bouquet: the wrap, ribbon and bow outlined; flat petals with an outline around each bloom; outlined leaves */
+.b-parts > .p:not(.b-name):not(.hl) { box-shadow: inset 0 0 0 var(--olw) var(--ol) !important; }
+.b-parts > .ol-wrap > .p { box-shadow: none !important; }
+.stage .flower .f-bloom { filter: saturate(0.3) brightness(0.62) var(--olf); }
+.stage .flower.lit .f-bloom, .stage .flower.spot .f-bloom { filter: var(--olf); }
+.stage .flower.active .f-bloom { filter: var(--olf) drop-shadow(0 0 10px var(--c)); }
+.stage .flower .f-petal { background: var(--c); box-shadow: none; }
+.stage .flower .f-core { background: #FFD966; box-shadow: inset 0 0 0 1.6px var(--ol); }
+.stage.bouquet svg :is(path, ellipse)[fill^="#"] { stroke: var(--ol); stroke-width: 1.6px; stroke-linejoin: round; paint-order: stroke; }
+
+/* Lanterns: a flat paper body with brown ribs and outline, wooden caps; lit = a warm light inside */
+.stage .lantern .l-line { background: var(--ol); opacity: 0.75; }
+.stage .lantern .l-body {
+  background: repeating-linear-gradient(90deg, transparent 0 8px, color-mix(in srgb, var(--ol) 45%, transparent) 8px 9.6px), var(--c);
+  box-shadow: inset 0 0 0 var(--olw) var(--ol);
+  filter: saturate(0.55) brightness(0.8);
+}
+.stage .lantern.lit .l-body {
+  filter: none;
+  background: radial-gradient(ellipse at 50% 56%, rgba(255, 246, 210, 0.75) 0 14%, rgba(255, 246, 210, 0) 52%), repeating-linear-gradient(90deg, transparent 0 8px, color-mix(in srgb, var(--ol) 40%, transparent) 8px 9.6px), var(--c);
+  box-shadow: inset 0 0 0 var(--olw) var(--ol), 0 0 16px 3px color-mix(in srgb, var(--c) 55%, transparent), 0 0 40px 10px color-mix(in srgb, var(--c) 18%, transparent);
+}
+.stage .lantern .l-body::before, .stage .lantern .l-body::after { height: 7px; background: #B98654; box-shadow: inset 0 0 0 1.6px var(--ol); border-radius: 3px; }
+.stage .lantern .l-body::before { top: -5px; }
+.stage .lantern .l-body::after { bottom: -5px; }
+.stage .lantern .l-tassel { background: var(--ol); }
+.stage .lantern.lit .l-tassel { background: var(--c); box-shadow: 0 0 0 1.2px var(--ol); }
+.stage .lantern.spot .l-body { box-shadow: none; }
+/* sky / star / heart / ketupat are cut out with clip-path: the layer around the body draws their outline */
+.lantern .l-ol { position: absolute; inset: 0; pointer-events: none; }
+.stage.lanterns:is([data-shape="sky"], [data-shape="star"], [data-shape="heart"], [data-shape="ketupat"]) .lantern:not(.spot) .l-ol { filter: var(--olf); }
+.stage.lanterns[data-shape="xi"] .lantern.lit .l-body { box-shadow: inset 0 0 0 var(--olw) var(--ol), 0 0 16px 3px rgba(255, 80, 60, 0.5); }
+
+/* Tumpeng: every dish a little sticker */
+.dish .d-food, .mini-dish .d-food { filter: var(--olt); }
+.dish.active .d-food { filter: var(--olt) drop-shadow(0 0 8px color-mix(in srgb, var(--c, #F2C12E) 80%, transparent)); }
+.stage-wrap:not(.with-backdrop) .dish .d-leaf { background: radial-gradient(closest-side, rgba(20, 50, 16, 0.3), rgba(20, 50, 16, 0)); }
+
+/* Angpao tree: an outlined pot and envelopes */
+.lx-pot :is(path, rect, ellipse)[fill^="#"] { stroke: var(--ol); stroke-width: 3px; stroke-linejoin: round; paint-order: stroke; }
+.envelope .e-svg, .mini-envelope .e-svg { filter: var(--olt); }
+.envelope.lit .e-svg { filter: var(--olt) drop-shadow(0 0 7px color-mix(in srgb, var(--c, #D42A2A) 55%, transparent)); }
+
+/* River lights: outlined floats */
+.k-svg { filter: var(--olt); }
+
+/* On the plain page (no backdrop picked) the scenes made for a night sky need dark words and strings, and no stars */
+.stage-wrap:not(.with-backdrop) .l-stars { display: none; }
+.stage-wrap:not(.with-backdrop) .l-words { color: #7A3E2A !important; }
+.stage-wrap:not(.with-backdrop) .l-names { color: rgba(91, 58, 41, 0.6) !important; }
+.stage-wrap:not(.with-backdrop) .stage.lanterns svg { --string: rgba(91, 58, 41, 0.55); }
+.stage-wrap:not(.with-backdrop) :is(.lx-name, .tp-name) { color: #7A3E2A; text-shadow: none; }
+.stage-wrap:not(.with-backdrop) .stage .lantern.lit .l-body { box-shadow: inset 0 0 0 var(--olw) var(--ol), 0 0 12px 2px color-mix(in srgb, var(--c) 45%, transparent); }

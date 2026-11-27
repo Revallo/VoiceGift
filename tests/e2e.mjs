@@ -1,4 +1,5 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
+// Cases are occasions, or a kind with its own scene (`occasion` + `shape`: a birthday tumpeng, a wedding angpao tree / river).
 // (create → decorate → sign up → friends sign up + record → dashboard → recipient link → log in → PIN →
 // reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop),
 // then the limits. Logging in is Google only; the test uses the local stand-in, so start the server with DEV_LOGIN=1.
@@ -84,8 +85,12 @@ async function signUpHere(p, name, email, shotName) {
 
 const CASES = {
   birthday: { recipient: 'Dimas', swatch: 9, shape: 'tower', friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
-  tumpeng: { recipient: 'Putri', swatch: 3, shape: 'tall', friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
+  tumpeng: { occasion: 'birthday', recipient: 'Putri', swatch: 3, shape: 'tumpeng', friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
   graduation: { recipient: 'Nadia', swatch: 6, shape: 'basket', friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
+  angpao: { occasion: 'wedding', recipient: 'Linh & Minh', swatch: 1, shape: 'angpao', friends: [['Bibi Lan', 'Selamat menempuh hidup baru, semoga rukun selalu.'], ['Om Hendra', 'Selamat ya Linh dan Minh, langgeng terus.']] },
+  imlek: { occasion: 'wedding', recipient: 'Mei & Andi', swatch: 2, shape: 'imlek', friends: [['Tante Lily', 'Gong xi, semoga langgeng dan banyak rezeki.'], ['Kevin', 'Selamat ya Mei dan Andi!']] },
+  ketupat: { occasion: 'wedding', recipient: 'Siti & Rafi', swatch: 3, shape: 'ketupat', friends: [['Bu Ani', 'Selamat menempuh hidup baru, mohon maaf lahir batin.'], ['Dodi', 'Selamat ya Siti dan Rafi, langgeng!']] },
+  river: { occasion: 'wedding', recipient: 'Ploy & Ken', swatch: 2, shape: 'river', friends: [['Nok', 'Selamat menikah, semoga bahagia selamanya.'], ['Budi', 'Selamat ya kalian berdua!']] },
   wedding: { recipient: 'Rina & Bayu', swatch: 6, shape: 'heart', extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };
 
@@ -103,34 +108,44 @@ async function runGift(occasion, c) {
   await logInHere(p, 'Sari', emailFor(occasion));
   await p.waitForURL(/\/new$/);
   await p.waitForSelector('#recipient');
-  await p.click(`#occasions [data-v="${occasion}"]`);
+  await p.click(`#occasions [data-v="${c.occasion || occasion}"]`);
   await p.fill('#recipient', c.recipient);
   await p.fill('#organizer', 'Sari');
-  await shot(p, P('01-create-who'));
-  await p.click('#nextBtn');
-  await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
-  // the kind of cake / bouquet / lanterns: swiping the big gift changes it, the strip of pictures picks one
+  // the kinds: a carousel of live gifts; the one in the middle is the gift
   await p.waitForTimeout(300);
-  const kind0 = await p.getAttribute('#kinds .on', 'data-v');
+  const lastKind = await p.$eval('#kinds', (b) => b.lastElementChild.dataset.v);
+  await p.click(`#kinds [data-v="${lastKind}"]`);
+  await p.waitForTimeout(700);
+  if ((await p.getAttribute('#kinds .on', 'data-v')) !== lastKind) errors.push(`${occasion}: tapping the last kind in the carousel did not pick it`);
+  if (!(await p.$eval('#kinds', (b) => b.scrollLeft))) errors.push(`${occasion}: the carousel did not slide to the last kind`);
+  await p.click(`#kinds [data-v="${c.shape}"]`);
+  await p.waitForTimeout(700);
+  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.shape) errors.push(`${occasion}: tapping a kind did not pick it`);
+  await shot(p, P('01-create-who'));
+  // Customize: its own page
+  await p.click('#customizeBtn');
+  await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
+  await p.waitForTimeout(300);
+  // swiping the big gift changes its kind; the arrow brings it back
+  const kindName0 = await p.textContent('#decorKindName');
   const sb0 = await (await p.$('#decorCake')).boundingBox();
   await p.mouse.move(sb0.x + sb0.width * 0.8, sb0.y + 60);
   await p.mouse.down();
   await p.mouse.move(sb0.x + sb0.width * 0.2, sb0.y + 60, { steps: 4 });
   await p.mouse.up();
-  if ((await p.getAttribute('#kinds .on', 'data-v')) === kind0) errors.push(`${occasion}: swiping the gift did not change its kind`);
-  const lastKind = await p.$eval('#kinds', (b) => b.lastElementChild.dataset.v);
-  await p.click(`#kinds [data-v="${lastKind}"]`);
-  await p.waitForTimeout(500);
-  const kindsScroll = await p.$eval('#kinds', (b) => b.scrollLeft);
-  if (!kindsScroll) errors.push(`${occasion}: the strip jumped back to the start after picking the last kind`);
-  await p.click(`#kinds [data-v="${c.shape}"]`);
-  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.shape) errors.push(`${occasion}: tapping a kind did not pick it`);
+  await p.waitForTimeout(300);
+  if ((await p.textContent('#decorKindName')) === kindName0) errors.push(`${occasion}: swiping the gift did not change its kind`);
+  await p.click('#kindPrev');
+  await p.waitForTimeout(300);
+  if ((await p.textContent('#decorKindName')) !== kindName0) errors.push(`${occasion}: the arrow did not go back to ${kindName0}`);
   // a strip picks whatever stops in the middle
+  await p.click('.tool-tab[data-tool="color"]');
   const flavor = await p.$eval(`#flavors > :nth-child(${c.swatch + 1})`, (el) => { el.parentElement.scrollLeft = el.offsetLeft - (el.parentElement.clientWidth - el.offsetWidth) / 2; return el.dataset.v; });
   await p.waitForTimeout(400);
   if ((await p.getAttribute('#flavors .on', 'data-v')) !== flavor) errors.push(`${occasion}: sliding the strip did not pick ${flavor}`);
   const hit = await p.$('.draw-hit');
   if (hit) {
+    await p.click('.tool-tab[data-tool="draw"]');
     await p.click('#sketchToggle');
     await p.click('[aria-label="Brush color 2"]');
     await p.waitForTimeout(400);
@@ -142,6 +157,7 @@ async function runGift(occasion, c) {
     await p.click('#sketchToggle');
   }
   // stickers: add two, drag one, remove one with ×
+  await p.click('.tool-tab[data-tool="stickers"]');
   await p.click('#stickerTray .sticker-btn >> nth=0');
   await p.click('#stickerTray .sticker-btn >> nth=1');
   await p.click('#stickerTray .sticker-btn >> nth=-1'); // the tray scrolls sideways
@@ -155,14 +171,20 @@ async function runGift(occasion, c) {
   await p.waitForTimeout(300);
   await shot(p, P('02-decorate'));
   // "No music" is the default: pressing play goes to a real tune and plays it
+  await p.click('.tool-tab[data-tool="music"]');
   await p.click('#musicPlay');
   await p.waitForFunction(() => document.querySelector('#tunes .on')?.dataset.v === 'party');
   await p.waitForTimeout(200);
   if (!(await p.$eval('#musicPlay', (b) => b.innerHTML.includes('rect')))) errors.push(`${occasion}: pressing play did not start the music`);
   await p.click('#musicPlay');
   // the tools scroll on their own, so the gift stays on screen
-  await p.$eval('#decorToolsCard', (c) => { c.scrollTop = c.scrollHeight; });
+  await p.$eval('#decorTools', (c) => { c.scrollTop = c.scrollHeight; });
   if ((await (await p.$('#decorCake')).boundingBox()).y < 0) errors.push(`${occasion}: scrolling the tools moved the gift off screen`);
+  // Save: back on the first screen, the carousel shows the design; then slide to create
+  await p.click('#saveDecorBtn');
+  await p.waitForSelector('[data-screen="who"]:not([hidden])');
+  await p.waitForTimeout(500);
+  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.shape) errors.push(`${occasion}: after Customize the carousel lost the kind`);
   await p.click('#createBtn');
   // "Create" opens the gift's one page: the gift, invite friends, who recorded, send it
   await p.waitForURL(/\/m\/.+\?k=/);
@@ -172,9 +194,10 @@ async function runGift(occasion, c) {
   // "Edit design": add a sticker, save, back on the gift's page
   await p.click('#editDesignLink');
   await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
-  if ((await p.textContent('#createBtn')).trim() !== 'Save changes') errors.push(`${occasion}: no "Save changes" when editing`);
+  if ((await p.textContent('#saveDecorBtn')).trim() !== 'Save changes') errors.push(`${occasion}: no "Save changes" when editing`);
+  await p.click('.tool-tab[data-tool="stickers"]');
   await p.click('#stickerTray .sticker-btn >> nth=2');
-  await p.click('#createBtn');
+  await p.click('#saveDecorBtn');
   await p.waitForURL(/\/m\/.+\?k=/);
   await p.waitForSelector('[data-screen="main"]:not([hidden])');
   const friendLink = 'http://' + (await p.textContent('#friendLink'));
@@ -353,7 +376,7 @@ async function runGift(occasion, c) {
   await t.waitForSelector('[data-screen="home"]:not([hidden])');
   await t.waitForTimeout(800);
   if (await t.$('.bottom-sheet .thanks-card')) errors.push(`${occasion}: the thank-you popped up again after being seen`);
-  await t.goto(`${BASE}/account`);
+  await t.goto(`${BASE}/gifts`);
   await t.waitForSelector('#thanksArchive .thanks-card');
   if (!/disappears in 7 days/.test(await t.textContent('#thanksArchive'))) errors.push(`${occasion}: the archived thank-you has no 7-day note`);
   await shot(t, P('19b-dashboard-thanks'));
@@ -385,7 +408,7 @@ async function accountFlow(occasion, recipientLink) {
   await a.click('#openForm button[type="submit"]');
   await a.waitForURL(/\/r\/.+\?k=/); // pasting the link opens the gift's PIN page
   await a.goto(`${BASE}/`);
-  await a.click('#profileLink');
+  await a.click('.bottom-nav a[href="/gifts"]'); // the nav's Gifts icon
   await a.waitForSelector(`#gifts a[href^="/m/${slug}?k="]`);
   await a.waitForTimeout(400);
   await shot(a, 'account-02-me', true);

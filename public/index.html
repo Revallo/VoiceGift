@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1C1A18">
+<meta name="theme-color" content="#FAF8F5">
 <title>Voice Gift — a surprise made of your friends' voices</title>
 <meta name="description" content="Friends record short voice wishes. They open as one surprise: a cake, a bouquet or lanterns. No app to install.">
 <meta property="og:title" content="Voice Gift">
@@ -12,87 +12,103 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/soft.css">
+<script>
+// Files are served from the browser's cache and refreshed in the background (vercel.json). Right after a deploy one
+// page can get old and new files mixed; if that breaks a module, load once more (by then the cache is fresh).
+addEventListener('error', (e) => {
+  if (!/export named|module script failed|Importing a module/i.test(e.message || '') || sessionStorage.getItem('vg-reloaded')) return;
+  sessionStorage.setItem('vg-reloaded', '1');
+  location.reload();
+}, true);
+addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-reloaded'), 4000));
+</script>
+<script type="speculationrules">
+{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/gifts"]}, "eagerness": "moderate"}],
+ "prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/api/*"}}]}, "eagerness": "moderate"}]}
+</script>
 </head>
 <body>
 <main class="app" id="app">
   <section data-screen="loading"><div class="loading"><div class="spinner"></div></div></section>
 
   <section data-screen="home" hidden>
-    <div class="row" style="justify-content:space-between">
-      <span class="brand home-brand"><span class="home-logo" id="homeLogo"></span>Voice Gift</span>
-      <a class="profile-btn" href="/account" id="profileLink"><span class="profile-ava" id="profileAva"></span>Profile</a>
-    </div>
-
-    <!-- the three gifts, drawn live; each one starts making that kind of gift -->
-    <div class="home-hero">
-      <a class="home-gift left" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"></a>
-      <a class="home-gift right" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"></a>
-      <a class="home-gift mid" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"></a>
-    </div>
+    <header class="top-bar">
+      <span class="brand-pill"><i id="homeLogo"></i>Voice Gift</span>
+    </header>
 
     <div class="home-title">
-      <p id="hello"></p>
-      <h1>What would you like to do?</h1>
+      <h1 id="hello">Hi</h1>
+      <p class="lead">A gift made of your friends’ voices.</p>
     </div>
 
-
-    <div class="stack" style="gap:12px">
-      <a class="choice primary" href="/new" id="makeGift">
-        <span class="choice-ico" id="makeIco"></span>
-        <span class="choice-text"><b>Make a gift</b><small>Collect your friends’ voices for someone.</small></span>
-      </a>
-      <button type="button" class="choice" id="openToggle" aria-expanded="false">
-        <span class="choice-ico" id="openIco"></span>
-        <span class="choice-text"><b>Open your gift</b><small>Received a link? Paste it here.</small></span>
-      </button>
-      <form class="card stack" id="openForm" style="gap:12px" novalidate hidden>
-        <input class="input" id="openLink" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste your gift link" aria-label="Your gift link">
-        <p class="small err" id="openError" hidden></p>
-        <button class="btn" type="submit">Continue</button>
-      </form>
-      <a class="choice" href="/account" id="myGifts">
-        <span class="choice-ico" id="mineIco"></span>
-        <span class="choice-text"><b>Dashboard</b><small>The gifts you’re making for others.</small></span>
-      </a>
+    <!-- the three gifts, drawn live; slide them, tap one to start that kind of gift -->
+    <div class="gift-carousel" id="giftCarousel">
+      <a class="home-gift" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"><div class="mini"></div><span>Bouquet</span></a>
+      <a class="home-gift" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"><div class="mini"></div><span>Cake</span></a>
+      <a class="home-gift" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"><div class="mini"></div><span>Lanterns</span></a>
     </div>
+
+    <div class="home-actions">
+      <a class="btn" href="/new" id="makeGift"><span>Make a gift</span></a>
+      <button type="button" class="btn ghost" id="openToggle" aria-haspopup="dialog"><i id="openIco"></i><span>Open a gift</span></button>
+    </div>
+    <form class="stack open-form" id="openForm" novalidate hidden>
+      <input class="input" id="openLink" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Paste your gift link" aria-label="Your gift link">
+      <p class="small err" id="openError" hidden></p>
+      <button class="btn" type="submit">Open</button>
+    </form>
   </section>
 </main>
 <script type="module">
-import { $, h, api, icon, addStars, showScreen, initials, openSheet, closeSheet } from '/assets/common.js';
+import { $, $$, h, api, icon, showScreen, initials, openSheet, closeSheet, bottomNav } from '/assets/common.js';
 import { noteCard, markRead, stopNoteVoice } from '/assets/thanksnote.js';
-$('#homeLogo').innerHTML = icon.mic(15); // static icon markup
+$('#homeLogo').innerHTML = icon.mic(16); // static icon markup
 import { me } from '/assets/auth.js';
 import { theme, createScene, firstName } from '/assets/themes.js';
 
 const user = await me();
 if (!user) location.replace('/login');
 else {
-  addStars($('#app'), 20, 40);
-  $('#makeIco').innerHTML = icon.plus(22);
-  $('#openIco').innerHTML = icon.gift(22);
-  $('#mineIco').innerHTML = icon.sparkle(22);
-  $('#profileAva').textContent = initials(user.name);
-  $('#hello').textContent = `Hi, ${user.name}`;
+  $('#openIco').innerHTML = icon.gift(20);
+  $('#hello').textContent = `Hi, ${firstName(user.name)}`;
+  $('#app').append(bottomNav('home'));
   showScreen('home');
   drawGifts(firstName(user.name));
+  peekCarousel($('#giftCarousel'), $('#heroCake'));
   showThanks();
 }
 
 function drawGifts(name) {
   for (const [occasion, host] of [['birthday', '#heroCake'], ['graduation', '#heroBouquet'], ['wedding', '#heroLanterns']]) {
-    const scene = createScene($(host), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
+    const scene = createScene($(`${host} .mini`), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
     scene.setCandles(occasion === 'birthday' ? 6 : 10);
     scene.lightAll();
   }
 }
 
+// A row you slide: the gift in the middle is big, its neighbours peek in smaller.
+function peekCarousel(box, start) {
+  const items = [...box.children];
+  const mark = () => {
+    const mid = box.scrollLeft + box.clientWidth / 2;
+    const near = items.reduce((a, b) => (Math.abs(b.offsetLeft + b.offsetWidth / 2 - mid) < Math.abs(a.offsetLeft + a.offsetWidth / 2 - mid) ? b : a));
+    items.forEach((el) => el.classList.toggle('on', el === near));
+  };
+  box.scrollLeft = start.offsetLeft - (box.clientWidth - start.offsetWidth) / 2;
+  box.addEventListener('scroll', () => requestAnimationFrame(mark), { passive: true });
+  mark();
+}
+
+// "Open a gift": paste the link in a sheet, not another page.
 $('#openToggle').addEventListener('click', () => {
   const form = $('#openForm');
-  form.hidden = !form.hidden;
-  $('#openToggle').setAttribute('aria-expanded', String(!form.hidden));
-  if (!form.hidden) $('#openLink').focus();
+  form.hidden = false;
+  openSheet({ title: 'Open a gift', subtitle: 'Paste the link you got.', content: form,
+    onClose: () => { form.hidden = true; $('[data-screen="home"]').append(form); } });
+  setTimeout(() => $('#openLink').focus(), 60);
 });
 
 $('#openForm').addEventListener('submit', (e) => {

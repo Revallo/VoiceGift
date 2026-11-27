@@ -3,14 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1C1A18">
+<meta name="theme-color" content="#FAF8F5">
 <meta name="robots" content="noindex">
 <title>Gift dashboard</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/soft.css">
+<script>
+// Files are served from the browser's cache and refreshed in the background (vercel.json). Right after a deploy one
+// page can get old and new files mixed; if that breaks a module, load once more (by then the cache is fresh).
+addEventListener('error', (e) => {
+  if (!/export named|module script failed|Importing a module/i.test(e.message || '') || sessionStorage.getItem('vg-reloaded')) return;
+  sessionStorage.setItem('vg-reloaded', '1');
+  location.reload();
+}, true);
+addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-reloaded'), 4000));
+</script>
+<script type="speculationrules">
+{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/gifts"]}, "eagerness": "moderate"}],
+ "prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/api/*"}}]}, "eagerness": "moderate"}]}
+</script>
 </head>
 <body>
 <main class="app" id="app">
@@ -19,51 +34,53 @@
     <div class="loading"><h1>Hmm.</h1><p class="lead" id="errorText"></p><a class="btn ghost" href="/" style="max-width:240px">Go to Voice Gift</a></div>
   </section>
   <section data-screen="main" hidden>
-    <!-- One page for the organizer: the gift, invite friends, who recorded, send it to the recipient -->
-    <div class="nav-header">
-      <a class="backbtn" href="/account" aria-label="Back to dashboard" data-icon="back"></a>
-      <b class="grow dash-title" id="title">Gift</b>
-      <a class="backbtn" href="/account" aria-label="Profile" data-icon="user"></a>
-    </div>
+    <!-- One page for the organizer: the gift, then three things to do, each in a sheet -->
+    <header class="top-bar">
+      <a class="icon-btn" href="/gifts" aria-label="Back to your gifts" data-icon="back"></a>
+      <span class="top-pill" id="title">Gift</span>
+      <a class="icon-btn" id="editDesignLink" href="/new" aria-label="Edit design" data-icon="edit"></a>
+    </header>
 
     <div class="dash">
-      <div class="dash-scene">
-        <div id="cake"></div>
-        <a class="btn ghost sm" id="editDesignLink" href="/new">✏️ Edit design</a>
+      <div class="dash-scene"><div id="cake"></div></div>
+      <button type="button" class="facepile-row" id="facepile" aria-label="Who recorded"></button>
+
+      <div class="dash-actions">
+        <button type="button" class="dash-act" id="inviteAct"><i data-icon="send"></i><b>Invite</b><small id="inviteActSub">Friends</small></button>
+        <button type="button" class="dash-act" id="voicesAct"><i data-icon="users"></i><b id="voicesActCount">0</b><small>Voices</small></button>
+        <button type="button" class="dash-act dark" id="sendAct"><i data-icon="gift"></i><b>Send</b><small id="sendActSub">Gift</small></button>
       </div>
 
-      <div class="card stack dash-step">
-        <div><b class="step-title"><span class="step-n">1</span><span id="inviteTitle">Invite friends to record</span></b>
-          <p class="small muted" id="inviteLead" style="margin:4px 0 0"></p></div>
+      <!-- the sheets' contents: kept in the page, moved into a sheet when its button is tapped -->
+      <div class="dash-panel stack" id="invitePanel" hidden>
+        <p class="lead" id="inviteLead"></p>
         <div class="linkbox"><span id="friendLink"></span><button type="button" id="copyFriend"></button></div>
         <div id="waBtn"></div>
       </div>
 
-      <div class="card stack dash-step">
-        <div class="row" style="justify-content:space-between">
-          <b class="step-title"><span class="step-n">2</span><span id="whoTitle">Who recorded</span></b>
-          <button type="button" class="linkbtn small" id="refresh">↻ Refresh</button>
-        </div>
+      <div class="dash-panel stack" id="voicesPanel" hidden>
         <div class="who-list" id="list"></div>
-        <!-- for showing the app without real people: 10 made-up voices (never training data) -->
-        <button type="button" class="linkbtn small" id="demoBtn" style="align-self:flex-start"></button>
-        <button type="button" class="linkbtn small" id="demoMoreBtn" style="align-self:flex-start" hidden></button>
-        <p class="small muted" style="margin:0">Demo messages use bundled sample recordings. They are excluded from training data.</p>
+        <!-- for showing the app without real people: made-up voices (never training data) -->
+        <div class="row-wrap demo-row">
+          <button type="button" class="soft-btn" id="refresh"><i data-icon="refresh"></i><span>Refresh</span></button>
+          <button type="button" class="soft-btn" id="demoBtn"></button>
+          <button type="button" class="soft-btn" id="demoMoreBtn" hidden></button>
+        </div>
+        <p class="tiny muted" style="margin:0">Demo voices are samples, never training data.</p>
       </div>
 
-      <div class="card stack dash-step">
-        <div><b class="step-title"><span class="step-n">3</span><span id="sendTitle">Send it</span></b>
-          <p class="small muted" id="sendLead" style="margin:4px 0 0"></p></div>
+      <div class="dash-panel stack" id="sendPanel" hidden>
+        <p class="lead" id="sendLead"></p>
         <button type="button" class="nav-row pin-row" id="pinRow">
-          <span class="nav-ico" data-icon="lock"></span>
-          <div class="nav-info"><b>PIN</b><small>They type it to open the gift</small></div>
-          <span class="nav-val" id="pinVal">1234</span>
+          <span class="nav-ico" data-icon="key"></span>
+          <div class="nav-info"><b>PIN</b><small>They type it to open</small></div>
+          <span class="nav-val t-num" id="pinVal">1234</span>
           <span class="nav-chev" data-icon="chevronRight"></span>
         </button>
         <div id="recipientBox" class="stack" style="gap:12px"></div>
       </div>
 
-      <button class="btn ghost sm" id="deleteGift" style="align-self:center;color:var(--coral)">Delete this gift</button>
+      <button class="btn link delete-link" id="deleteGift">Delete this gift</button>
     </div>
   </section>
 </main>

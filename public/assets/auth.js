@@ -13,8 +13,26 @@ const askServer = () => (account ||= api('/api/account').then((data) => {
   return data;
 }).catch((error) => { account = null; throw error; }));
 // The logged-in account ({ name, email }) or null. Asked once per page.
+// Moving between pages shouldn't wait for the server each time: the account is remembered for this tab
+// (sessionStorage, gone when the tab closes) and the page draws straight away. The server is still asked
+// in the background; if it says otherwise (logged out, another account), the page loads again with the truth.
+// Only for drawing the page: every API call still checks the session cookie on the server.
+const SAVED = 'vg-me';
+const saved = () => { try { return JSON.parse(sessionStorage.getItem(SAVED) || 'null'); } catch { return null; } };
+export function remember(user) { try { if (user) sessionStorage.setItem(SAVED, JSON.stringify(user)); else sessionStorage.removeItem(SAVED); } catch { /* private mode */ } }
 export function me() {
-  current ||= askServer().then((d) => d.user || null).catch(() => { current = null; return null; });
+  if (current) return current;
+  const fresh = askServer().then((d) => d.user || null);
+  const was = saved();
+  if (was) {
+    current = Promise.resolve(was);
+    fresh.then((user) => {
+      remember(user);
+      if (!user || user.email !== was.email) location.reload();
+    }).catch(() => {}); // offline: keep what we had
+    return current;
+  }
+  current = fresh.then((user) => { remember(user); return user; }).catch(() => { current = null; return null; });
   return current;
 }
 
@@ -28,6 +46,7 @@ export async function requireLogin() {
 // When the server says nobody is logged in after all (logged out in another tab, say).
 export function forgetMe() {
   current = Promise.resolve(null);
+  remember(null);
 }
 
 export async function logOut() {
@@ -77,6 +96,7 @@ export function loginBox({ onDone }) {
     try {
       const { user } = await api('/api/account', { method: 'POST', json });
       current = Promise.resolve(user);
+      remember(user);
       await claimDeviceGifts();
       await onDone(user);
     } catch (e) {
@@ -152,17 +172,13 @@ export function giftItem(g, onDeleted) {
     }
     onDeleted(g);
   }
-  const sub = [t.label, g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
   const count = typeof g.count === 'number' ? `${g.count} ${g.count === 1 ? 'voice' : 'voices'}` : '';
-  return h('div', { class: 'gift-item' },
-    h('div', { class: 'gift-item-top' },
-      h('span', { class: 'gift-item-ava' }, t.emoji || initials(g.recipient)),
-      h('div', { class: 'gift-item-meta' }, h('b', {}, g.recipient), h('span', {}, sub)),
-      h('button', { type: 'button', class: 'gift-item-del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.x(14), onclick: remove })
-    ),
-    h('div', { class: 'gift-item-bottom' },
-      count && h('span', { class: 'gift-item-count' }, count),
-      h('a', { class: 'gift-item-open', href: `/m/${g.slug}?k=${g.key}` }, 'Open dashboard →')
-    )
+  const sub = [count, g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
+  const ico = { birthday: 'cake', tumpeng: 'bowl', graduation: 'cap', wedding: 'ring' }[g.occasion] || 'gift';
+  return h('div', { class: 'gift-item', 'data-occasion': g.occasion },
+    h('span', { class: 'gift-item-ava', html: icon[ico](24) }),
+    h('a', { class: 'gift-item-open', href: `/m/${g.slug}?k=${g.key}`, 'aria-label': `Open the gift for ${g.recipient}` },
+      h('b', {}, g.recipient), h('span', {}, sub)),
+    h('button', { type: 'button', class: 'gift-item-del', 'aria-label': `Delete the gift for ${g.recipient}`, html: icon.trash(16), onclick: remove })
   );
 }

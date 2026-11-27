@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "montserrat",
+        "createdAt": "2026-11-26T07:47:51.557Z",
+        "reason": "user confirmed: Revallo asked in chat to use Montserrat for the whole UI"
+      }
+    ]
+  }
+}

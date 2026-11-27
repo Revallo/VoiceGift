@@ -3,125 +3,113 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1C1A18">
+<meta name="theme-color" content="#FAF8F5">
 <title>Create a voice gift</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/soft.css">
+<script>
+// Files are served from the browser's cache and refreshed in the background (vercel.json). Right after a deploy one
+// page can get old and new files mixed; if that breaks a module, load once more (by then the cache is fresh).
+addEventListener('error', (e) => {
+  if (!/export named|module script failed|Importing a module/i.test(e.message || '') || sessionStorage.getItem('vg-reloaded')) return;
+  sessionStorage.setItem('vg-reloaded', '1');
+  location.reload();
+}, true);
+addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-reloaded'), 4000));
+</script>
+<script type="speculationrules">
+{"prerender": [{"where": {"href_matches": ["/", "/new", "/new?*", "/account", "/gifts"]}, "eagerness": "moderate"}],
+ "prefetch": [{"where": {"and": [{"href_matches": "/*"}, {"not": {"href_matches": "/api/*"}}]}, "eagerness": "moderate"}]}
+</script>
 </head>
 <body>
 <main class="app" id="app">
 
-  <!-- Step 1 -->
+  <!-- One screen: pick the kind (carousel) and the occasion, the names, then slide to create -->
   <section data-screen="who">
-    <div class="nav-header">
-      <a class="backbtn small" id="whoBack" href="/" aria-label="Back" data-icon="back"></a>
-      <div class="step-dots" style="margin-left:auto"><i class="on"></i><i></i></div>
-      <a class="backbtn" href="/account" aria-label="Profile" data-icon="user"></a>
+    <header class="top-bar">
+      <a class="icon-btn" id="whoBack" href="/" aria-label="Back" data-icon="back"></a>
+      <span class="top-pill" id="whoPill">New gift</span>
+      <a class="icon-btn" href="/account" aria-label="Profile" data-icon="user"></a>
+    </header>
+
+    <h1 class="make-title">Make a gift</h1>
+
+    <!-- the kinds of the picked occasion: slide, the one in the middle is the gift -->
+    <div class="kind-carousel" id="kinds" role="radiogroup" aria-label="Kind of gift"></div>
+    <p class="kind-name" id="kindName" aria-live="polite"></p>
+
+    <div class="occ-row" id="occasions" role="radiogroup" aria-label="Occasion">
+      <button type="button" class="occ" role="radio" data-v="birthday"><i data-icon="cake"></i><span>Birthday</span></button>
+      <button type="button" class="occ" role="radio" data-v="graduation"><i data-icon="cap"></i><span>Graduation</span></button>
+      <button type="button" class="occ" role="radio" data-v="wedding"><i data-icon="ring"></i><span>Wedding</span></button>
     </div>
 
-    <div class="web-grid">
-      <div class="web-col">
-        <div class="pick-title">
-          <h1>What do you want to make?</h1>
-          <p id="pickLead"></p>
-        </div>
-        <!-- the gift itself, redrawn as soon as you pick another occasion -->
-        <div class="who-scene" id="whoPreview"></div>
+    <form id="whoForm" class="stack make-form" novalidate>
+      <label class="pill-field"><span id="recipientLabel">For</span><input class="input" id="recipient" maxlength="40" autocomplete="off" placeholder="e.g. Dimas" required></label>
+      <label class="pill-field"><span>From</span><input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required></label>
+      <div class="make-actions">
+        <button type="button" class="soft-btn" id="customizeBtn"><i data-icon="palette"></i><span>Customize</span></button>
+        <button type="button" class="soft-btn" id="openDeliverySheetBtn" aria-label="PIN for the gift"><i data-icon="key"></i><span>PIN <b id="deliverySummaryVal">1234</b></span></button>
       </div>
-
-      <div class="web-col">
-        <form id="whoForm" class="stack" novalidate>
-          <div class="picks" id="occasions" role="radiogroup" aria-label="What to make">
-            <button type="button" class="pick" role="radio" data-v="birthday"><span class="em">🎂</span><b>Cake</b><small>Birthday</small></button>
-            <button type="button" class="pick" role="radio" data-v="tumpeng"><span class="em">🍚</span><b>Tumpeng</b><small>Birthday · ID</small></button>
-            <button type="button" class="pick" role="radio" data-v="graduation"><span class="em">💐</span><b>Bouquet</b><small>Graduation</small></button>
-            <button type="button" class="pick" role="radio" data-v="wedding"><span class="em">🏮</span><b>Lanterns</b><small>Wedding</small></button>
-          </div>
-          <div class="field">
-            <label for="recipient" id="recipientLabel">Their name</label>
-            <input class="input" id="recipient" maxlength="40" autocomplete="off" placeholder="e.g. Dimas" required>
-          </div>
-          <div class="field">
-            <label for="organizer">Your name</label>
-            <input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required>
-          </div>
-          <div class="nav-list">
-            <button type="button" class="nav-row" id="openDeliverySheetBtn">
-              <span class="nav-ico" data-icon="shield"></span>
-              <div class="nav-info">
-                <b>PIN for the gift</b>
-                <small>4 digits · they type it to open the gift</small>
-              </div>
-              <span class="nav-val" id="deliverySummaryVal">1234</span>
-              <span class="nav-chev" data-icon="chevronRight"></span>
-            </button>
-          </div>
-          <p class="small err" id="whoError" hidden></p>
-          <button class="btn emerald-track" type="submit" id="nextBtn"><span>Next: customize gift</span></button>
-        </form>
-      </div>
-    </div>
+      <p class="small err" id="whoError" hidden></p>
+      <p class="small err" id="createError" hidden></p>
+      <button class="btn emerald-track" type="submit" id="createBtn"><span>Create gift</span></button>
+    </form>
   </section>
 
-  <!-- Step 2: Customize Studio -->
+  <!-- Customize: its own page over the first one; Save (or back) returns -->
   <section data-screen="decorate" hidden>
-    <div class="nav-header">
-      <button type="button" class="backbtn small" data-back aria-label="Back" data-icon="back"></button>
-      <div class="step-dots" style="margin-left:auto"><i class="done"></i><i class="on"></i></div>
+    <header class="top-bar wide-right">
+      <button type="button" class="icon-btn" data-back aria-label="Back" data-icon="back"></button>
+      <b class="top-title">Customize</b>
+      <button type="button" class="btn sm save-btn" id="saveDecorBtn">Save</button>
+    </header>
+
+    <div class="stage-showcase decor-kinds">
+      <button type="button" class="kind-peek prev" id="kindPrev" aria-label="Previous kind"></button>
+      <div id="decorCake"></div>
+      <button type="button" class="kind-peek next" id="kindNext" aria-label="Next kind"></button>
     </div>
+    <div class="kind-switch"><b id="decorKindName"></b><span class="kind-dots" id="kindDots" aria-hidden="true"></span></div>
 
-    <div class="web-grid">
-      <div class="web-col">
-        <div class="stage-showcase">
-          <div id="decorCake"></div>
-        </div>
+    <div class="tool-tabs" id="toolTabs" role="tablist" aria-label="Decorate"></div>
+    <div class="decor-tools" id="decorTools">
+      <div class="tool-pane" data-tool="color"><div class="wheel" id="flavors"></div></div>
+      <div class="tool-pane" data-tool="accent"><div class="wheel" id="accents"></div></div>
+      <div class="tool-pane" data-tool="pattern"><div class="wheel" id="patterns"></div></div>
+      <div class="tool-pane" data-tool="topper"><div class="wheel" id="toppers"></div>
+        <div class="row age-row" id="ageRow" hidden><label class="label" for="ageRange">Age</label><input type="range" id="ageRange" min="1" max="100" class="grow"><b class="t-num" id="ageVal"></b></div></div>
+      <div class="tool-pane" data-tool="greens"><div class="wheel" id="greens"></div></div>
+      <div class="tool-pane" data-tool="text">
+        <input class="input" id="cakeName" maxlength="14" aria-label="Words on the gift">
+        <div class="wheel" id="fonts"></div>
       </div>
-
-      <div class="web-col decor-tools">
-        <div class="card stack" id="decorToolsCard" style="gap:14px">
-          <div class="field" style="gap:6px"><span class="label" id="shapeLabel">Cake</span><div class="kinds" id="kinds" role="radiogroup"></div></div>
-          <div class="row"><span class="label tool" id="swatchLabel">Style</span><div class="wheel" id="flavors"></div></div>
-          <div class="row"><span class="label tool" id="accentLabel">Cream</span><div class="wheel" id="accents"></div></div>
-          <div class="row"><span class="label tool" id="patternLabel">Pattern</span><div class="wheel" id="patterns"></div></div>
-          <div class="row"><span class="label tool" id="topperLabel">Topper</span><div class="wheel" id="toppers"></div></div>
-          <div class="row" id="greensRow" hidden><span class="label tool">Greens</span><div class="wheel" id="greens"></div></div>
-          <div class="row" id="ageRow" hidden><label class="label tool" for="ageRange">Age</label><input type="range" id="ageRange" min="1" max="100" class="grow"><b id="ageVal" style="width:30px;text-align:right"></b></div>
-          <div class="row"><span class="label tool">Backdrop</span><div class="wheel" id="backdrops"></div></div>
-          <div class="row"><span class="label tool">Music</span><div class="wheel" id="tunes"></div><button type="button" class="seen-play" id="musicPlay" aria-label="Listen to this music"></button></div>
-          <div class="field" style="gap:6px"><span class="label">Stickers · drag one onto the gift</span><div class="slider" id="stickerTray"></div></div>
-          <div class="row">
-            <label class="label tool" for="cakeName" id="nameLabel">Title</label>
-            <input class="input" id="cakeName" maxlength="14" style="min-height:44px;flex:1;min-width:0">
-          </div>
-          <div class="row">
-            <span class="label tool">Font</span>
-            <div class="wheel" id="fonts"></div>
-          </div>
-          <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px" id="drawRow">
-            <div class="row" style="gap:8px">
-              <button type="button" class="btn ghost sm" id="sketchToggle">✏️ Draw</button>
-              <button type="button" class="btn ghost sm" id="undoDraw" hidden disabled>↶ Undo</button>
-            </div>
-            <div class="wheel" id="brushes" hidden></div>
-            <button type="button" class="btn ghost sm" id="clearDraw" hidden>Clear</button>
-          </div>
+      <div class="tool-pane" data-tool="stickers"><p class="tool-hint">Drag one onto the gift</p><div class="slider" id="stickerTray"></div></div>
+      <div class="tool-pane" data-tool="draw" id="drawRow">
+        <div class="row draw-row">
+          <button type="button" class="btn ghost sm" id="sketchToggle">Draw</button>
+          <button type="button" class="icon-btn small" id="undoDraw" aria-label="Undo" data-icon="redo" hidden disabled></button>
+          <button type="button" class="icon-btn small" id="clearDraw" aria-label="Clear the drawing" data-icon="trash" hidden></button>
         </div>
-        <p class="small err" id="createError" hidden></p>
-        <div class="row">
-          <button type="button" class="btn grow create-btn" id="createBtn">Create the gift</button>
-        </div>
+        <div class="wheel" id="brushes" hidden></div>
       </div>
+      <div class="tool-pane" data-tool="music"><div class="row"><div class="wheel" id="tunes"></div><button type="button" class="icon-btn dark" id="musicPlay" aria-label="Listen to this music"></button></div></div>
+      <div class="tool-pane" data-tool="backdrop"><div class="wheel" id="backdrops"></div></div>
+      <div class="tool-pane" data-tool="local"><div class="wheel" id="locals" aria-label="Local touches: stickers, backdrop and money from this country"></div></div>
     </div>
   </section>
 
   <!-- Between step 2 and 3, only when logged out: a new gift needs an account -->
   <section data-screen="account" hidden>
-    <div class="nav-header">
-      <button type="button" class="backbtn" data-back aria-label="Back" data-icon="back"></button>
-    </div>
+    <header class="top-bar">
+      <button type="button" class="icon-btn" data-back aria-label="Back" data-icon="back"></button>
+      <span></span><span class="icon-btn ghost"></span>
+    </header>
     <div class="web-col" style="max-width:420px;width:100%;margin:0 auto">
       <div class="head">
         <h1>Save your gift</h1>

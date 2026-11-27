@@ -36,6 +36,10 @@
       "destination": "/account.html"
     },
     {
+      "source": "/gifts",
+      "destination": "/account.html"
+    },
+    {
       "source": "/admin/asr",
       "destination": "/asr.html"
     }
@@ -45,5 +49,16 @@
       "maxDuration": 60,
       "includeFiles": "demo/**"
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, stale-while-revalidate=604800"
+        }
+      ]
+    }
+  ]
 }

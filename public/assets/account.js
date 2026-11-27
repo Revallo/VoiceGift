@@ -1,10 +1,9 @@
 // /signup and /login: "Continue with Google". /account: layered mobile-app profile & settings (bottom sheets).
-import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet } from './common.js';
-import { me, logOut, loginBox, giftItem } from './auth.js';
+import { $, $$, h, api, icon, showScreen, toast, openSheet, closeSheet, bottomNav } from './common.js';
+import { me, logOut, loginBox, giftItem, remember } from './auth.js';
 import { applyTheme } from './themes.js';
 import { noteCard } from './thanksnote.js';
 
-addStars($('#app'), 20, 40);
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
@@ -54,13 +53,10 @@ function populateUserUI(user) {
   currentUser = user;
   const initial = (user.name || user.email || 'U').trim()[0].toUpperCase();
   if ($('#acctAvatar')) $('#acctAvatar').textContent = initial;
-  $('#hello').textContent = `Hi, ${user.name || 'organizer'}`;
+  $('#hello').textContent = user.name || 'You';
   $('#meEmail').textContent = user.email;
   if ($('#rowProfileSub')) {
-    $('#rowProfileSub').textContent = user.bio ? `${user.name} · ${user.bio}` : `${user.name} · ${user.email}`;
-  }
-  if ($('#rowProfileVal')) {
-    $('#rowProfileVal').textContent = 'Edit';
+    $('#rowProfileSub').textContent = user.bio || 'Name and a short line about you';
   }
   const prefs = user.prefs || {};
   if ($('#rowPrefsVal')) {
@@ -74,7 +70,7 @@ function openEditProfileSheet() {
   const nameIn = h('input', { class: 'input', value: currentUser.name || '', maxlength: 60, required: true, placeholder: 'Your name' });
   const bioIn = h('input', { class: 'input', value: currentUser.bio || '', maxlength: 120, placeholder: 'e.g. Voice Gift Organizer · Jakarta' });
   const emailIn = h('input', { class: 'input', value: currentUser.email || '', disabled: true, style: { opacity: '0.55', cursor: 'not-allowed' } });
-  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save profile changes');
+  const saveBtn = h('button', { type: 'submit', class: 'btn' }, 'Save');
 
   const form = h('form', {
     class: 'stack',
@@ -88,6 +84,7 @@ function openEditProfileSheet() {
           json: { name: nameIn.value.trim(), bio: bioIn.value.trim() }
         });
         populateUserUI(user);
+        remember(user);
         closeSheet();
         toast('Profile updated');
       } catch (e) {
@@ -97,15 +94,14 @@ function openEditProfileSheet() {
       }
     }
   },
-    h('div', { class: 'field' }, h('label', {}, 'Display name'), nameIn),
-    h('div', { class: 'field' }, h('label', {}, 'Role / bio'), bioIn),
-    h('div', { class: 'field' }, h('label', {}, 'Verified email'), emailIn),
+    h('div', { class: 'field' }, h('label', {}, 'Name'), nameIn),
+    h('div', { class: 'field' }, h('label', {}, 'Bio'), bioIn),
+    h('div', { class: 'field' }, h('label', {}, 'Email'), emailIn),
     saveBtn
   );
 
   openSheet({
-    title: 'Personal profile',
-    subtitle: 'Update your organizer display name and bio',
+    title: 'Profile',
     content: form
   });
 }
@@ -137,6 +133,7 @@ function openAsrPrefsSheet() {
         }
       });
       populateUserUI(user);
+      remember(user);
       toast('Speech-to-text preferences saved');
     } catch (e) {
       toast(e.message);
@@ -214,16 +211,18 @@ $('#rowEditProfile')?.addEventListener('click', openEditProfileSheet);
 $('#rowAsrPrefs')?.addEventListener('click', openAsrPrefsSheet);
 $('#rowAsrCorpus')?.addEventListener('click', openAsrCorpusSheet);
 
+// /account = Profile, /gifts = Your gifts: one page file, two screens, each its own address in the nav.
 function showAccount(user) {
-  const keepHash = location.hash;
-  history.replaceState(null, '', `/account${keepHash}`);
-  document.title = 'Your account · Voice Gift';
+  const gifts = location.pathname === '/gifts';
+  const hash = location.hash;
+  document.title = `${gifts ? 'Your gifts' : 'Your profile'} · Voice Gift`;
   populateUserUI(user);
-  showScreen('me');
-  loadThanks();
+  if (!$('.bottom-nav')) $('#app').append(bottomNav(gifts ? 'gifts' : 'me'));
+  showScreen(gifts ? 'gifts' : 'me');
+  if (gifts) loadThanks();
   return loadGifts().then(() => {
-    if (keepHash === '#settings') openEditProfileSheet();
-    else if (keepHash === '#ASR') openAsrPrefsSheet();
+    if (hash === '#settings') openEditProfileSheet();
+    else if (hash === '#ASR') openAsrPrefsSheet();
   });
 }
 
@@ -233,15 +232,18 @@ async function loadGifts() {
   try {
     const { gifts = [], stats = {} } = await api('/api/account?gifts=1');
     latestStats = stats;
-    if ($('#acctHeroVal')) {
-      $('#acctHeroVal').textContent = `${stats.totalRecordings ?? 0} voices`;
-    }
+    $('#acctHeroVal').textContent = stats.totalRecordings ?? 0;
+    $('#acctGiftCount').textContent = gifts.length;
     if ($('#rowCorpusVal')) {
       $('#rowCorpusVal').textContent = `${stats.totalRecordings ?? 0} voices · .jsonl`;
     }
     list.replaceChildren(...(gifts.length
       ? gifts.map((g) => giftItem(g, () => { toast('Gift deleted'); loadGifts(); }))
-      : [h('div', { class: 'item small muted' }, 'No gifts yet. Make your first one!')]));
+      : [h('div', { class: 'gifts-empty' },
+          h('span', { class: 'gifts-empty-ico', html: icon.gift(40) }),
+          h('b', null, 'No gifts yet'),
+          h('p', null, 'Make one, then invite friends to record.'),
+          h('a', { class: 'btn', href: '/new' }, 'Make a gift'))]));
   } catch (e) {
     list.replaceChildren(h('div', { class: 'item small muted' }, e.message));
   }
@@ -261,12 +263,18 @@ $('#logout').addEventListener('click', async () => {
     return toast(e.message);
   }
   toast('Logged out');
+  $('.bottom-nav')?.remove();
   showAuth('login');
 });
 
+if (location.pathname === '/account' && location.hash === '#gifts') history.replaceState(null, '', '/gifts'); // old links
 me().then(async (user) => {
-  if (!user) return showAuth(location.pathname === '/signup' ? 'signup' : 'login');
-  return location.pathname === '/account' ? showAccount(user) : goOn();
+  const page = ['/account', '/gifts'].includes(location.pathname);
+  if (!user) {
+    if (page) history.replaceState(null, '', `/login?next=${location.pathname}`);
+    return showAuth(location.pathname === '/signup' ? 'signup' : 'login');
+  }
+  return page ? showAccount(user) : goOn();
 });
 
 // Once logged in, go to ?next= (same site only) or to the home page.

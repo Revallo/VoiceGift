@@ -276,4 +276,4 @@ body.reveal-page[data-theme="birthday"] {
   .reveal-page .confetti i { display: none; animation: none !important; }
 }
 
-.reveal-page[data-theme="graduation"] .app, .reveal-page[data-theme="wedding"] .app, .reveal-page[data-theme="tumpeng"] .app { background: radial-gradient(100% 440px at 50% 190px, var(--glow), transparent), var(--bg); }
+.reveal-page[data-theme="graduation"] .app, .reveal-page[data-theme="wedding"] .app, .reveal-page[data-theme="tumpeng"] .app, .reveal-page[data-theme="angpao"] .app, .reveal-page[data-theme="river"] .app { background: radial-gradient(100% 440px at 50% 190px, var(--glow), transparent), var(--bg); }

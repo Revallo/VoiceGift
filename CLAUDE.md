@@ -15,8 +15,17 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 - Storage: **Upstash Redis** (Vercel Marketplace, free: 256 MB, 500k commands/month; env `KV_REST_API_URL` + `KV_REST_API_TOKEN`),
   since 2026-11-19 when the account's Vercel Blob Hobby quota ran out (Blob code is kept as a fallback). Locally a `.data/` folder
   with the same interface (`lib/store.js`).
-- Frontend: plain HTML + ES modules, **no build step, no framework**. Fonts: Fraunces + Plus Jakarta Sans.
-  The `›››` buttons are real sliders (`swipeButton()` in `common.js`); a tap works too.
+- Frontend: plain HTML + ES modules, **no build step, no framework**. Font: **Montserrat only** (500/700/800/900).
+  The look ("Soft", 2026-11-26) lives in `assets/soft.css`, loaded after `app.css` on every page: a light page with a pastel
+  wash per occasion (`--wash`/`--wash2`), black pill buttons, round icon buttons, no bordered boxes (a soft tile only where
+  something needs a surface). Type roles: display 900 caps, title 800 caps, label 700 caps, button 800 caps, body 500,
+  numbers 900 tabular. The gifts are drawn **cute, like stickers** (2026-11-27, `soft.css` "The cute look"): flat colours,
+  a warm brown outline (`--ol`; pieces cut with clip-path go in an `.ol-wrap`), a face on most cakes (each shape's `face` spot, `faceSvg` in `cake.js`) and on the tumpeng (`coneFace`), thin outlines (`--olt`) on dishes, envelopes and river lights, and
+  **no card behind a gift**: the stage has no colour unless a backdrop is picked, and a backdrop (and the river's night) fades out at its edges.
+  **Never capitals for captions, inputs or what people typed** (CSS `text-transform` only, strings unchanged).
+  Icons: `assets/icons.js` (chunky two-tone SVG, fill = `--ico-fill`/`--wash`), re-exported as `icon` from `common.js`; emoji
+  only as content (stickers, moods). Shared pieces in `common.js`: `topBar()`, `bottomNav()`, `openSheet()` (a sheet over a
+  sheet closes the first one properly). The slide buttons are real sliders (`swipeButton()` in `common.js`); a tap works too.
 - Audio: the browser records **16 kHz mono 16-bit WAV** (`public/assets/recorder.js`) — playable
   everywhere and ready for ASR, so no ffmpeg/conversion anywhere.
 
@@ -29,25 +38,33 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | home, logged in only (else `/login`): the three gifts drawn live, Profile top right, thank-you notes received, "Make a gift" → `/new`, "Open your gift" (paste the link), "Dashboard" (→ `/account`) |
-| `/new` | `create.html` + `assets/create.js` | organizer: what to make (cake / tumpeng / bouquet / lanterns cards, the gift drawn on top) + names + 4-digit PIN (old `/start` links land here too) → decorate → (account, if logged out) → "Create" opens the gift's page `/m/…`. `?edit=slug&k=` = "Edit design" |
-| `/signup`, `/login`, `/account` | `account.html` + `assets/account.js` | everyone: "Continue with Google" → their gifts (dashboard links), log out |
+| `/` | `index.html` | home, logged in only (else `/login`): "Hi, name", the three gifts in a carousel you slide (tap = make that kind), "Make a gift" → `/new`, "Open a gift" (paste the link in a sheet), bottom nav, thank-you notes pop up |
+| `/new` | `create.html` + `assets/create.js` | organizer, **one screen**: a carousel of the kinds (`#kinds`, the one in the middle is the gift) + occasion tiles + For/From + PIN chip + "Customize" + slide "Create gift". Customize (`data-screen="decorate"`) is its own page: the big gift with the kinds before and after peeking in at the sides (swipe it or tap a peek = kind; dots under the name), icon tabs (Color · Accent · Pattern · Topper · Greens · Text · Stickers · Draw · Music · Backdrop · Local), one tool at a time, "Save" goes back. `?edit=slug&k=` opens Customize; its Save ("Save changes") saves and goes to `/m/…` |
+| `/signup`, `/login`, `/account`, `/gifts` | `account.html` + `assets/account.js` | everyone: "Continue with Google". `/account` = Profile (avatar, name, voices/gifts tiles, edit profile, log out); `/gifts` = Your gifts (their gifts, + to make one, thank-yous). Both have the bottom nav (`/account#gifts` goes to `/gifts`) |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
-| `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit design, 1. invite friends (link), 2. who recorded (names, not content), 3. send it (recipient link + PIN) |
+| `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit (top right), who recorded as faces, three big actions that each open a sheet: Invite (link + share), Voices (names, not content; demo voices), Send (recipient link + PIN) |
 | `/admin/asr` | `asr.html` + `assets/asr.js` | the team (ADMIN_KEY, typed in, kept for the tab only): which ASR runs, TWM health + latest tasks, how many corrected captions reached TWM, retry the ones that did not |
-| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → items light → listen → finale (blow / throw cap / release lanterns) → keepsake → thank everyone |
+| `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → 3-2-1, items light → listen → finale (blow + first slice / throw cap / release lanterns → constellation) → keepsake → thank everyone |
 
-Designed screens to match: `design/screens/*.jpg` (Flow1–10 = full journey; Before/Midnight/Listen/Blow/Keep = reveal;
-Grad* = graduation, Wed* = wedding; Decorate = cake editor).
+Older designed screens: `design/screens/*.jpg` (the journey still holds; the look is now "Soft", see Stack above).
 
 ## Occasions (themes)
 - `assets/themes.js` holds every occasion's words (one object per occasion) and `createScene()`, which picks
   the scene. Pages never hard-code "candle" or "birthday": add words there.
-- Scenes: `cake.js` (birthday), `tumpeng.js` (occasion `tumpeng`, an Indonesian birthday), `bouquet.js` (graduation), `lanterns.js` (wedding), all built on `stage.js`
+- Only three occasions: birthday, graduation, wedding (decided 2026-11-26: a voice gift is for one person, so Tết / Loy Krathong / tumpeng
+  are not occasions). Each theme has a `scene`; a **kind** (`gift.cake.shape`) may draw another scene, through `BY_SHAPE` in `themes.js`
+  (its own words + decorate lists, `theme(occasion, shape)`): birthday `tumpeng` → `tumpeng.js`, wedding `angpao` → `lixi.js`
+  (red envelopes on a blossom tree), wedding `imlek` → `lixi.js` too, dressed for Chinese New Year (theme `imlek`: red pot,
+  lanterns, `dragon` backdrop, dragon / scale / cloud envelopes), wedding `river` → `krathong.js` (floating lights), wedding
+  `ketupat` = the lanterns as woven ketupat (a Ramadan feel; same scene, its own words). A kind can bring its own defaults
+  (`decorate.accent` / `pattern` / `topper` / `backdrop`), applied when it is picked. Pages check `t.scene`, never the occasion, for
+  scene behaviour. Old gifts with occasion `tumpeng` open as a birthday tumpeng. Changing kind in the decorate step to another scene
+  redraws the gift (`switchScene()` in `create.js`).
+- Scenes: `cake.js`, `tumpeng.js`, `bouquet.js`, `lanterns.js`, `lixi.js`, `krathong.js`, all built on `stage.js`
 - Birthday keeps one logical candle per voice, with at most six visible per group. `setActive()`/`light()` open the matching group; `lightAll()`/`reset()` restore the first group. Keep every voice/index available; do not truncate messages to match the visible candles.
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
-- Decorate step: the kind is picked from a sideways strip of live minis (tap one, or swipe the big gift); the strip is never rebuilt on a pick, so it stays where it was scrolled; every strip (`wheel()` in `create.js`) picks whatever stops in the middle; stickers are dragged up onto the gift. The gift stays on screen and only the tools card scrolls; a music plays as soon as it's picked. Drawing has Undo (each stroke and Clear). On the cake, the age and the figures are pushed into the cream (cut at the bottom, a thin cream rim), among the candles.
+- The kind is picked in the carousel on the first screen (or in Customize by swiping the gift / tapping a peeking neighbour, `renderPeeks()`); every strip (`wheel()` in `create.js`) picks whatever stops in the middle; stickers are dragged up onto the gift. In Customize the gift stays on screen and only the picked tool shows; a music plays as soon as it's picked. Drawing has Undo (each stroke and Clear). On the cake, the age and the figures are pushed into the cream (cut at the bottom, a thin cream rim), among the candles.
 - `gift.cake` also has `accent` (cream / ribbon / string), `pattern`, `topper` + `age`, `backdrop` (`BACKDROPS` in `stage.js`), `music` (`TUNES` in `music.js`) and, on the bouquet only, `greens` (leaf/eucalyptus/fern/none, `GREENS` in `bouquet.js`, drawn as SVG); each scene exports its own `ACCENTS`, `PATTERNS`, `TOPPERS`. On the cake the name is an SVG text along the tier's curve (`curvedName()` in `cake.js`).
 - `gift.cake {flavor, shape, font, name, dots, stickers}` is reused by every scene: `font` is a key of `NAME_FONTS` in `stage.js`
   (script/serif/hand/round, loaded from Google Fonts by the stage; cake and bouquet names shrink to fit); `flavor` is a key of that scene's
@@ -57,9 +74,9 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   `name` is the text on the cake / wrap / under the lanterns; `stickers` = `[[emoji, x, y]]` (sets in
   `themes.js` → `decorate.stickers`, layer in `stage.js`, drag/remove in `create.js`).
 - "Edit design" saves with `PATCH /api/gifts` (manageKey), then back to `/m/…`. Each step is a history entry, so the
-  phone's back gesture works. No bottom tab bar: the profile button sits top right.
-- After checking their words, a friend may "Add a twist": a voice **mood** (`MOODS` in `voicefx.js`: Sad, Angry, Dangdut, Toa,
-  Horror, Helium, Alien, 8-bit; each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
+  phone's back gesture works. A floating bottom nav of three icons, no words (Home · Gifts · Profile; the current one sits on a black blob that stretches into a bar over the tabs it passes and shrinks onto the new tab, `bottomNav()`) only on home, `/gifts` and `/account`. Making a gift lives on home's button and the + on `/gifts`, not in the nav.
+- After checking their words, a friend may "Add a twist" (two icon tabs, no box: Mood, and their own item): a voice **mood** (`MOODS` in `voicefx.js`: Sad, Angry, Dangdut, Toa,
+  Horror, Helium, Alien, 8-bit, plus 19 local ones with a `local` country, e.g. Abang Bakso, Videoke, Lion dance; the gift's country is listed first (`moodsFor()`); each = an intro sound + the voice effect + a show on the gift via `moodShow()`; played
   with Web Audio only, never baked into the WAV; the recipient's player has "🔊 Original voice" to hear it without the mood, and back) and, on the cake, their own candle in three picks: **stick**, **flame colour**,
   **flame shape** (`CANDLES`/`FLAMES`/`FLAME_SHAPES` in `cake.js`; each pick shows only that thing, live). Saved on the message as
   `mood` and `candle {body, flame, shape}` (`PATCH /api/message`); keys checked in `lib/gifts.js`.
@@ -68,6 +85,26 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   urap, sambal, fried fish, tofu; drawn as SVG in `tumpeng.js`), saved as `dish {type}` (`cleanDish` in `lib/gifts.js`). Dishes are spaced
   evenly along the tray (a second row in front from 13 on, up to 40). Decorate: rice (`FLAVORS`), cone (`SHAPES`), tray (`ACCENTS`),
   garnish (`PATTERNS`), on top (`TOPPERS`, incl. age). Finale: "Cut the tumpeng" (one tap: the top lifts off via `finaleStart()`, the dishes hop).
+- Local touches (added 2026-11-25, `assets/local.js`, ideas + sensitivities in `ide local.md`): `gift.cake.local` = `none|id|th|ph|vn` (`LOCAL_KEYS`),
+  guessed from the phone's time zone and picked in the decorate step's "Local" row. It puts that country's stickers first, adds its backdrop
+  (`BACKDROPS` with `local`) and lantern motif (`PATTERNS` with `local`), and sets the money / snacks of the bouquet kinds `money` and `snack`
+  (`treat` in `bouquet.js` SHAPES; theme words per kind via `theme(occasion, shape)`). A snack bouquet friend picks `flower.snack` (`SNACK_TYPES`).
+  **The country shows on the gift itself, never by swapping the backdrop** (decided 2026-11-26; local backdrops stay in the Backdrop list):
+  every bouquet prints the country's motif on its wrapping paper (`WRAP_MOTIFS` in `bouquet.js`: kawung, Thai gold, banig, mai blossoms);
+  the cake stands on the country's mat instead of the white plate, with a garland on it (`cakeMatSvg`/`cakeGarlandSvg` in `local.js`:
+  banana leaf + melati, purple silk + phuang malai, banig + sampaguita, red lacquer tray + mai branches); every wedding scene
+  (lanterns, angpao, Imlek, river, ketupat) hangs the country's decoration across the top (`drapeSvg`: janur fringe, jasmine garlands,
+  capiz strings, red-gold swags). Scenes take it as `opts.local` and `setLocal(k)`. The tumpeng has none (it is already Indonesian).
+  Lanterns add `hoian` (finale: down onto a river, not up), `capiz`, `xi`. Never: flags, maps, real banknote designs, royal/religious symbols, brands.
+- Angpao tree and river lights (wedding kinds, 2026-11-26, on trial): the friend picks their envelope design (`ENVELOPE_TYPES`) or the
+  flowers on their light (`KRATHONG_TYPES`), saved as `item {type}` on the message (`cleanItem` in `lib/gifts.js`; scene method `setItemStyle`).
+  Finales: "Open the envelopes" (a gold coin pops out of each), "Float the lights".
+- The opening and finales (2026-11-26, "WOW"): the reveal dims the room around the gift (`.cine`), counts 3-2-1, and each item lights with
+  its friend's first name rising from it (`nameRise`) and a short vibration (`buzz`). While a voice plays, an analyser on the output sets
+  `--lvl` on the speaking item: rings grow with the voice (`voiceRing`) and the flame / flower / lantern swells with it. Cake: warm
+  candlelight on the cream (`.cake-warm`), curling smoke, then `finaleCut()` puts the first slice on a plate. Lanterns: two layers of
+  stars, a glowing trail as they rise, then `constellation()` joins a star per guest (names when 14 or fewer). Bouquet: petals open one
+  by one as a flower lights, and rain down with the caps.
 - Wedding calls the couple by the full recipient ("Rina & Bayu"); the others use the first name.
 - All UI text is English. No QR codes.
 
@@ -96,6 +133,10 @@ Grad* = graduation, Wed* = wedding; Decorate = cake editor).
   that **pops up once** on home; then it waits in the Dashboard and is **deleted 7 days after it was opened** (`listThanks`).
   Only that friend can play the voice in it, and only until it expires. Friends who recorded before accounts were required have no `userId` and get none.
 - Sessions: a random token in an HttpOnly, SameSite=Lax cookie (`vg_session`, 30 days); storage keeps only its sha256.
+- Moving between pages (2026-11-26): `me()` remembers the account for the tab (sessionStorage `vg-me`) so a page draws at once;
+  the server is still asked in the background and a different answer reloads the page. Display only: every API checks the cookie.
+  No animation between pages (asked 2026-11-27: pages just change). Every page has speculation rules (prerender `/`, `/new`, `/account`, `/gifts`; prefetch other
+  links) and a one-shot reload if a module fails to link; `/assets/*` is served `stale-while-revalidate` (`vercel.json`).
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
 - **Demo voices** (updated 2026-11-19): the gift's page has "+ Add 5 demo voices" / "Remove the demo voices" (`DEMO_COUNT` in `lib/demo.js`, cut from 20 on 2026-11-19); deleted ones can be added back.
@@ -149,6 +190,8 @@ generic HTTP API (TWM wins, then this, then Groq; adapt `fromProvider()` to its 
 - Consent checkbox on every recording; store `consentVersion`. Accounts are Google only. No phone numbers.
 - Never send `googleSub`, session tokens or `ownerId` to a page (`publicUser`, `publicGift`).
 - Mobile first: test at 390×844, and desktop (the app is a phone-sized frame, 420×844 at most, that scrolls inside; no wide layout).
+- Fewer pages, fewer words: secondary things open in a sheet (`openSheet`), choices are swiped or tapped, labels are short
+  and in capitals, an icon wherever one says it. Focused flows (create, record, reveal, manage) have a back button, no bottom nav.
 - iOS: create the AudioContext inside the tap (see `recorder.js`, `reveal.js` `openGift`).
 
 ## Not built yet (designed)

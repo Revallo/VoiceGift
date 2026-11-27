@@ -9,3 +9,7 @@ tests/screenshots/
 promo/out/
 promo/build/
 promo/*/build/
+
+# BRONCI ASR test script (scripts/README-bronci.md)
+scripts/*.wav
+scripts/out/

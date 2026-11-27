@@ -5,7 +5,7 @@ import { createScene, applyTheme } from './themes.js';
 import { requireLogin } from './auth.js';
 import { playTune } from './music.js';
 import { ITEM_COLORS, DISH_TYPES, ENVELOPE_TYPES, KRATHONG_TYPES } from './item-options.js';
-import { startRecording, micSupported, micErrorHelp } from './recorder.js';
+import { startRecording, micSupported, micErrorHelp, MAX_RECORDING_SEC, clock } from './recorder.js';
 import { MOODS, moodOf, playVoice, moodShow } from './voicefx.js';
 
 addStars($('#app'), 26, 55);
@@ -442,7 +442,7 @@ async function play(i, chain, { original = false } = {}) {
       h('div', {}, h('div', { class: 'name' }, m.sender), h('div', { class: 'meta' }, fmtDur(m.durationSec),
         hasMood && !original ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, `${MOODS[moodOf(m.mood)].emoji} ${MOODS[moodOf(m.mood)].label}`) : '',
         hasMood && original ? h('span', { class: 'mood-tag', style: { marginLeft: '6px' } }, '🔊 Original') : '')), bars),
-    h('div', { class: 'caption' }, words));
+    h('div', { class: 'caption' + (words.length > 40 ? ' long' : '') }, words)); // up to 90 s: a long text scrolls in its own box
   // switch between the friend's mood and their plain voice; starts this voice again from the beginning
   const moodSwitch = hasMood && h('button', {
     type: 'button', class: 'btn ghost sm mood-switch', id: 'moodSwitch',
@@ -570,6 +570,12 @@ async function play(i, chain, { original = false } = {}) {
     let k = -1;
     m.words.forEach((w, idx) => { if (w.start <= el) k = idx; });
     words.forEach((w, idx) => { w.className = idx < k ? 'done' : idx === k ? 'now' : ''; });
+    // a long text: keep the word being said in view, inside the caption's own box (the page stays where it is)
+    if (k !== me.k && words[k]) {
+      me.k = k;
+      const box = words[k].parentElement;
+      if (box.scrollHeight > box.clientHeight + 4) box.scrollTo({ top: Math.max(0, words[k].offsetTop - box.offsetTop - box.clientHeight / 3), behavior: 'smooth' });
+    }
     if (el < dur * rate + 3 && current === me) me.raf = requestAnimationFrame(paint);
   };
   me.raf = requestAnimationFrame(paint);
@@ -879,11 +885,11 @@ function openThanks(thankBtn) {
       if (!st.consent) return fail(new Error('Please tick the box to continue.'));
       if (!micSupported()) return fail(new Error(micErrorHelp()));
       try {
-        st.rec = await startRecording({ maxSec: 15, onTick: (s) => { timer.textContent = `0:${String(Math.min(15, Math.floor(s))).padStart(2, '0')}`; }, onAutoStop: () => finish() });
+        st.rec = await startRecording({ maxSec: MAX_RECORDING_SEC, onTick: (s) => { timer.textContent = clock(Math.min(MAX_RECORDING_SEC, s)); }, onAutoStop: () => finish() });
       } catch (e) { return fail(new Error(micErrorHelp(e))); }
       const stop = h('button', { type: 'button', class: 'recbtn', 'aria-label': 'Stop recording', html: icon.stop(30), style: { alignSelf: 'center' }, onclick: () => finish() });
       stop.id = 'thanksStop';
-      render(h('b', {}, title), timer, stop, h('p', { class: 'center small muted', style: { margin: '0' } }, 'Tap to finish · up to 15 seconds'));
+      render(h('b', {}, title), timer, stop, h('p', { class: 'center small muted', style: { margin: '0' } }, `Tap to finish · up to ${MAX_RECORDING_SEC} seconds`));
     };
     mic.id = 'thanksMic';
     render(h('b', {}, title), h('p', { class: 'small muted', style: { margin: '0' } }, 'Say it in your own words. You’ll check the words after.'), consent, mic,

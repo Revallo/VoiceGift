@@ -1040,3 +1040,10 @@ body[data-theme="custom"] {
 .say-sample q { color: var(--text); font-weight: 700; }
 /* "Other": the occasion the organizer types */
 #customTitleField[hidden] { display: none; }
+
+/* A long wish (up to 90 s, 2026-11-28): smaller words in a box of its own that scrolls, following the voice */
+:is(.reveal-page, .record-page) .birthday-player .caption.long, .caption.long {
+  font-size: 17px; line-height: 1.55; max-height: min(42vh, 300px); overflow-y: auto; overscroll-behavior: contain;
+  position: relative; padding-right: 4px; scrollbar-width: thin;
+  -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent);
+}

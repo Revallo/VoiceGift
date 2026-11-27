@@ -8,7 +8,7 @@ speech with captions the speakers corrected themselves. Works on phones and desk
 **Flow**
 1. The organizer creates a gift at `/new`: the occasion, who it's for, decorates the cake / bouquet / lanterns,
    then logs in with Google to save it. `/account` lists their gifts on any phone.
-2. Friends open `/g/<gift>` from WhatsApp, record up to 15 s, fix the caption, send.
+2. Friends open `/g/<gift>` from WhatsApp, record up to 90 s, fix the caption, send.
 3. The organizer follows progress at `/m/<gift>?k=<key>` and, when ready (e.g. at 00:00), sends the
    recipient their link `/r/<gift>?k=<key>` + the 4-digit PIN from there.
 4. The recipient opens it: the candles light up one voice at a time, they tap candles to listen,

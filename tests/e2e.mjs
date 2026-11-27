@@ -84,7 +84,8 @@ async function signUpHere(p, name, email, shotName) {
 }
 
 const CASES = {
-  birthday: { occasion: 'birthday', gift: 'cake', style: 'tower', recipient: 'Dimas', swatch: 9, friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
+  // longFirst: the first friend records for ~17 s (recordings may be up to 90 s since 2026-11-28)
+  birthday: { occasion: 'birthday', gift: 'cake', style: 'tower', recipient: 'Dimas', swatch: 9, longFirst: true, friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
   tumpeng: { occasion: 'birthday', gift: 'tumpeng', style: 'tall', recipient: 'Putri', swatch: 3, friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
   graduation: { occasion: 'graduation', gift: 'bouquet', style: 'basket', recipient: 'Nadia', swatch: 6, friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
   angpao: { occasion: 'wedding', gift: 'angpao', style: 'vase', recipient: 'Linh & Minh', swatch: 1, friends: [['Bibi Lan', 'Selamat menempuh hidup baru, semoga rukun selalu.'], ['Om Hendra', 'Selamat ya Linh dan Minh, langgeng terus.']] },
@@ -237,10 +238,16 @@ async function runGift(occasion, c) {
     await f.check('#consent');
     await f.click('#startBtn');
     await f.waitForSelector('[data-screen="record"]:not([hidden])');
-    await f.waitForTimeout(2600);
+    const long = c.longFirst && k === 0;
+    await f.waitForTimeout(long ? 17000 : 2600);
     if (k === 0) await shot(f, P('05-recording'));
     await f.click('#stopBtn');
     await f.waitForSelector('[data-screen="caption"]:not([hidden])', { timeout: 15000 });
+    if (long) {
+      const dur = await f.textContent('#ownDur');
+      const [mm, ss] = dur.split(':').map(Number);
+      if (!(mm * 60 + ss > 15)) errors.push(`${occasion}: a long recording was cut short (${dur})`);
+    }
     if (k === 0) await shot(f, P('06-caption'));
     await f.fill('#captionText', text);
     await f.click('#sendBtn');

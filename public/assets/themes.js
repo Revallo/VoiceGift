@@ -37,7 +37,7 @@ export const OCCASIONS = {
       letterLabel: 'A birthday wish, in their own words', keepTitle: 'A little love to come back to.', keepSub: KEPT },
     keepSub: (n) => `${count(n, 'person loves', 'people love')} you.`,
     thanksText: 'Thank you for your birthday wish. Hearing your voice made my day.',
-    waFriends: (name) => `Record a 15-second birthday wish for ${name}! It’s a secret, don’t tell them.`,
+    waFriends: (name) => `Record a short birthday wish for ${name}! It’s a secret, don’t tell them.`,
     waRecipient: (name) => `${name}! Your friends made you a voice gift 🎂 Turn your sound on.`
   },
 
@@ -57,7 +57,7 @@ export const OCCASIONS = {
       keepSub: 'Your voices are kept here. Come back whenever you need a little encouragement.' },
     keepSub: (n) => `${count(n, 'person is', 'people are')} proud of you.`,
     thanksText: 'Thank you for celebrating my graduation with me. Your voice made my day.',
-    waFriends: (name) => `Record a 15-second graduation wish for ${name}! It’s a secret, don’t tell them.`,
+    waFriends: (name) => `Record a short graduation wish for ${name}! It’s a secret, don’t tell them.`,
     waRecipient: (name) => `Congratulations, ${name}! 🎓 Your friends made you a voice gift. Turn your sound on.`
   },
 
@@ -78,7 +78,7 @@ export const OCCASIONS = {
       keepSub: 'Your voices are kept here. Open this link to hear your people again.' },
     keepSub: (n) => `${count(n, 'guest', 'guests')} wished you a happy life together.`,
     thanksText: 'Thank you for your wishes. Hearing your voice made our day.',
-    waFriends: (name) => `Leave a 15-second voice wish for ${name}!`,
+    waFriends: (name) => `Leave a voice wish for ${name}!`,
     waRecipient: (name) => `${name}, congratulations on your wedding 💍 Here are your guests’ voice wishes. Turn your sound on.`
   },
 
@@ -97,7 +97,7 @@ export const OCCASIONS = {
       letterLabel: 'An anniversary wish, in their own words', keepTitle: 'A little love to come back to.', keepSub: KEPT },
     keepSub: (n) => `${count(n, 'person celebrates', 'people celebrate')} you.`,
     thanksText: 'Thank you for your wishes. Hearing your voice made our day.',
-    waFriends: (name) => `Record a 15-second anniversary wish for ${name}! It’s a secret, don’t tell them.`,
+    waFriends: (name) => `Record a short anniversary wish for ${name}! It’s a secret, don’t tell them.`,
     waRecipient: (name) => `Happy anniversary, ${name}! 💞 Your friends made you a voice gift. Turn your sound on.`
   },
 
@@ -116,7 +116,7 @@ export const OCCASIONS = {
       letterLabel: 'An Eid wish, in their own words', keepTitle: 'A little love to come back to.', keepSub: KEPT },
     keepSub: (n) => `${count(n, 'person', 'people')} sent you their wishes.`,
     thanksText: 'Thank you for your Eid wishes. Hearing your voice made my day.',
-    waFriends: (name) => `Record a 15-second Eid wish for ${name}! It’s a surprise.`,
+    waFriends: (name) => `Record a short Eid wish for ${name}! It’s a surprise.`,
     waRecipient: (name) => `Eid Mubarak, ${name}! 🌙 Your loved ones made you a voice gift. Turn your sound on.`
   },
 
@@ -135,7 +135,7 @@ export const OCCASIONS = {
       letterLabel: 'A New Year wish, in their own words', keepTitle: 'Gong xi! Luck for the year ahead.', keepSub: KEPT },
     keepSub: (n) => `${count(n, 'person wishes', 'people wish')} you luck.`,
     thanksText: 'Thank you for your New Year wishes. Hearing your voice made my day.',
-    waFriends: (name) => `Record a 15-second Lunar New Year wish for ${name}! It’s a surprise.`,
+    waFriends: (name) => `Record a short Lunar New Year wish for ${name}! It’s a surprise.`,
     waRecipient: (name) => `Gong xi fa cai, ${name}! 🧧 Your loved ones made you a voice gift. Turn your sound on.`
   },
 
@@ -154,7 +154,7 @@ export const OCCASIONS = {
       letterLabel: 'A thank-you, in their own words', keepTitle: 'A little thanks to come back to.', keepSub: KEPT },
     keepSub: (n) => `${count(n, 'person is', 'people are')} grateful for you.`,
     thanksText: 'Thank you for your words. Hearing your voice made my day.',
-    waFriends: (name) => `Record a 15-second thank-you for ${name}! It’s a secret, don’t tell them.`,
+    waFriends: (name) => `Record a short thank-you for ${name}! It’s a secret, don’t tell them.`,
     waRecipient: (name) => `${name}, this is for you 💛 Your friends made you a voice gift to say thank you. Turn your sound on.`
   },
 
@@ -173,7 +173,7 @@ export const OCCASIONS = {
       letterLabel: 'A few words, in their own voice', keepTitle: 'A little love to come back to.', keepSub: KEPT },
     keepSub: (n) => `${count(n, 'person loves', 'people love')} you.`,
     thanksText: 'Thank you for your words. Hearing your voice made my day.',
-    waFriends: (name) => `Record a 15-second message for ${name}! It’s a surprise, don’t tell them.`,
+    waFriends: (name) => `Record a short message for ${name}! It’s a surprise, don’t tell them.`,
     waRecipient: (name) => `${name}, your friends made you a voice gift 💌 Turn your sound on.`
   },
 

@@ -2,13 +2,18 @@
 // and it plays on every browser (no conversion needed on the server).
 
 const TARGET_RATE = 16000;
+// The longest recording (friends' wishes and the recipient's thank-you). 90 s of 16 kHz mono WAV ≈ 2.9 MB, under the
+// 4 MB upload limit (lib/http.js) and Vercel's 4.5 MB. The server checks the same (lib/gifts.js MAX_RECORDING_SEC).
+export const MAX_RECORDING_SEC = 90;
+// 0:07, 1:30
+export const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 export function micSupported() {
   return Boolean(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && (window.AudioContext || window.webkitAudioContext));
 }
 
 // Call this directly inside a click handler (iOS needs the AudioContext created during the tap).
-export async function startRecording({ maxSec = 15, onLevel, onTick, onAutoStop } = {}) {
+export async function startRecording({ maxSec = MAX_RECORDING_SEC, onLevel, onTick, onAutoStop } = {}) {
   const AC = window.AudioContext || window.webkitAudioContext;
   const ctx = new AC();
   let stream;

@@ -1,6 +1,6 @@
 import { $, $$, h, api, icon, showScreen, slugFromPath, copyText, toast, initials, colorFor } from './common.js';
 import { createScene, applyTheme } from './themes.js';
-import { startRecording, micSupported, micErrorHelp } from './recorder.js';
+import { startRecording, micSupported, micErrorHelp, MAX_RECORDING_SEC, clock } from './recorder.js';
 import { requireLogin } from './auth.js';
 import { moodsFor, playVoice, moodShow } from './voicefx.js';
 import { CANDLES, FLAMES, FLAME_SHAPES, miniCandle, styleCandle } from './cake.js';
@@ -100,17 +100,17 @@ $('#inviteForm').addEventListener('submit', async (e) => {
 function syncConsent() {
   const ok = $('#consent').checked;
   $('#startBtn').classList.toggle('waiting', !ok);
-  $('#micHint').textContent = ok ? 'Tap to record · up to 15 seconds' : 'Tick the box above, then tap to record';
+  $('#micHint').textContent = ok ? `Tap to record · up to ${MAX_RECORDING_SEC} seconds` : 'Tick the box above, then tap to record';
   if (ok) { err($('#inviteError'), ''); $('#consent').closest('.check').classList.remove('nudge'); }
 }
 $('#consent').addEventListener('change', syncConsent);
 syncConsent();
 
-// The recording screen: how much of the 15 seconds is left.
+// The recording screen: how much of the time is left (1:30, then seconds for the last minute).
 function showLeft(s) {
-  const left = Math.max(0, 15 - Math.floor(s));
-  $('#recBar').style.width = `${Math.min(100, (s / 15) * 100)}%`;
-  $('#recLeft').textContent = left === 1 ? '1 second left' : `${left} seconds left`;
+  const left = Math.max(0, MAX_RECORDING_SEC - Math.floor(s));
+  $('#recBar').style.width = `${Math.min(100, (s / MAX_RECORDING_SEC) * 100)}%`;
+  $('#recLeft').textContent = left >= 60 ? `${clock(left)} left` : left === 1 ? '1 second left' : `${left} seconds left`;
   $('[data-screen="record"]').classList.toggle('ending', left <= 3);
 }
 
@@ -128,9 +128,9 @@ async function beginRecording() {
   let autoStopped = false;
   try {
     rec = await startRecording({
-      maxSec: 15,
+      maxSec: MAX_RECORDING_SEC,
       onLevel: (lv) => { bars[levelIdx++ % bars.length].style.height = `${Math.round(6 + lv * 80)}px`; },
-      onTick: (s) => { $('#timer').textContent = `0:${String(Math.min(15, Math.floor(s))).padStart(2, '0')}`; showLeft(s); },
+      onTick: (s) => { $('#timer').textContent = clock(Math.min(MAX_RECORDING_SEC, s)); showLeft(s); },
       onAutoStop: () => { if (!autoStopped) { autoStopped = true; finishRecording(); } }
     });
     // Optional browser SpeechRecognition to capture real spoken words when supported
@@ -205,7 +205,7 @@ async function upload() {
     $('#seenName').textContent = $('#name').value.trim();
     const note = $('#mockNote');
     note.hidden = true;
-    $('#ownDur').textContent = `0:${String(Math.round(recorded.durationSec)).padStart(2, '0')}`;
+    $('#ownDur').textContent = clock(Math.round(recorded.durationSec));
     $('#againBtn').innerHTML = icon.redo(15);
     $('#againBtn').append(h('span', {}, 'Record again'));
     $('#sendBtn').textContent = `Send to ${first}`;

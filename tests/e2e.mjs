@@ -366,7 +366,8 @@ async function runGift(occasion, c) {
   await r.check('.bottom-sheet .check input');
   await r.click('#thanksMic');
   await r.waitForSelector('#thanksStop');
-  await r.waitForTimeout(2200);
+  await r.waitForTimeout(c.longFirst ? 16500 : 2200); // the thank-you may be up to 90 s too
+  if (c.longFirst && !/^0:1[6-9]$/.test(await r.textContent('.bottom-sheet .timer'))) errors.push(`${occasion}: the thank-you timer stopped early (${await r.textContent('.bottom-sheet .timer')})`);
   await r.click('#thanksStop');
   await r.waitForSelector('#thanksWords', { timeout: 15000 });
   await shot(r, P('17a-thanks-words'));

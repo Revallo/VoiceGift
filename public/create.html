@@ -44,11 +44,10 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
     <div class="occ-row" id="occasions" role="radiogroup" aria-label="Occasion"></div>
     <label class="pill-field" id="customTitleField" hidden><span>What</span><input class="input" id="customTitle" maxlength="60" autocomplete="off" placeholder="e.g. Get well soon"></label>
 
-    <!-- 2. the gift: slide, the one in the middle is it. Only the gifts that suit the occasion, unless "more" is open -->
+    <!-- 2. the gift: slide, the one in the middle is it. Every gift goes with every occasion -->
     <h2 class="make-step"><b>2</b>Pick a look</h2>
     <div class="kind-carousel" id="kinds" role="radiogroup" aria-label="Gift"></div>
     <p class="kind-name" id="kindName" aria-live="polite"></p>
-    <button type="button" class="kind-more" id="kindMore" hidden></button>
     <p class="small muted center kind-lock" id="kindLock" hidden></p>
 
     <!-- 3. the names; Customize and the PIN are optional -->

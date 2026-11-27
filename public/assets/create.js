@@ -1,7 +1,7 @@
 import { $, $$, h, api, icon, showScreen, addStars, toast, openSheet, closeSheet, swipeButton } from './common.js';
 import { BRUSHES, NAME_FONTS, DEFAULT_FONT, BACKDROPS } from './stage.js';
 import { TUNES, playTune } from './music.js';
-import { OCCASIONS, GIFT_INFO, GIFT_KEYS, theme, normalize, createScene, applyTheme } from './themes.js';
+import { OCCASIONS, GIFT_INFO, GIFT_KEYS, theme as themeOf, normalize, createScene, applyTheme as applyThemeOf } from './themes.js';
 import { me, forgetMe, loginBox } from './auth.js';
 import { LOCALES, detectLocal, localKey } from './local.js';
 import { isTreat } from './bouquet.js';
@@ -11,6 +11,10 @@ $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
 const params = new URLSearchParams(location.search);
+// Every theme on this page carries the "Other" title typed so far (gift.customTitle).
+let customTitle = '';
+const theme = (o, sh, f) => themeOf(o, sh, f, customTitle);
+const applyTheme = (o, sh, f) => applyThemeOf(o, sh, f, customTitle);
 // /new?occasion=…&gift=…&style=… (a template on home). Older links: ?occasion= alone, ?shape=, ?occasion=tumpeng.
 // A gift in the link counts as picked: an occasion then no longer moves the carousel.
 const start = (() => {
@@ -152,8 +156,17 @@ function setOccasion(key) {
     buildDecorate();
   } else retheme();
   $('#recipient').placeholder = t.recipientPlaceholder;
+  $('#customTitleField').hidden = key !== 'custom';
   renderCarousel();
 }
+// "Other": the typed title becomes the words (greeting, and the text on the gift while it is short enough).
+$('#customTitle').addEventListener('input', () => {
+  customTitle = $('#customTitle').value;
+  t = applyTheme(state.occasion, state.shape, state.family);
+  const rec = recipientOr();
+  if (!state.nameTouched) { $('#cakeName').value = t.decorate.name(rec); scene.setName($('#cakeName').value); }
+  for (const sc of kindScenes) { const [f, sh] = sc.kind; sc.setName(theme(state.occasion, sh, f).decorate.name(rec)); }
+});
 // every decorate choice back to the gift's own (the first time, or when the gift draws another scene)
 const fallback = { accent: (d) => Object.keys(d.accents)[0], pattern: (d) => Object.keys(d.patterns)[0], topper: () => 'none',
   backdrop: () => (BACKDROPS[state.backdrop]?.local ? state.backdrop : 'party'), flavor: (d) => d.flavor };
@@ -199,11 +212,12 @@ $('#openDeliverySheetBtn').addEventListener('click', () => {
 function checkNames() {
   const err = $('#whoError');
   let msg = '';
-  if (!$('#recipient').value.trim()) msg = 'Who is it for?';
+  if (state.occasion === 'custom' && !customTitle.trim()) msg = 'What is the gift for?';
+  else if (!$('#recipient').value.trim()) msg = 'Who is it for?';
   else if (!$('#organizer').value.trim()) msg = 'Add your name.';
   err.hidden = !msg;
   err.textContent = msg;
-  if (msg) (msg.startsWith('Who') ? $('#recipient') : $('#organizer')).focus();
+  if (msg) (msg.startsWith('What') ? $('#customTitle') : msg.startsWith('Who') ? $('#recipient') : $('#organizer')).focus();
   return !msg;
 }
 $('#whoForm').addEventListener('submit', (e) => {
@@ -644,6 +658,7 @@ async function saveGift() {
       recipient: recTrim,
       organizer: $('#organizer').value.trim(),
       occasion: state.occasion,
+      customTitle: state.occasion === 'custom' ? customTitle.trim() : '',
       verifyPin: state.verifyPin,
       cake: { ...decor($('#cakeName').value.trim()), dots: t.decorate.draw ? scene.getDots() : [], stickers: scene.stickers.get() }
     };
@@ -691,6 +706,8 @@ if (editSlug && editKey) {
     // the gift as it is now (older gifts: their kind read as gift + style); friends' voices lock the gift
     const n = normalize(gift.occasion, gift.cake?.shape, gift.cake?.family);
     Object.assign(state, { family: n.family, shape: n.shape, giftPicked: true, locked: (messages || []).some((m) => !m.demo) });
+    customTitle = gift.customTitle || '';
+    $('#customTitle').value = customTitle;
     setOccasion(n.occasion);
     $('#recipient').value = gift.recipient || '';
     $('#organizer').value = gift.organizer || '';

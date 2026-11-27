@@ -986,3 +986,57 @@ body.reveal-page[data-theme="birthday"] {
 .stage-wrap:not(.with-backdrop) .stage.lanterns svg { --string: rgba(91, 58, 41, 0.55); }
 .stage-wrap:not(.with-backdrop) :is(.lx-name, .tp-name) { color: #7A3E2A; text-shadow: none; }
 .stage-wrap:not(.with-backdrop) .stage .lantern.lit .l-body { box-shadow: inset 0 0 0 var(--olw) var(--ol), 0 0 12px 2px color-mix(in srgb, var(--c) 45%, transparent); }
+
+/* ==================== The gift box (gift-box.js, 2026-11-28) ==================== */
+/* A big wrapped box; every voice is a little present around it. Unlit = a faint shape; lit = its colour and a glow. */
+.stage.giftbox .gb-name { font-size: 26px; pointer-events: none; }
+.stage.giftbox .gb-lid { transform-box: view-box; transform-origin: 195px var(--lid-y, 160px); transition: transform 0.9s cubic-bezier(0.3, 1.4, 0.5, 1); }
+.stage.giftbox .gb-light { opacity: 0; transform-box: view-box; transform-origin: 195px 300px; transform: scaleY(0.2); transition: opacity 0.6s ease 0.25s, transform 0.9s ease 0.25s; }
+.stage.giftbox.opened .gb-lid { transform: translate(58px, -118px) rotate(26deg); }
+.stage.giftbox.opened .gb-light { opacity: 1; transform: none; }
+.stage.giftbox .topper { transition: transform 0.9s cubic-bezier(0.3, 1.4, 0.5, 1); }
+.stage.giftbox.opened .topper { transform: translate(58px, -118px) rotate(26deg); }
+.present { position: absolute; padding: 0; margin: 0; border: 0; background: transparent; cursor: default; -webkit-tap-highlight-color: transparent; }
+.present .p-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: 0.28; filter: grayscale(0.7); transform: scale(0.82);
+  transition: opacity 0.35s ease, filter 0.35s ease, transform 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.present.lit .p-art { opacity: 1; filter: drop-shadow(0 0 7px color-mix(in srgb, var(--c) 60%, transparent)); transform: none; animation: vg-present-bob 3.2s ease-in-out var(--bob-at, 0s) infinite; }
+.present.spot { border: 1.5px dashed rgba(91, 58, 41, 0.3); border-radius: 8px; transform: scale(0.7); }
+.stage.interactive .present.lit { cursor: pointer; }
+.present.active .p-art { transform: translateY(-6px) scale(1.18); filter: drop-shadow(0 0 10px var(--c)); animation: none; }
+.present.speaking .p-art { scale: calc(1 + var(--lvl, 0) * 0.2); }
+.present.mine::before { content: ''; position: absolute; inset: -6px; border: 2px solid var(--emerald-light); border-radius: 50%; }
+.present .p-lid { transform-box: view-box; transform-origin: 20px 14px; }
+.present.out .p-lid { animation: vg-present-pop 0.8s cubic-bezier(0.3, 1.5, 0.5, 1) var(--hop-at, 0s) both; }
+.present.out .p-art { animation: vg-dish-hop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) var(--hop-at, 0s) 1 both; }
+.stage-wrap.mood-dangdut .present.lit, .stage-wrap:is(.mood-odong, .mood-lukthung, .mood-morlam, .mood-lion, .mood-keroncong, .mood-rondalla) .present.lit { animation: vg-beat 0.46s ease-in-out infinite; }
+.stage-wrap.mood-helium .present.speaking { translate: 0 -16px; transition: translate 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes vg-present-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes vg-present-pop { 0% { transform: none; } 60% { transform: translate(4px, -14px) rotate(18deg); } 100% { transform: translate(3px, -10px) rotate(14deg); } }
+@media (prefers-reduced-motion: reduce) { .present.lit .p-art { animation: none; } }
+/* the occasions added 2026-11-28 */
+body[data-theme="christmas"] {
+  --fg: 22, 20, 26; --bg: #F8FAF6; --bg-outer: #E3EBE1; --panel: #FFFFFF; --panel-subtle: #EEF4EC; --panel-hover: #E6EEE3;
+  --text: #16141A; --face: #E3ECE0;
+  --emerald: #D23C44; --emerald-light: #B0283A; --emerald-dark: #B0283A; --emerald-grad: linear-gradient(180deg, #E15A61, #D23C44);
+  --on-accent: #FFFFFF; --glow: rgba(210, 60, 68, 0.2);
+  --wash: #CFEBD5; --wash2: #FFD2D2; --stage-bg: #EEF6EE;
+}
+body[data-theme="business"] {
+  --fg: 22, 20, 26; --bg: #FAF9F4; --bg-outer: #EDEADC; --panel: #FFFFFF; --panel-subtle: #F5F3E8; --panel-hover: #EEECDF;
+  --text: #16141A; --face: #EDEADA;
+  --emerald: #E07B1F; --emerald-light: #B65E0C; --emerald-dark: #B65E0C; --emerald-grad: linear-gradient(180deg, #EE963F, #E07B1F);
+  --on-accent: #FFFFFF; --glow: rgba(224, 123, 31, 0.22);
+  --wash: #FFE1B0; --wash2: #CDEFD8; --stage-bg: #F8F1E2;
+}
+body[data-theme="custom"] {
+  --fg: 22, 20, 26; --bg: #F9F7FB; --bg-outer: #E9E4EF; --panel: #FFFFFF; --panel-subtle: #F2EEF6; --panel-hover: #ECE7F1;
+  --text: #16141A; --face: #EAE4F0;
+  --emerald: #E0567F; --emerald-light: #C23C64; --emerald-dark: #C23C64; --emerald-grad: linear-gradient(180deg, #EA7397, #E0567F);
+  --on-accent: #FFFFFF; --glow: rgba(224, 86, 127, 0.22);
+  --wash: #FFD3E0; --wash2: #D6E4FF; --stage-bg: #F7EEF5;
+}
+/* the sample wish on the friend's page */
+.say-sample { margin: 2px 0 0; text-align: center; font-size: 13.5px; color: var(--soft); text-wrap: pretty; }
+.say-sample q { color: var(--text); font-weight: 700; }
+/* "Other": the occasion the organizer types */
+#customTitleField[hidden] { display: none; }

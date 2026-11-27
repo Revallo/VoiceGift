@@ -1,7 +1,8 @@
 // What a gift says and how it looks, from two free choices:
-//  - the GIFT (gift.cake.family): the drawing and how it opens — cake, tumpeng, bouquet, lanterns, angpao tree, river lights.
+//  - the GIFT (gift.cake.family): the drawing and how it opens — cake, tumpeng, bouquet, lanterns, angpao tree, river lights, gift box.
 //    gift.cake.shape is that gift's style (a key of its scene's SHAPES: drip cake, tall cone, flower box, ketupat…).
-//  - the OCCASION (gift.occasion): the words — greeting, inscription, stickers, page colour.
+//  - the OCCASION (gift.occasion): the words — greeting, inscription, sample wish, stickers, page colour. Adding one = one
+//    object in OCCASIONS, no drawing. "Other" (custom) builds its words from the title the organizer typed (gift.customTitle).
 // Any gift goes with any occasion (decided 2026-11-27): no choice hides another. Pages call theme(occasion, shape, family)
 // for the merged words and createScene() for the drawing. Old gifts (no family) are read through normalize().
 import { createCake, FLAVORS, SHAPES as CAKE_SHAPES, SWATCH as CAKE_SWATCH, ACCENTS as CREAMS, PATTERNS as CAKE_PATTERNS, TOPPERS as CAKE_TOPPERS } from './cake.js';
@@ -9,6 +10,7 @@ import { createBouquet, WRAPS, SHAPES as WRAP_SHAPES, SWATCH as WRAP_SWATCH, ACC
 import { createLanterns, LIGHTS, SHAPES as LIGHT_SHAPES, SWATCH as LIGHT_SWATCH, ACCENTS as STRINGS, PATTERNS as MOTIFS, TOPPERS as LIGHT_TOPPERS } from './lanterns.js';
 import { createTumpeng, FLAVORS as RICES, SHAPES as CONES, SWATCH as RICE_SWATCH, ACCENTS as TRAYS, PATTERNS as GARNISH, TOPPERS as TIPS } from './tumpeng.js';
 import { createLixi, FLAVORS as BLOSSOMS, SHAPES as POTS, SWATCH as BLOSSOM_SWATCH, ACCENTS as POT_COLORS, PATTERNS as TREE_EXTRAS, TOPPERS as TREE_TOPS } from './lixi.js';
+import { createGiftBox, FLAVORS as PAPERS, SHAPES as BOX_SHAPES, SWATCH as PAPER_SWATCH, ACCENTS as BOX_RIBBONS, PATTERNS as BOX_PATTERNS, TOPPERS as BOX_TOPPERS } from './gift-box.js';
 import { createKrathong, FLAVORS as NIGHTS, SHAPES as FLOATS, SWATCH as NIGHT_SWATCH, ACCENTS as BANKS, PATTERNS as SKIES, TOPPERS as SKY_MARKS } from './krathong.js';
 
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -21,7 +23,7 @@ const QUIET = 'Find a quiet moment. Turn your sound on.';
 // who = what the people who record are called ("3 friends have…", "Every lantern is one guest").
 export const OCCASIONS = {
   birthday: {
-    key: 'birthday', label: 'Birthday', bg: '#FAF8F5', emoji: '🎂', age: true, suggest: ['cake', 'tumpeng'],
+    key: 'birthday', label: 'Birthday', bg: '#FAF8F5', emoji: '🎂', age: true, suggest: ['cake', 'tumpeng'], sample: 'HBD! Sehat terus ya, panjang umur!',
     who: { one: 'friend', many: 'friends' },
     callName: firstName, people: (n) => count(n, 'person', 'people'),
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
@@ -40,7 +42,7 @@ export const OCCASIONS = {
   },
 
   graduation: {
-    key: 'graduation', label: 'Graduation', bg: '#F7F9FB', emoji: '🎓', suggest: ['bouquet', 'cake'],
+    key: 'graduation', label: 'Graduation', bg: '#F7F9FB', emoji: '🎓', suggest: ['bouquet', 'cake'], sample: 'Akhirnya lulus! Bangga banget sama kamu.',
     who: { one: 'friend', many: 'friends' },
     callName: firstName, people: (n) => count(n, 'person', 'people'),
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Nadia',
@@ -60,7 +62,7 @@ export const OCCASIONS = {
   },
 
   wedding: {
-    key: 'wedding', label: 'Wedding', bg: '#FAF8FB', emoji: '💍', suggest: ['lanterns', 'angpao', 'river', 'cake'],
+    key: 'wedding', label: 'Wedding', bg: '#FAF8FB', emoji: '💍', suggest: ['lanterns', 'angpao', 'river', 'cake'], sample: 'Sakinah mawaddah warahmah, langgeng terus ya!',
     who: { one: 'guest', many: 'guests' },
     callName: fullName, // "Rina & Bayu": the couple, not a first name
     people: (n) => count(n, 'guest', 'guests'),
@@ -81,7 +83,7 @@ export const OCCASIONS = {
   },
 
   anniversary: {
-    key: 'anniversary', label: 'Anniversary', bg: '#FBF7F8', emoji: '💞', age: true, suggest: ['cake', 'lanterns', 'bouquet'],
+    key: 'anniversary', label: 'Anniversary', bg: '#FBF7F8', emoji: '💞', age: true, suggest: ['cake', 'lanterns', 'bouquet'], sample: 'Happy anniversary, makin sayang terus ya!',
     who: { one: 'friend', many: 'friends' },
     callName: fullName, people: (n) => count(n, 'person', 'people'),
     recipientLabel: 'Who it’s for', recipientPlaceholder: 'e.g. Rina & Bayu',
@@ -100,7 +102,7 @@ export const OCCASIONS = {
   },
 
   lebaran: {
-    key: 'lebaran', label: 'Lebaran', bg: '#F6FAF4', emoji: '🌙', suggest: ['lanterns', 'tumpeng', 'cake'], prefer: { lanterns: 'ketupat' },
+    key: 'lebaran', label: 'Lebaran', bg: '#F6FAF4', emoji: '🌙', suggest: ['lanterns', 'tumpeng', 'cake'], prefer: { lanterns: 'ketupat' }, sample: 'Minal aidin wal faizin, mohon maaf lahir dan batin.',
     who: { one: 'friend', many: 'friends' },
     callName: fullName, people: (n) => count(n, 'person', 'people'),
     recipientLabel: 'Who it’s for', recipientPlaceholder: 'e.g. Mama',
@@ -119,7 +121,7 @@ export const OCCASIONS = {
   },
 
   imlek: {
-    key: 'imlek', label: 'Imlek', bg: '#FBF5F4', emoji: '🧧', suggest: ['angpao', 'lanterns', 'cake'], prefer: { lanterns: 'xi' },
+    key: 'imlek', label: 'Imlek', bg: '#FBF5F4', emoji: '🧧', suggest: ['angpao', 'lanterns', 'cake'], prefer: { lanterns: 'xi' }, sample: 'Gong xi fa cai, semoga rezekinya lancar!',
     who: { one: 'friend', many: 'friends' },
     callName: fullName, people: (n) => count(n, 'person', 'people'),
     recipientLabel: 'Who it’s for', recipientPlaceholder: 'e.g. Ama',
@@ -138,7 +140,7 @@ export const OCCASIONS = {
   },
 
   thanks: {
-    key: 'thanks', label: 'Thank you', bg: '#FBF9F2', emoji: '💛', suggest: ['bouquet', 'cake', 'lanterns'],
+    key: 'thanks', label: 'Thank you', bg: '#FBF9F2', emoji: '💛', suggest: ['bouquet', 'cake', 'lanterns'], sample: 'Makasih banyak ya, kamu baik banget.',
     who: { one: 'friend', many: 'friends' },
     callName: firstName, people: (n) => count(n, 'person', 'people'),
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Pak Andi',
@@ -157,7 +159,7 @@ export const OCCASIONS = {
   },
 
   justbecause: {
-    key: 'justbecause', label: 'Just because', bg: '#F9F7FB', emoji: '💌', suggest: ['bouquet', 'cake', 'lanterns'],
+    key: 'justbecause', label: 'Just because', bg: '#F9F7FB', emoji: '💌', suggest: ['bouquet', 'cake', 'lanterns'], sample: 'Cuma mau bilang, kamu berarti banget buat aku.',
     who: { one: 'friend', many: 'friends' },
     callName: firstName, people: (n) => count(n, 'person', 'people'),
     recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
@@ -173,10 +175,72 @@ export const OCCASIONS = {
     thanksText: 'Thank you for your words. Hearing your voice made my day.',
     waFriends: (name) => `Record a 15-second message for ${name}! It’s a surprise, don’t tell them.`,
     waRecipient: (name) => `${name}, your friends made you a voice gift 💌 Turn your sound on.`
+  },
+
+  christmas: {
+    key: 'christmas', label: 'Christmas', bg: '#F8FAF6', emoji: '🎄', suggest: ['giftbox', 'cake', 'lanterns'], sample: 'Selamat Natal, damai selalu!',
+    who: { one: 'friend', many: 'friends' },
+    callName: firstName, people: (n) => count(n, 'person', 'people'),
+    recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Maria',
+    decorate: { nameLabel: 'Words', nameMax: 24, name: () => 'Merry Christmas',
+      stickers: ['🎄', '⭐', '🔔', '🎁', '❄️', '✨', '🦌', '🧦', '☃️', '🕯️', '🤍', '🎶'] },
+    inviteTitle: (name) => `Wish ${name} a merry Christmas`,
+    eyebrow: (name) => `For ${name} · Christmas`,
+    greeting: (name) => `Merry Christmas, ${name}!`,
+    reveal: { eyebrow: 'Peace and joy, from the people who love you', salutation: 'Merry Christmas,', dedication: (n) => `${count(n, 'voice', 'voices')} · with love this Christmas`,
+      readyNote: (n) => `${count(n, 'person has', 'people have')} something to tell you.`, soundHint: QUIET,
+      letterLabel: 'A Christmas wish, in their own words', keepTitle: 'A little warmth to come back to.', keepSub: KEPT },
+    keepSub: (n) => `${count(n, 'person', 'people')} sent you Christmas wishes.`,
+    thanksText: 'Thank you for your Christmas wishes. Hearing your voice made my day.',
+    waFriends: (name) => `Record a Christmas wish for ${name}! It’s a surprise, don’t tell them.`,
+    waRecipient: (name) => `Merry Christmas, ${name}! 🎄 Your loved ones made you a voice gift. Turn your sound on.`
+  },
+
+  business: {
+    key: 'business', label: 'New business', bg: '#FAF9F4', emoji: '🏪', suggest: ['bouquet', 'giftbox', 'cake'], sample: 'Semoga laris manis!',
+    who: { one: 'friend', many: 'friends' },
+    callName: firstName, people: (n) => count(n, 'person', 'people'),
+    recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
+    decorate: { nameLabel: 'Words', nameMax: 24, name: () => 'Grand opening',
+      stickers: ['🏪', '🎉', '✨', '🚀', '🌟', '🍀', '🎊', '📈', '🥂', '💐', '🎀', '💰'] },
+    inviteTitle: (name) => `Cheer on ${name}’s new business`,
+    eyebrow: (name) => `For ${name} · New business`,
+    greeting: (name) => `Congrats on the new business, ${name}!`,
+    reveal: { eyebrow: 'A good start, cheered on together', salutation: 'Congratulations,', dedication: (n) => `${count(n, 'voice', 'voices')} · cheering you on`,
+      readyNote: (n) => `${count(n, 'person has', 'people have')} something to tell you.`, soundHint: QUIET,
+      letterLabel: 'A wish for your business, in their own words', keepTitle: 'A little luck to come back to.', keepSub: KEPT },
+    keepSub: (n) => `${count(n, 'person is', 'people are')} cheering you on.`,
+    thanksText: 'Thank you for cheering me on. Hearing your voice made my day.',
+    waFriends: (name) => `Record a wish for ${name}’s new business! It’s a surprise, don’t tell them.`,
+    waRecipient: (name) => `Congrats on the new business, ${name}! 🏪 Your friends made you a voice gift. Turn your sound on.`
   }
 };
+// "Other": the organizer types the occasion themselves (gift.customTitle, up to 60 characters). Its words are built from it.
+export const CUSTOM_TITLE_MAX = 60;
+export function customOccasion(title) {
+  const tt = String(title || '').trim().replace(/\s+/g, ' ').slice(0, CUSTOM_TITLE_MAX);
+  return {
+    key: 'custom', label: 'Other', bg: '#F9F7FB', emoji: '🎉', suggest: ['giftbox', 'cake', 'bouquet'], sample: 'Semangat terus, aku selalu dukung kamu!',
+    who: { one: 'friend', many: 'friends' },
+    callName: firstName, people: (n) => count(n, 'person', 'people'),
+    recipientLabel: 'Their name', recipientPlaceholder: 'e.g. Dimas',
+    decorate: { nameLabel: 'Words', nameMax: 30, name: (r) => (tt && tt.length <= 30 ? tt : fullName(r).slice(0, 20)),
+      stickers: ['🎉', '✨', '🤍', '🌟', '🎈', '💫', '🎀', '🍀', '🌸', '🎶', '⭐', '💌'] },
+    inviteTitle: (name) => `Record a message for ${name}`,
+    eyebrow: (name) => (tt ? `For ${name} · ${tt}` : `For ${name}`),
+    greeting: (name) => tt || `Hi, ${name}!`,
+    reveal: { eyebrow: tt || 'Just for you', salutation: 'Just for you,', dedication: (n) => `${count(n, 'voice', 'voices')} · made with love`,
+      readyNote: (n) => `${count(n, 'person has', 'people have')} something to tell you.`, soundHint: QUIET,
+      letterLabel: 'A few words, in their own voice', keepTitle: 'A little love to come back to.', keepSub: KEPT },
+    keepSub: (n) => `${count(n, 'person', 'people')} sent you their voice.`,
+    thanksText: 'Thank you for your words. Hearing your voice made my day.',
+    waFriends: (name) => `Record a voice message for ${name}${tt ? ` (${tt})` : ''}! It’s a surprise, don’t tell them.`,
+    waRecipient: (name) => `${name}, your friends made you a voice gift 🎉 Turn your sound on.`
+  };
+}
+OCCASIONS.custom = customOccasion('');
 // the icon on each occasion's chip (icons.js)
-const OCC_ICONS = { birthday: 'cake', graduation: 'cap', wedding: 'ring', anniversary: 'heart', lebaran: 'ketupat', imlek: 'envelope', thanks: 'smile', justbecause: 'sparkle' };
+const OCC_ICONS = { birthday: 'cake', graduation: 'cap', wedding: 'ring', anniversary: 'heart', lebaran: 'ketupat', imlek: 'envelope', thanks: 'smile', justbecause: 'sparkle', christmas: 'star', business: 'gift', custom: 'pen' };
 for (const [k, o] of Object.entries(OCCASIONS)) o.icon = OCC_ICONS[k];
 export const OCCASION_KEYS = Object.keys(OCCASIONS);
 export const THEMES = OCCASIONS; // older name, still imported in places
@@ -189,7 +253,8 @@ export const GIFT_INFO = {
   bouquet: { label: 'Bouquet', emoji: '💐', icon: 'flower' },
   lanterns: { label: 'Lanterns', emoji: '🏮', icon: 'lantern' },
   angpao: { label: 'Angpao tree', emoji: '🧧', icon: 'envelope' },
-  river: { label: 'River lights', emoji: '🪷', icon: 'sparkle' }
+  river: { label: 'River lights', emoji: '🪷', icon: 'sparkle' },
+  giftbox: { label: 'Gift box', emoji: '🎁', icon: 'gift' }
 };
 export const GIFT_KEYS = Object.keys(GIFT_INFO);
 
@@ -325,6 +390,28 @@ const GIFTS = {
     finaleBtn: 'Float the lights', finaleTitle: 'Float the lights',
     finaleSub: (n) => (n === 1 ? 'The wish drifts down the river.' : `All ${n} wishes drift down the river together.`),
     finaleAction: 'Tap to float', finaleHint: 'The river carries every wish with it.'
+  }),
+
+  // A big gift box with a little glowing present around it for every voice. The finale opens the big box.
+  giftbox: (w) => ({
+    scene: 'giftbox', item: 'present', items: 'presents', itemsOn: 'glowing',
+    decorate: { shapeLabel: 'Box', shapes: BOX_SHAPES, swatchLabel: 'Paper', swatches: PAPERS, swatch: PAPER_SWATCH, flavor: 'red', accentLabel: 'Ribbon', accents: BOX_RIBBONS, patternLabel: 'Print', patterns: BOX_PATTERNS, topperLabel: 'On top', toppers: BOX_TOPPERS, draw: true,
+      stickers: ['🎁', '🎀', '✨', '🎉', '🎊', '💝'] },
+    countLine: (n) => (n ? `${count(n, `${w.one} has`, `${w.many} have`)} added a present` : 'Be the first to add a present'),
+    doneTitle: 'Your present is by the box',
+    doneCount: (n) => `${count(n, 'present', 'presents')} · yours is the one circled`,
+    reveal: { readyTitle: 'A box full of surprises,\njust for you.', readySub: `Every little present holds a ${w.one}’s wish, in their own voice.`,
+      libraryTitle: 'The people behind the presents', idleTitle: 'There’s a voice in every present.', idleSub: 'Tap a present or a name below. Their words will appear here.' },
+    lightingTitle: `Your ${w.many} are bringing their presents…`,
+    lightingSub: `Every present is one ${w.one}.`,
+    gaveLine: (n) => `${count(n, 'person', 'people')} brought you a present.`,
+    progress: (i, n) => (i === n ? `All ${n} ${n === 1 ? 'present is' : 'presents are'} glowing` : `${i} of ${n} presents glowing`),
+    tapHint: `Every present is a ${w.one}. Tap one to hear them.`,
+    idleTitle: 'Tap a present to hear who brought it',
+    allHeard: 'You heard everyone. Now open the big box.',
+    finaleBtn: 'Open the box', finaleTitle: 'Open the box!',
+    finaleSub: (n) => (n === 1 ? 'One last surprise inside.' : `One last surprise from all ${n} ${w.many}.`),
+    finaleAction: 'Tap to open', finaleHint: 'Every wish comes out at once.'
   })
 };
 
@@ -412,9 +499,9 @@ export const familyOf = (gift) => normalize(gift?.occasion, gift?.cake?.shape, g
 
 const COUPLE = /&|\+|\band\b|\bdan\b/i;
 // The words and decorate lists of one gift for one occasion.
-export function theme(occasion, shape, family) {
+export function theme(occasion, shape, family, title) {
   const n = normalize(occasion, shape, family);
-  const o = OCCASIONS[n.occasion];
+  const o = n.occasion === 'custom' ? customOccasion(title) : OCCASIONS[n.occasion];
   const g = GIFTS[n.family](o.who);
   const s = BY_STYLE[n.family]?.[n.shape]?.(o.who) || {};
   const c = COMBO[`${n.dressed || n.occasion}:${n.family}`]?.(o.who) || {};
@@ -431,7 +518,7 @@ export function theme(occasion, shape, family) {
     decorate, reveal: { ...or, ...g.reveal, ...s.reveal, ...c.reveal }
   };
 }
-export const giftTheme = (gift) => theme(gift?.occasion, gift?.cake?.shape, gift?.cake?.family);
+export const giftTheme = (gift) => theme(gift?.occasion, gift?.cake?.shape, gift?.cake?.family, gift?.customTitle);
 
 // Quick starts on home: a gift and an occasion already picked. Everything stays changeable on /new.
 export const TEMPLATES = [
@@ -442,7 +529,7 @@ export const TEMPLATES = [
   { occasion: 'imlek', gift: 'angpao', label: 'Imlek angpao' }
 ];
 
-const SCENES = { cake: createCake, tumpeng: createTumpeng, bouquet: createBouquet, lanterns: createLanterns, lixi: createLixi, krathong: createKrathong };
+const SCENES = { giftbox: createGiftBox, cake: createCake, tumpeng: createTumpeng, bouquet: createBouquet, lanterns: createLanterns, lixi: createLixi, krathong: createKrathong };
 
 export function createScene(host, gift, opts = {}) {
   const cake = gift.cake || {};
@@ -452,8 +539,8 @@ export function createScene(host, gift, opts = {}) {
 }
 
 // Colours the page (background wash, theme-color) for a gift.
-export function applyTheme(occasion, shape, family) {
-  const t = theme(occasion, shape, family);
+export function applyTheme(occasion, shape, family, title) {
+  const t = theme(occasion, shape, family, title);
   document.body.dataset.theme = t.theme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t.bg);
   return t;

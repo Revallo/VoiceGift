@@ -22,7 +22,7 @@ async function load() {
   }
   const { gift, openKey, messages } = data;
   current = { gift, openKey };
-  const t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
+  const t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family, gift.customTitle);
   const name = t.callName(gift.recipient);
   const sentMsgs = messages.filter((m) => m.sent);
   document.title = `For ${gift.recipient} · Voice Gift`;

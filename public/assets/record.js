@@ -57,7 +57,9 @@ async function load() {
     $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
     return showScreen('error');
   }
-  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
+  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family, gift.customTitle);
+  // an example of what to say, from the occasion (Indonesian, like the recordings)
+  if (t.sample) { $('#saySample').replaceChildren('e.g. ', h('q', {}, t.sample)); $('#saySample').hidden = false; }
   const defaultColor = Object.keys(ITEM_COLORS)[count % Object.keys(ITEM_COLORS).length];
   flowerStyle = { type: FLOWER_TYPES[gift.cake?.pattern] ? gift.cake.pattern : 'round', color: defaultColor };
   if (treat() === 'snack') flowerStyle.snack = snackKey('', count, gift.cake?.local);

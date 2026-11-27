@@ -92,6 +92,9 @@ const CASES = {
   ketupat: { occasion: 'lebaran', gift: 'lanterns', style: 'ketupat', recipient: 'Mama', swatch: 3, friends: [['Bu Ani', 'Selamat Idul Fitri, mohon maaf lahir batin.'], ['Dodi', 'Minal aidin wal faizin, Ma!']] },
   river: { occasion: 'wedding', gift: 'river', style: 'lotus', recipient: 'Ploy & Ken', swatch: 2, friends: [['Nok', 'Selamat menikah, semoga bahagia selamanya.'], ['Budi', 'Selamat ya kalian berdua!']] },
   weddingcake: { occasion: 'wedding', gift: 'cake', style: 'pearl', recipient: 'Tia & Joe', swatch: 4, friends: [['Om Ben', 'Selamat menempuh hidup baru, Tia dan Joe!'], ['Sinta', 'Langgeng terus ya kalian!']] },
+  // added 2026-11-28: "Other" with a typed title on the new gift box, and Christmas on a cake
+  other: { occasion: 'custom', customTitle: 'Get well soon', gift: 'giftbox', style: 'round', recipient: 'Raka', swatch: 2, friends: [['Dewi', 'Cepat sembuh ya Raka, kita kangen main bareng.'], ['Pak Ari', 'Semoga lekas pulih, semangat terus!']] },
+  christmas: { occasion: 'christmas', gift: 'cake', style: 'classic', recipient: 'Maria', swatch: 3, friends: [['Yosef', 'Selamat Natal Maria, damai selalu.'], ['Lina', 'Merry Christmas, sehat terus ya!']] },
   wedding: { occasion: 'wedding', gift: 'lanterns', style: 'heart', recipient: 'Rina & Bayu', swatch: 6, extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };
 
@@ -110,11 +113,15 @@ async function runGift(occasion, c) {
   await p.waitForURL(/\/new$/);
   await p.waitForSelector('#recipient');
   await p.click(`#occasions [data-v="${c.occasion}"]`);
+  if (c.customTitle) {
+    if (await p.isHidden('#customTitle')) errors.push(`${occasion}: "Other" did not show the title box`);
+    await p.fill('#customTitle', c.customTitle);
+  } else if (await p.isVisible('#customTitle')) errors.push(`${occasion}: the title box shows for ${c.occasion}`);
   await p.fill('#recipient', c.recipient);
   await p.fill('#organizer', 'Sari');
-  // the gifts: a carousel of live gifts (all six for every occasion); the one in the middle is the gift
+  // the gifts: a carousel of live gifts (all seven for every occasion); the one in the middle is the gift
   await p.waitForTimeout(300);
-  if ((await p.$$('#kinds .kind')).length !== 6) errors.push(`${occasion}: the carousel does not show all six gifts`);
+  if ((await p.$$('#kinds .kind')).length !== 7) errors.push(`${occasion}: the carousel does not show all seven gifts`);
   const lastKind = await p.$eval('#kinds', (b) => b.lastElementChild.dataset.v);
   await p.click(`#kinds [data-v="${lastKind}"]`);
   await p.waitForTimeout(700);

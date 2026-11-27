@@ -69,7 +69,7 @@ async function unlockAndShow(pin = '') {
   const data = await api(`/api/reveal?${q.toString()}`);
   gift = data.gift;
   thanked = data.thanked;
-  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
+  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family, gift.customTitle);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
   if ($('#revealAccessBadge')) $('#revealAccessBadge').textContent = '✓ PIN';
@@ -133,7 +133,7 @@ async function load() {
     return showScreen('error');
   }
   gift = pub.gift;
-  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
+  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family, gift.customTitle);
   first = t.callName(gift.recipient);
   document.title = `Verify PIN for ${first}`;
   if ($('#verifyOrganizer')) $('#verifyOrganizer').textContent = `From ${gift.organizer}`;
@@ -667,7 +667,7 @@ function startBlow() {
 // Every scene but the cake: one tap, everyone together.
 function startTap() {
   const ring = h('button', { type: 'button', class: 'holdbtn', 'aria-label': t.finaleAction, style: { background: 'rgba(255,255,255,0.14)' } });
-  const inner = h('span', { html: t.scene === 'bouquet' ? (t.caps ? icon.cap(32) : icon.flower(30)) : t.scene === 'tumpeng' ? KNIFE : t.scene === 'lixi' ? ENVELOPE : icon.sparkle(30) });
+  const inner = h('span', { html: t.scene === 'bouquet' ? (t.caps ? icon.cap(32) : icon.flower(30)) : t.scene === 'tumpeng' ? KNIFE : t.scene === 'lixi' ? ENVELOPE : t.scene === 'giftbox' ? icon.gift(30) : icon.sparkle(30) });
   inner.append(h('span', {}, t.finaleAction));
   ring.append(inner);
   setBottom(ring, h('p', { class: 'small muted center', style: { margin: '0' } }, t.finaleHint));

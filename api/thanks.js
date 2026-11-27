@@ -9,7 +9,7 @@ import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../
 import { loadGift, canOpen, analyzeWav, CONSENT_VERSION, createThanksVoice, findThanksVoice, deleteThanksVoice } from '../lib/gifts.js';
 import { requireUser, findThanksNote } from '../lib/accounts.js';
 import { getObject, putJSON } from '../lib/store.js';
-import { transcribe, asrProvider, evenWords, computeCorrections } from '../lib/asr.js';
+import { transcribe, asrProvider, evenWords, computeCorrections, syncCorrection } from '../lib/asr.js';
 import { countRecording } from '../lib/limits.js';
 
 // Only the recipient (key + PIN, logged in, not the organizer), and only before the thank-you was sent.
@@ -43,7 +43,7 @@ export default route({
     await countRecording(user.id);
     let asr;
     try {
-      asr = await transcribe({ wav, durationSec, recipient: gift.recipient, occasion: gift.occasion, speechStartSec, speechEndSec, clientHint: cleanText(q.hint, 300) });
+      asr = await transcribe({ wav, durationSec, recipient: gift.recipient, occasion: gift.occasion, speechStartSec, speechEndSec, clientHint: cleanText(q.hint, 300), name: `vg-${gift.slug}-thanks` });
     } catch (e) {
       console.error(e);
       asr = { text: '', words: [], typos: [] };
@@ -59,6 +59,7 @@ export default route({
       asrText: asr.text,
       asrWords: asr.words,
       asrTypos: asr.typos || [],
+      asrTaskId: asr.taskId ?? null, // the task on the ASR side (TWM), where the correction is written back
       finalText: null,
       edited: false,
       corrections: [],
@@ -78,6 +79,7 @@ export default route({
     voice.edited = text !== (voice.asrText || '').trim();
     voice.corrections = computeCorrections(voice.asrText, text, voice.asrTypos);
     voice.finalWords = voice.edited ? evenWords(text, voice.durationSec, new Set(), voice.speechStartSec || 0, voice.speechEndSec || null) : voice.asrWords;
+    voice.asrSync = await syncCorrection(voice, text);
     await putJSON(path, voice, { overwrite: true });
     send(res, 200, { ok: true, edited: voice.edited });
   },

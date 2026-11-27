@@ -43,6 +43,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | `/signup`, `/login`, `/account`, `/gifts` | `account.html` + `assets/account.js` | everyone: "Continue with Google". `/account` = Profile (avatar, name, voices/gifts tiles, edit profile, log out); `/gifts` = Your gifts (their gifts, + to make one, thank-yous). Both have the bottom nav (`/account#gifts` goes to `/gifts`) |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit (top right), who recorded as faces, three big actions that each open a sheet: Invite (link + share), Voices (names, not content; demo voices), Send (recipient link + PIN) |
+| `/admin/asr` | `asr.html` + `assets/asr.js` | the team (ADMIN_KEY, typed in, kept for the tab only): which ASR runs, TWM health + latest tasks, how many corrected captions reached TWM, retry the ones that did not |
 | `/r/:slug?k=openKey` | `reveal.html` + `assets/reveal.js` | recipient: log in → 4-digit PIN (the 4th digit opens it, no button) → 3-2-1, items light → listen → finale (blow + first slice / throw cap / release lanterns → constellation) → keepsake → thank everyone |
 
 Older designed screens: `design/screens/*.jpg` (the journey still holds; the look is now "Soft", see Stack above).
@@ -159,6 +160,8 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
 - `POST /api/manage` action `update-delivery` {verifyPin} → change the 4-digit PIN
 - `GET|POST /api/manage` (manageKey) → dashboard data incl. openKey
 - `GET /api/export?key=ADMIN_KEY` → JSONL: audio path, asrText, finalText, edited, consent… (+ `userId` if the speaker was logged in)
+- `GET /api/asr` (header `X-Admin-Key`) → ASR provider, TWM health + latest tasks, caption/sync counts, failed syncs; `POST` {action: "retry", slug, id, kind} → sends that caption to TWM again
+- Admin endpoints use `requireAdmin()` (`lib/http.js`): `X-Admin-Key` header (or the old `?key=`), constant-time compare, 10 tries/min per IP, off unless `ADMIN_KEY` has 12+ characters.
 - `GET /api/users?key=ADMIN_KEY` → every account: name, email, joined, last login, number of gifts
 
 Storage layout: `gifts/<slug>/gift.json`, `gifts/<slug>/msg/<id>.json` (older: `<ts>-<id>.json`), `gifts/<slug>/audio/<id>.wav`;
@@ -167,9 +170,15 @@ accounts: `users/<id>/user.json` (+ `gifts`/`thanks` slug lists), `users/<id>/th
 `asrText` and `finalText` are kept separately — **the difference is the training label**. Don't merge them.
 
 ## ASR
-`lib/asr.js` is the only seam. Mock by default (a plausible Indonesian greeting with typical ASR mistakes, with even word
-timings). Set `GROQ_API_KEY` for Groq Whisper large-v3 (interim, free tier), or `ASR_URL` (+ `ASR_API_KEY`) for the
-company API (wins over Groq; adapt `fromProvider()` to its response shape). Locally, keys go in `.env`.
+`lib/asr.js` is the only seam (+ `lib/twm-asr.js`). **Company ASR (TWM overseas, added 2026-11-20):** set `TWM_ASR_USER` +
+`TWM_ASR_PASSWORD` (optional `TWM_ASR_URL`, default `https://asrapi.bronci.ai/gateway`; `TWM_ASR_MODEL`). It logs in, streams
+the WAV over the WebSocket (`type=file`, `saveResult=1`) and keeps the task id as `asrTaskId`; when the speaker saves their caption,
+`syncCorrection()` PUTs it to `/api/v1/subtitle/tasks/:id/subtitle-json` as `type: "edited"` (result in `asrSync`). The same text is sent once;
+failures are listed on `/admin/asr`. Safety (`twm-asr.js`): HTTPS + `wss://` only, timeouts, a failed login waits 60 s (TWM locks
+accounts after wrong logins), task ids must be numeric, sizes capped. TWM keeps original + latest edit itself; we still keep `asrText`/`finalText` too. Spec: BRONCI "Conversational ASR Streaming API" v3.22 + the
+subtitle-json mail (2026-11-20). The test gateway `172.27.41.176` is internal, so Vercel can only reach production. Otherwise mock by default (a plausible Indonesian greeting with typical ASR mistakes, with even word
+timings). Set `GROQ_API_KEY` for Groq Whisper large-v3 (interim, free tier), or `ASR_URL` (+ `ASR_API_KEY`) for a
+generic HTTP API (TWM wins, then this, then Groq; adapt `fromProvider()` to its response shape). Locally, keys go in `.env`.
 
 ## Rules
 - Insert user text with `textContent`/the `h()` helper — never `innerHTML` with user data.

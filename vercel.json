@@ -38,6 +38,10 @@
     {
       "source": "/gifts",
       "destination": "/account.html"
+    },
+    {
+      "source": "/admin/asr",
+      "destination": "/asr.html"
     }
   ],
   "functions": {

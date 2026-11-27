@@ -44,12 +44,9 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
       <p class="lead">A gift made of your friends’ voices.</p>
     </div>
 
-    <!-- the three gifts, drawn live; slide them, tap one to start that kind of gift -->
-    <div class="gift-carousel" id="giftCarousel">
-      <a class="home-gift" id="heroBouquet" href="/new?occasion=graduation" aria-label="Make a bouquet"><div class="mini"></div><span>Bouquet</span></a>
-      <a class="home-gift" id="heroCake" href="/new?occasion=birthday" aria-label="Make a cake"><div class="mini"></div><span>Cake</span></a>
-      <a class="home-gift" id="heroLanterns" href="/new?occasion=wedding" aria-label="Make lanterns"><div class="mini"></div><span>Lanterns</span></a>
-    </div>
+    <!-- quick starts (TEMPLATES in themes.js), drawn live; slide them, tap one to start with that gift and occasion.
+         Everything stays changeable on /new: any gift goes with any occasion. -->
+    <div class="gift-carousel" id="giftCarousel"></div>
 
     <div class="home-actions">
       <a class="btn" href="/new" id="makeGift"><span>Make a gift</span></a>
@@ -67,7 +64,7 @@ import { $, $$, h, api, icon, showScreen, initials, openSheet, closeSheet, botto
 import { noteCard, markRead, stopNoteVoice } from '/assets/thanksnote.js';
 $('#homeLogo').innerHTML = icon.mic(16); // static icon markup
 import { me } from '/assets/auth.js';
-import { theme, createScene, firstName } from '/assets/themes.js';
+import { theme, createScene, firstName, TEMPLATES } from '/assets/themes.js';
 
 const user = await me();
 if (!user) location.replace('/login');
@@ -77,16 +74,22 @@ else {
   $('#app').append(bottomNav('home'));
   showScreen('home');
   drawGifts(firstName(user.name));
-  peekCarousel($('#giftCarousel'), $('#heroCake'));
+  peekCarousel($('#giftCarousel'), $('#giftCarousel').children[0]);
   showThanks();
 }
 
 function drawGifts(name) {
-  for (const [occasion, host] of [['birthday', '#heroCake'], ['graduation', '#heroBouquet'], ['wedding', '#heroLanterns']]) {
-    const scene = createScene($(`${host} .mini`), { occasion, recipient: name, cake: { name: theme(occasion).decorate.name(name) } });
-    scene.setCandles(occasion === 'birthday' ? 6 : 10);
+  $('#giftCarousel').replaceChildren(...TEMPLATES.map((tp) => {
+    const t = theme(tp.occasion, tp.style, tp.gift);
+    const q = new URLSearchParams({ occasion: tp.occasion, gift: tp.gift, ...(tp.style ? { style: tp.style } : {}) });
+    const mini = h('div', { class: 'mini' });
+    const a = h('a', { class: 'home-gift', href: `/new?${q}`, 'aria-label': `Make a ${tp.label.toLowerCase()}` }, mini, h('span', {}, tp.label));
+    const d = t.decorate;
+    const scene = createScene(mini, { occasion: tp.occasion, recipient: name, cake: { family: tp.gift, shape: tp.style, name: d.name(name), accent: d.accent, pattern: d.pattern, topper: d.topper, backdrop: d.backdrop } });
+    scene.setCandles(tp.gift === 'cake' ? 6 : 10);
     scene.lightAll();
-  }
+    return a;
+  }));
 }
 
 // A row you slide: the gift in the middle is big, its neighbours peek in smaller.

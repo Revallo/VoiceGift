@@ -29,7 +29,7 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
 <body>
 <main class="app" id="app">
 
-  <!-- One screen: pick the kind (carousel) and the occasion, the names, then slide to create -->
+  <!-- One screen: pick the gift (carousel) and the occasion, the names, then slide to create -->
   <section data-screen="who">
     <header class="top-bar">
       <a class="icon-btn" id="whoBack" href="/" aria-label="Back" data-icon="back"></a>
@@ -39,15 +39,13 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
 
     <h1 class="make-title">Make a gift</h1>
 
-    <!-- the kinds of the picked occasion: slide, the one in the middle is the gift -->
-    <div class="kind-carousel" id="kinds" role="radiogroup" aria-label="Kind of gift"></div>
+    <!-- the gift: slide, the one in the middle is it (any gift goes with any occasion) -->
+    <div class="kind-carousel" id="kinds" role="radiogroup" aria-label="Gift"></div>
     <p class="kind-name" id="kindName" aria-live="polite"></p>
+    <p class="small muted center kind-lock" id="kindLock" hidden></p>
 
-    <div class="occ-row" id="occasions" role="radiogroup" aria-label="Occasion">
-      <button type="button" class="occ" role="radio" data-v="birthday"><i data-icon="cake"></i><span>Birthday</span></button>
-      <button type="button" class="occ" role="radio" data-v="graduation"><i data-icon="cap"></i><span>Graduation</span></button>
-      <button type="button" class="occ" role="radio" data-v="wedding"><i data-icon="ring"></i><span>Wedding</span></button>
-    </div>
+    <!-- the occasion: only the words, stickers and colours (filled in by create.js) -->
+    <div class="occ-row" id="occasions" role="radiogroup" aria-label="Occasion"></div>
 
     <form id="whoForm" class="stack make-form" novalidate>
       <label class="pill-field"><span id="recipientLabel">For</span><input class="input" id="recipient" maxlength="40" autocomplete="off" placeholder="e.g. Dimas" required></label>
@@ -71,14 +69,15 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
     </header>
 
     <div class="stage-showcase decor-kinds">
-      <button type="button" class="kind-peek prev" id="kindPrev" aria-label="Previous kind"></button>
+      <button type="button" class="kind-peek prev" id="kindPrev" aria-label="Previous style"></button>
       <div id="decorCake"></div>
-      <button type="button" class="kind-peek next" id="kindNext" aria-label="Next kind"></button>
+      <button type="button" class="kind-peek next" id="kindNext" aria-label="Next style"></button>
     </div>
     <div class="kind-switch"><b id="decorKindName"></b><span class="kind-dots" id="kindDots" aria-hidden="true"></span></div>
 
     <div class="tool-tabs" id="toolTabs" role="tablist" aria-label="Decorate"></div>
     <div class="decor-tools" id="decorTools">
+      <div class="tool-pane" data-tool="style"><div class="wheel" id="styles"></div></div>
       <div class="tool-pane" data-tool="color"><div class="wheel" id="flavors"></div></div>
       <div class="tool-pane" data-tool="accent"><div class="wheel" id="accents"></div></div>
       <div class="tool-pane" data-tool="pattern"><div class="wheel" id="patterns"></div></div>

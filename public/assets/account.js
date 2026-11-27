@@ -1,19 +1,21 @@
 // /signup and /login: "Continue with Google". /account: layered mobile-app profile & settings (bottom sheets).
 import { $, $$, h, api, icon, showScreen, toast, openSheet, closeSheet, bottomNav } from './common.js';
 import { me, logOut, loginBox, giftItem, remember } from './auth.js';
-import { applyTheme } from './themes.js';
+import { applyTheme, OCCASIONS, GIFT_INFO, normalize } from './themes.js';
 import { noteCard } from './thanksnote.js';
 
 $$('[data-logo]').forEach((el) => (el.innerHTML = icon.gift(14)));
 $$('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]()));
 
-// What the person picked on the first page ("/"): from ?occasion= or inside ?next=/new?occasion=…
-const THINGS = { birthday: ['cake', '🎂'], tumpeng: ['tumpeng', '🍚'], graduation: ['bouquet', '💐'], wedding: ['lanterns', '🏮'] };
+// What the person picked on home (a template): from ?occasion=&gift= or inside ?next=/new?occasion=…&gift=…
 const picked = (() => {
-  const q = new URLSearchParams(location.search);
-  let o = q.get('occasion');
-  try { o = o || new URL(q.get('next') || '/', location.origin).searchParams.get('occasion'); } catch {}
-  return THINGS[o] ? o : null;
+  let q = new URLSearchParams(location.search);
+  try { if (!q.get('occasion')) q = new URL(q.get('next') || '/', location.origin).searchParams; } catch {}
+  const occ = q.get('occasion'), gift = q.get('gift');
+  if (!OCCASIONS[occ] && occ !== 'tumpeng') return null;
+  const n = normalize(occ, q.get('style') || q.get('shape'), gift);
+  const family = GIFT_INFO[gift] || occ === 'tumpeng' ? n.family : OCCASIONS[n.occasion].suggest[0];
+  return { ...n, family, query: q.toString() };
 })();
 
 const WORDS = {
@@ -25,7 +27,7 @@ const WORDS = {
 const nextPath = new URLSearchParams(location.search).get('next') || '';
 const afterLogin = nextPath.startsWith('/r/') ? 'Then you can open your gift.'
   : nextPath.startsWith('/g/') ? 'Then you can record your message.'
-  : picked ? `Then we’ll start on your ${THINGS[picked][0]}.`
+  : picked ? `Then we’ll start on your ${GIFT_INFO[picked.family].label.toLowerCase()}.`
   : 'Make a gift, or open one you received.';
 
 let currentUser = null;
@@ -33,14 +35,14 @@ let latestStats = {};
 
 // The simple page around every account form: an emoji, a title, one line, then `box`.
 function showPanel({ path, doc, title, lead = '', emoji, box }) {
-  if (picked) applyTheme(picked); // same colors as the thing they picked
-  $('#authEmoji').textContent = emoji || (picked ? THINGS[picked][1] : '🎁');
+  if (picked) applyTheme(picked.occasion, picked.shape, picked.family); // same colors as the thing they picked
+  $('#authEmoji').textContent = emoji || (picked ? GIFT_INFO[picked.family].emoji : '🎁');
   history.replaceState(null, '', path + location.search); // keeps ?next=
   document.title = `${doc} · Voice Gift`;
   $('#authTitle').textContent = title;
   $('#authLead').textContent = lead;
   $('#authBack').hidden = !picked;
-  $('#authBack').href = picked ? `/new?occasion=${picked}` : '/';
+  $('#authBack').href = picked ? `/new?${picked.query}` : '/';
   if (box) $('#authBox').replaceChildren(box);
   showScreen('auth');
 }

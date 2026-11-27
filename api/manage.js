@@ -6,7 +6,7 @@
 //                                            action "remove-demo": takes the demo voices out again
 import { route, send, query, jsonBody, HttpError } from '../lib/http.js';
 import { loadGift, saveGift, publicGift, loadMessages, findMessage, deleteMessage, deleteGift } from '../lib/gifts.js';
-import { DEMO_COUNT, isDemoId } from '../lib/demo.js';
+import { DEMO_COUNT, isDemoId, hasDemo } from '../lib/demo.js';
 import { forgetGift } from '../lib/accounts.js';
 
 // Demo voices (lib/demo.js) are not stored: adding them is one gift.json write. Adding again brings back the ones
@@ -14,6 +14,7 @@ import { forgetGift } from '../lib/accounts.js';
 async function addDemo(gift) {
   const hidden = gift.demo ? (gift.demo.hidden || []).length : DEMO_COUNT;
   if (!hidden) throw new HttpError(400, 'The demo voices are already in this gift.');
+  if (!(await hasDemo(gift.occasion))) throw new HttpError(400, 'There are no demo voices for this occasion yet.');
   await removeStoredDemos(gift);
   gift.demo = { at: gift.demo?.at || new Date().toISOString(), hidden: [] };
   await saveGift(gift);
@@ -54,6 +55,7 @@ export default route({
       },
       openKey: gift.openKey,
       demoCount: DEMO_COUNT,
+      demoAvailable: await hasDemo(gift.occasion), // no recordings yet for the newer occasions
       messages
     });
   },

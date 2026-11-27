@@ -174,7 +174,7 @@ export function giftItem(g, onDeleted) {
   }
   const count = typeof g.count === 'number' ? `${g.count} ${g.count === 1 ? 'voice' : 'voices'}` : '';
   const sub = [count, g.createdAt ? fmtAgo(g.createdAt) : ''].filter(Boolean).join(' · ');
-  const ico = { birthday: 'cake', tumpeng: 'bowl', graduation: 'cap', wedding: 'ring' }[g.occasion] || 'gift';
+  const ico = g.occasion === 'tumpeng' ? 'bowl' : t.icon || 'gift'; // the occasion's icon
   return h('div', { class: 'gift-item', 'data-occasion': g.occasion },
     h('span', { class: 'gift-item-ava', html: icon[ico](24) }),
     h('a', { class: 'gift-item-open', href: `/m/${g.slug}?k=${g.key}`, 'aria-label': `Open the gift for ${g.recipient}` },

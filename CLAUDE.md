@@ -38,8 +38,8 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 ## Pages (see `vercel.json` rewrites)
 | URL | File | Who |
 | --- | --- | --- |
-| `/` | `index.html` | home, logged in only (else `/login`): "Hi, name", the three gifts in a carousel you slide (tap = make that kind), "Make a gift" → `/new`, "Open a gift" (paste the link in a sheet), bottom nav, thank-you notes pop up |
-| `/new` | `create.html` + `assets/create.js` | organizer, **one screen**: a carousel of the kinds (`#kinds`, the one in the middle is the gift) + occasion tiles + For/From + PIN chip + "Customize" + slide "Create gift". Customize (`data-screen="decorate"`) is its own page: the big gift with the kinds before and after peeking in at the sides (swipe it or tap a peek = kind; dots under the name), icon tabs (Color · Accent · Pattern · Topper · Greens · Text · Stickers · Draw · Music · Backdrop · Local), one tool at a time, "Save" goes back. `?edit=slug&k=` opens Customize; its Save ("Save changes") saves and goes to `/m/…` |
+| `/` | `index.html` | home, logged in only (else `/login`): "Hi, name", quick-start templates in a carousel you slide (`TEMPLATES` in `themes.js`: Birthday cake, Graduation bouquet, Wedding lanterns, Lebaran ketupat, Imlek angpao; tap = `/new?occasion=&gift=&style=`), "Make a gift" → `/new`, "Open a gift" (paste the link in a sheet), bottom nav, thank-you notes pop up |
+| `/new` | `create.html` + `assets/create.js` | organizer, **one screen**: a carousel of the six gifts (`#kinds`, the one in the middle is the gift) + a sliding row of 8 occasion tiles (`#occasions`) + For/From + PIN chip + "Customize" + slide "Create gift". Any gift with any occasion. Customize (`data-screen="decorate"`) is its own page: the big gift with the styles before and after peeking in at the sides (swipe it or tap a peek = style; dots under the name), icon tabs (Style · Color · Accent · Pattern · Topper · Greens · Text · Stickers · Draw · Music · Backdrop · Local), one tool at a time, "Save" goes back. `?edit=slug&k=` opens Customize; its Save ("Save changes") saves and goes to `/m/…`; once a real voice exists the gift is locked (only it shows in the carousel) |
 | `/signup`, `/login`, `/account`, `/gifts` | `account.html` + `assets/account.js` | everyone: "Continue with Google". `/account` = Profile (avatar, name, voices/gifts tiles, edit profile, log out); `/gifts` = Your gifts (their gifts, + to make one, thank-yous). Both have the bottom nav (`/account#gifts` goes to `/gifts`) |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit (top right), who recorded as faces, three big actions that each open a sheet: Invite (link + share), Voices (names, not content; demo voices), Send (recipient link + PIN) |
@@ -48,18 +48,27 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 
 Older designed screens: `design/screens/*.jpg` (the journey still holds; the look is now "Soft", see Stack above).
 
-## Occasions (themes)
-- `assets/themes.js` holds every occasion's words (one object per occasion) and `createScene()`, which picks
-  the scene. Pages never hard-code "candle" or "birthday": add words there.
-- Only three occasions: birthday, graduation, wedding (decided 2026-11-26: a voice gift is for one person, so Tết / Loy Krathong / tumpeng
-  are not occasions). Each theme has a `scene`; a **kind** (`gift.cake.shape`) may draw another scene, through `BY_SHAPE` in `themes.js`
-  (its own words + decorate lists, `theme(occasion, shape)`): birthday `tumpeng` → `tumpeng.js`, wedding `angpao` → `lixi.js`
-  (red envelopes on a blossom tree), wedding `imlek` → `lixi.js` too, dressed for Chinese New Year (theme `imlek`: red pot,
-  lanterns, `dragon` backdrop, dragon / scale / cloud envelopes), wedding `river` → `krathong.js` (floating lights), wedding
-  `ketupat` = the lanterns as woven ketupat (a Ramadan feel; same scene, its own words). A kind can bring its own defaults
-  (`decorate.accent` / `pattern` / `topper` / `backdrop`), applied when it is picked. Pages check `t.scene`, never the occasion, for
-  scene behaviour. Old gifts with occasion `tumpeng` open as a birthday tumpeng. Changing kind in the decorate step to another scene
-  redraws the gift (`switchScene()` in `create.js`).
+## Gifts and occasions (themes)
+- **Two free choices** (decided 2026-11-27: "a wedding, but with a cake" must work; no choice hides another):
+  the **gift** `gift.cake.family` = `cake | tumpeng | bouquet | lanterns | angpao | river` (the drawing, its items, how it opens)
+  and the **occasion** `gift.occasion` = `birthday | graduation | wedding | anniversary | lebaran | imlek | thanks | justbecause`
+  (the words: greeting, inscription, stickers first, page wash, recipient naming). `gift.cake.shape` is the gift's **style**, a key
+  of its scene's `SHAPES` (cake shapes, tumpeng cones, bouquet wraps incl. money/snack, lantern shapes incl. ketupat/hoian/capiz/xi,
+  angpao pots, river floats).
+- `assets/themes.js`: `OCCASIONS` (words, `who` = friend/guest, `age` (topper with years: birthday, anniversary), `suggest` gifts,
+  `prefer[gift]` style, `icon`), `GIFTS` (one factory per gift, built for the occasion's `who`), `BY_STYLE` (words of a style:
+  money/snack, hoian, ketupat), `COMBO['occasion:gift']` (only where the pair needs its own words or look: graduation bouquet throws
+  caps (`caps`), other bouquets shower petals; wedding/anniversary cake "Blow the candles together"; imlek angpao = red pot, dragon
+  backdrop). `theme(occasion, shape, family)` merges them; `giftTheme(gift)`, `applyTheme(occasion, shape, family)`, `createScene()`.
+  Pages never hard-code "candle" or "birthday": add words there. Pages check `t.scene` / `t.family`, never the occasion, for behaviour.
+- `/new`: picking an occasion changes only words, stickers and wash; until a gift is picked (template, tap, slide) it also brings its
+  first suggested gift. A new gift resets the decoration to that gift's own; a new style or occasion keeps everything picked,
+  except a look it brings (Imlek's red pot, the ketupat's leaf string). The name, stickers and drawing always stay.
+- **Old gifts** (no `cake.family`, before 2026-11-27): `normalize()` (client) / `familyOf()` (`lib/gifts.js`, server) read them:
+  occasion `tumpeng` or shape `tumpeng` → tumpeng; shape `angpao`/`imlek` → angpao (old `imlek` keeps its look via `dressed`);
+  `river` → river; graduation → bouquet; wedding → lanterns; else cake. Occasion `other` → just because.
+- Naming: a recipient with `&`, `and`, `dan` or `+` is always called by the full name; else the occasion's rule (wedding,
+  anniversary, lebaran, imlek: full; the others: first name).
 - Scenes: `cake.js`, `tumpeng.js`, `bouquet.js`, `lanterns.js`, `lixi.js`, `krathong.js`, all built on `stage.js`
 - Birthday keeps one logical candle per voice, with at most six visible per group. `setActive()`/`light()` open the matching group; `lightAll()`/`reset()` restore the first group. Keep every voice/index available; do not truncate messages to match the visible candles.
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
@@ -139,7 +148,7 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
   links) and a one-shot reload if a module fails to link; `/assets/*` is served `stale-while-revalidate` (`vercel.json`).
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
-- **Demo voices** (updated 2026-11-19): the gift's page has "+ Add 5 demo voices" / "Remove the demo voices" (`DEMO_COUNT` in `lib/demo.js`, cut from 20 on 2026-11-19); deleted ones can be added back.
+- **Demo voices** (updated 2026-11-19; only birthday, graduation and wedding have recordings, the other occasions hide the button, `hasDemo()`): the gift's page has "+ Add 5 demo voices" / "Remove the demo voices" (`DEMO_COUNT` in `lib/demo.js`, cut from 20 on 2026-11-19); deleted ones can be added back.
   (`POST /api/manage` `add-demo` / `remove-demo`). TTS audio + scripts in `demo/` (bundled via `includeFiles` in `vercel.json`),
   each with a mood and a candle. **Not stored in Blob** (`lib/demo.js`): the gift keeps only `demo: {at, hidden}` and the messages are
   built on each read, marked `demo: true`: never in the export or stats, no ASR call, no thank-you.
@@ -148,7 +157,7 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
 - Limits (`lib/limits.js`, counters in storage): 3 voices per account per gift, 20 recordings + 10 gifts per account per day.
 
 ## API (`api/*.js`)
-- `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit
+- `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{family,flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit (409 if it changes the gift once a real voice exists)
 - `GET /api/account` → {user} or {user: null}, + `googleClientId`, `devLogin` (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `google` {credential}, `dev-login` {email, name} (local only), `logout`, `claim`, `thanks-read`
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}

@@ -80,6 +80,35 @@ body[data-theme="river"] {
   --on-accent: #FFFFFF; --glow: rgba(62, 111, 216, 0.2);
   --wash: #CFE0FF; --wash2: #FFE9B8; --stage-bg: #E8EFFA;
 }
+/* The newer occasions (2026-11-27). The gifts with a look of their own (tumpeng, angpao, river) keep theirs. */
+body[data-theme="anniversary"] {
+  --fg: 22, 20, 26; --bg: #FBF7F8; --bg-outer: #EFE3E7; --panel: #FFFFFF; --panel-subtle: #F7EEF1; --panel-hover: #F1E5E9;
+  --text: #16141A; --face: #F1E3E8;
+  --emerald: #E0567F; --emerald-light: #C23C64; --emerald-dark: #C23C64; --emerald-grad: linear-gradient(180deg, #EA7397, #E0567F);
+  --on-accent: #FFFFFF; --glow: rgba(224, 86, 127, 0.22);
+  --wash: #FFCFDC; --wash2: #E6D4FF; --stage-bg: #FBEDF1;
+}
+body[data-theme="lebaran"] {
+  --fg: 22, 20, 26; --bg: #F6FAF4; --bg-outer: #E2ECDF; --panel: #FFFFFF; --panel-subtle: #EEF5EB; --panel-hover: #E6EFE2;
+  --text: #16141A; --face: #E2ECDE;
+  --emerald: #3E9A5C; --emerald-light: #2B7C45; --emerald-dark: #2B7C45; --emerald-grad: linear-gradient(180deg, #55AE71, #3E9A5C);
+  --on-accent: #FFFFFF; --glow: rgba(62, 154, 92, 0.22);
+  --wash: #CDEBC9; --wash2: #FFEBA8; --stage-bg: #EBF5E8;
+}
+body[data-theme="thanks"] {
+  --fg: 22, 20, 26; --bg: #FBF9F2; --bg-outer: #EEEAD9; --panel: #FFFFFF; --panel-subtle: #F6F3E6; --panel-hover: #EFEBDB;
+  --text: #16141A; --face: #EEE9D6;
+  --emerald: #E2A414; --emerald-light: #A97800; --emerald-dark: #A97800; --emerald-grad: linear-gradient(180deg, #F0BB3B, #E2A414);
+  --on-accent: #FFFFFF; --glow: rgba(226, 164, 20, 0.24);
+  --wash: #FFE8A3; --wash2: #FFD3C2; --stage-bg: #F8F2DE;
+}
+body[data-theme="justbecause"] {
+  --fg: 22, 20, 26; --bg: #F9F7FB; --bg-outer: #E9E4EF; --panel: #FFFFFF; --panel-subtle: #F2EEF6; --panel-hover: #ECE7F1;
+  --text: #16141A; --face: #EAE4F0;
+  --emerald: #7C6CE0; --emerald-light: #5F4FC4; --emerald-dark: #5F4FC4; --emerald-grad: linear-gradient(180deg, #9586EA, #7C6CE0);
+  --on-accent: #FFFFFF; --glow: rgba(124, 108, 224, 0.22);
+  --wash: #DAD3FF; --wash2: #CFEAF5; --stage-bg: #F0EDFA;
+}
 body {
   --line: rgba(var(--fg), 0.08);
   --line-strong: rgba(var(--fg), 0.14);
@@ -418,10 +447,12 @@ textarea.input { border-radius: 24px; padding: 16px 20px; font-weight: 500; }
 .kind-carousel .mini { pointer-events: none; border-radius: 34px; overflow: visible; background: none; }
 .kind-name { margin: -10px 0 0; text-align: center; font-weight: 800; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); min-height: 15px; }
 
-/* The occasion: three round tiles with a cute icon */
-.occ-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+/* The occasion: a row of round tiles with a cute icon, slid sideways (8 of them) */
+.occ-row { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 2px 2px 8px; }
+.occ-row::-webkit-scrollbar { display: none; }
 .occ {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 72px;
+  flex: 0 0 auto; min-width: 84px; scroll-snap-align: start; text-align: center; line-height: 1.15; padding: 8px 14px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px;
   border: 0; border-radius: 24px; background: #FFFFFF; color: var(--text); cursor: pointer; font: inherit;
   box-shadow: 0 0 0 1.5px rgba(var(--fg), 0.06); --ico-fill: var(--wash);
   font-weight: 800; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
@@ -432,6 +463,7 @@ textarea.input { border-radius: 24px; padding: 16px 20px; font-weight: 500; }
 .occ:active { transform: scale(0.96); }
 .occ.on { background: var(--ink); color: #FFFFFF; box-shadow: 0 14px 26px -16px rgba(22, 20, 26, 0.8); --ico-fill: var(--emerald); }
 
+.kind-lock { margin: -4px 0 0; }
 .make-form { gap: 10px; }
 .make-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .soft-btn {

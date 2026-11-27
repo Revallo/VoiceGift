@@ -22,7 +22,7 @@ async function load() {
   }
   const { gift, openKey, messages } = data;
   current = { gift, openKey };
-  const t = applyTheme(gift.occasion, gift.cake?.shape);
+  const t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
   const name = t.callName(gift.recipient);
   const sentMsgs = messages.filter((m) => m.sent);
   document.title = `For ${gift.recipient} · Voice Gift`;
@@ -36,7 +36,7 @@ async function load() {
   scene.lightAll();
 
   // 1. invite friends
-  const friends = gift.occasion === 'wedding' ? 'guests' : 'friends';
+  const friends = t.who.many; // friends, or guests at a wedding
   const friend = friendUrl(gift);
   $('#inviteActSub').textContent = friends;
   $('#inviteLead').textContent = `Send it to ${friends}. Keep it secret from ${name}!`;
@@ -68,6 +68,7 @@ async function load() {
   const demos = messages.filter((m) => m.demo).length;
   const demoMax = data.demoCount || 5;
   const demoBtn = $('#demoBtn');
+  demoBtn.hidden = !demos && data.demoAvailable === false; // no recordings yet for this occasion
   demoBtn.textContent = demos ? `Remove demos` : `+ ${demoMax} demo voices`;
   demoBtn.onclick = () => demoAction(demos ? 'remove-demo' : 'add-demo', demoBtn);
   const moreDemos = $('#demoMoreBtn');

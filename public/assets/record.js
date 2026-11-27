@@ -57,7 +57,7 @@ async function load() {
     $('#errorText').textContent = e.status === 404 ? 'This gift link doesn’t exist. Check the link and try again.' : e.message;
     return showScreen('error');
   }
-  t = applyTheme(gift.occasion, gift.cake?.shape);
+  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
   const defaultColor = Object.keys(ITEM_COLORS)[count % Object.keys(ITEM_COLORS).length];
   flowerStyle = { type: FLOWER_TYPES[gift.cake?.pattern] ? gift.cake.pattern : 'round', color: defaultColor };
   if (treat() === 'snack') flowerStyle.snack = snackKey('', count, gift.cake?.local);
@@ -570,4 +570,4 @@ async function showDone() {
 load();
 
 // A money or snack bouquet instead of flowers (bouquet.js SHAPES)
-function treat() { return t?.key === 'graduation' ? WRAP_SHAPES[gift?.cake?.shape]?.treat || '' : ''; }
+function treat() { return t?.family === 'bouquet' ? WRAP_SHAPES[gift?.cake?.shape]?.treat || '' : ''; }

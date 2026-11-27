@@ -1,12 +1,12 @@
 // POST  /api/gifts  {recipient, organizer, occasion, cake}               → create a gift (logged in) → { slug, manageKey, openKey }
 // PATCH /api/gifts  {slug, key, recipient, organizer, occasion, cake}    → the organizer edits it (back from step 3)
 import { route, send, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { createGift, loadGift, saveGift, OCCASIONS } from '../lib/gifts.js';
+import { createGift, loadGift, saveGift, loadMessages, OCCASIONS, GIFT_FAMILIES, familyOf } from '../lib/gifts.js';
 import { LOCAL_KEYS } from '../public/assets/item-options.js';
 import { requireUser, addGift } from '../lib/accounts.js';
 import { countGift } from '../lib/limits.js';
 
-// cake = the decoration of any scene: { flavor, shape, name, dots: [[x, y, colour]], stickers: [[emoji, x, y]] }
+// cake = the gift and its decoration: { family, flavor, shape (its style), name, dots: [[x, y, colour]], stickers: [[emoji, x, y]] }
 function cleanCake(cake = {}) {
   const flavor = /^[a-z]{2,16}$/.test(cake.flavor) ? cake.flavor : 'strawberry'; // the page falls back if unknown
   const name = cleanText(cake.name, 30); // cake 14, bouquet 18, lantern words 30
@@ -25,7 +25,8 @@ function cleanCake(cake = {}) {
   const font = /^[a-z]{2,16}$/.test(cake.font) ? cake.font : ''; // a key of NAME_FONTS (stage.js); '' = the default
   const key = (v) => (/^[a-z]{2,16}$/.test(v) ? v : ''); // keys of the scene's lists; '' or unknown = the default
   const age = Math.max(0, Math.min(120, Math.round(+cake.age) || 0));
-  return { flavor, shape, font, name, dots, stickers, accent: key(cake.accent), pattern: key(cake.pattern), topper: key(cake.topper), greens: key(cake.greens), backdrop: key(cake.backdrop), music: key(cake.music), local: LOCAL_KEYS.includes(cake.local) ? cake.local : '', age };
+  const family = GIFT_FAMILIES.includes(cake.family) ? cake.family : ''; // '' = older pages: the occasion decides
+  return { family, flavor, shape, font, name, dots, stickers, accent: key(cake.accent), pattern: key(cake.pattern), topper: key(cake.topper), greens: key(cake.greens), backdrop: key(cake.backdrop), music: key(cake.music), local: LOCAL_KEYS.includes(cake.local) ? cake.local : '', age };
 }
 
 function readGift(b) {
@@ -55,6 +56,11 @@ export default route({
     const gift = await loadGift(b.slug);
     if (!b.key || b.key !== gift.manageKey) throw new HttpError(403, 'Not allowed');
     const updates = readGift(b);
+    // Once friends recorded, the gift stays what it is: their candles, dishes or envelopes belong to it.
+    if (familyOf({ ...gift, ...updates }) !== familyOf(gift)) {
+      const real = (await loadMessages(gift.slug, gift)).filter((m) => !m.demo);
+      if (real.length) throw new HttpError(409, 'Friends already recorded on this gift, so it can’t become another gift.');
+    }
     Object.assign(gift, updates, { updatedAt: new Date().toISOString() });
     await saveGift(gift);
     send(res, 200, { ok: true });

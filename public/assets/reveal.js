@@ -69,7 +69,7 @@ async function unlockAndShow(pin = '') {
   const data = await api(`/api/reveal?${q.toString()}`);
   gift = data.gift;
   thanked = data.thanked;
-  t = applyTheme(gift.occasion, gift.cake?.shape);
+  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
   first = t.callName(gift.recipient);
   document.title = `A voice gift for ${first}`;
   if ($('#revealAccessBadge')) $('#revealAccessBadge').textContent = '✓ PIN';
@@ -133,7 +133,7 @@ async function load() {
     return showScreen('error');
   }
   gift = pub.gift;
-  t = applyTheme(gift.occasion, gift.cake?.shape);
+  t = applyTheme(gift.occasion, gift.cake?.shape, gift.cake?.family);
   first = t.callName(gift.recipient);
   document.title = `Verify PIN for ${first}`;
   if ($('#verifyOrganizer')) $('#verifyOrganizer').textContent = `From ${gift.organizer}`;
@@ -667,7 +667,7 @@ function startBlow() {
 // Every scene but the cake: one tap, everyone together.
 function startTap() {
   const ring = h('button', { type: 'button', class: 'holdbtn', 'aria-label': t.finaleAction, style: { background: 'rgba(255,255,255,0.14)' } });
-  const inner = h('span', { html: t.scene === 'bouquet' ? icon.cap(32) : t.scene === 'tumpeng' ? KNIFE : t.scene === 'lixi' ? ENVELOPE : icon.sparkle(30) });
+  const inner = h('span', { html: t.scene === 'bouquet' ? (t.caps ? icon.cap(32) : icon.flower(30)) : t.scene === 'tumpeng' ? KNIFE : t.scene === 'lixi' ? ENVELOPE : icon.sparkle(30) });
   inner.append(h('span', {}, t.finaleAction));
   ring.append(inner);
   setBottom(ring, h('p', { class: 'small muted center', style: { margin: '0' } }, t.finaleHint));
@@ -677,7 +677,7 @@ function startTap() {
     ring.classList.add('down');
     ring.disabled = true;
     if (t.scene === 'bouquet') {
-      throwCaps();
+      throwCaps(t.caps);
       later(finishFinale, 2300);
     } else {
       // tumpeng: the top comes off first (a soft knock), then the dishes hop
@@ -1107,12 +1107,13 @@ function confetti() {
 // A mortarboard; the tassel takes the friend's colour (palette colours only, never user text).
 const capSvg = (c) => `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 22v9c6 5 18 5 24 0v-9l-12 6z" fill="#20264A"/><path d="M24 8 46 18 24 28 2 18z" fill="#2B3263" stroke="#4E5796" stroke-width="1.2"/><path d="M24 18 39 24v10" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/><circle cx="39" cy="36" r="3.2" fill="${c}"/><circle cx="24" cy="18" r="2.2" fill="${c}"/></svg>`;
 
-function throwCaps() {
+// A graduation throws caps with the petals; any other bouquet only showers its petals (more of them).
+function throwCaps(withCaps = true) {
   $('#confetti').textContent = '';
   noise(0.6, 2400, 0.12);
   const n = Math.min(Math.max(messages.length + 1, 10), 30); // yours + your friends' (a few extra when there are only a few)
   const caps = [];
-  for (let j = 0; j < n; j++) {
+  for (let j = 0; withCaps && j < n; j++) {
     const cap = h('i', { class: 'cap', html: capSvg(j === 0 ? '#F6B93B' : colorFor(j - 1)), style: {
       left: `${8 + Math.random() * 76}%`, animationDelay: `${(j * 0.035 + Math.random() * 0.12).toFixed(2)}s`,
       width: j === 0 ? '60px' : '46px', height: j === 0 ? '60px' : '46px'
@@ -1122,7 +1123,7 @@ function throwCaps() {
     cap.style.setProperty('--spin', `${Math.round((Math.random() - 0.5) * 1000)}deg`);
     caps.push(cap);
   }
-  for (let j = 0; j < 34; j++) {
+  for (let j = 0; j < (withCaps ? 34 : 60); j++) {
     const petal = h('i', { class: 'petal', style: {
       left: `${Math.random() * 100}%`, background: messageColor(j % messages.length),
       animationDelay: `${(0.5 + Math.random() * 1.6).toFixed(2)}s`, animationDuration: `${(3.2 + Math.random() * 2).toFixed(2)}s`

@@ -1,5 +1,5 @@
 // End-to-end test: walks the whole product in Chromium with a fake microphone, for every occasion
-// Cases are occasions, or a kind with its own scene (`occasion` + `shape`: a birthday tumpeng, a wedding angpao tree / river).
+// Each case is an occasion + a gift + its style (any gift goes with any occasion): a wedding cake, Lebaran ketupat, an Imlek angpao tree…
 // (create → decorate → sign up → friends sign up + record → dashboard → recipient link → log in → PIN →
 // reveal → finale → keepsake → thank everyone → the friend sees it at home, then log in / account page / log out, plus desktop),
 // then the limits. Logging in is Google only; the test uses the local stand-in, so start the server with DEV_LOGIN=1.
@@ -84,14 +84,15 @@ async function signUpHere(p, name, email, shotName) {
 }
 
 const CASES = {
-  birthday: { recipient: 'Dimas', swatch: 9, shape: 'tower', friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
-  tumpeng: { occasion: 'birthday', recipient: 'Putri', swatch: 3, shape: 'tumpeng', friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
-  graduation: { recipient: 'Nadia', swatch: 6, shape: 'basket', friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
-  angpao: { occasion: 'wedding', recipient: 'Linh & Minh', swatch: 1, shape: 'angpao', friends: [['Bibi Lan', 'Selamat menempuh hidup baru, semoga rukun selalu.'], ['Om Hendra', 'Selamat ya Linh dan Minh, langgeng terus.']] },
-  imlek: { occasion: 'wedding', recipient: 'Mei & Andi', swatch: 2, shape: 'imlek', friends: [['Tante Lily', 'Gong xi, semoga langgeng dan banyak rezeki.'], ['Kevin', 'Selamat ya Mei dan Andi!']] },
-  ketupat: { occasion: 'wedding', recipient: 'Siti & Rafi', swatch: 3, shape: 'ketupat', friends: [['Bu Ani', 'Selamat menempuh hidup baru, mohon maaf lahir batin.'], ['Dodi', 'Selamat ya Siti dan Rafi, langgeng!']] },
-  river: { occasion: 'wedding', recipient: 'Ploy & Ken', swatch: 2, shape: 'river', friends: [['Nok', 'Selamat menikah, semoga bahagia selamanya.'], ['Budi', 'Selamat ya kalian berdua!']] },
-  wedding: { recipient: 'Rina & Bayu', swatch: 6, shape: 'heart', extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
+  birthday: { occasion: 'birthday', gift: 'cake', style: 'tower', recipient: 'Dimas', swatch: 9, friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
+  tumpeng: { occasion: 'birthday', gift: 'tumpeng', style: 'tall', recipient: 'Putri', swatch: 3, friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
+  graduation: { occasion: 'graduation', gift: 'bouquet', style: 'basket', recipient: 'Nadia', swatch: 6, friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
+  angpao: { occasion: 'wedding', gift: 'angpao', style: 'vase', recipient: 'Linh & Minh', swatch: 1, friends: [['Bibi Lan', 'Selamat menempuh hidup baru, semoga rukun selalu.'], ['Om Hendra', 'Selamat ya Linh dan Minh, langgeng terus.']] },
+  imlek: { occasion: 'imlek', gift: 'angpao', style: 'classic', recipient: 'Ama', swatch: 2, friends: [['Tante Lily', 'Gong xi fa cai, Ama, sehat selalu.'], ['Kevin', 'Selamat tahun baru, Ama!']] },
+  ketupat: { occasion: 'lebaran', gift: 'lanterns', style: 'ketupat', recipient: 'Mama', swatch: 3, friends: [['Bu Ani', 'Selamat Idul Fitri, mohon maaf lahir batin.'], ['Dodi', 'Minal aidin wal faizin, Ma!']] },
+  river: { occasion: 'wedding', gift: 'river', style: 'lotus', recipient: 'Ploy & Ken', swatch: 2, friends: [['Nok', 'Selamat menikah, semoga bahagia selamanya.'], ['Budi', 'Selamat ya kalian berdua!']] },
+  weddingcake: { occasion: 'wedding', gift: 'cake', style: 'pearl', recipient: 'Tia & Joe', swatch: 4, friends: [['Om Ben', 'Selamat menempuh hidup baru, Tia dan Joe!'], ['Sinta', 'Langgeng terus ya kalian!']] },
+  wedding: { occasion: 'wedding', gift: 'lanterns', style: 'heart', recipient: 'Rina & Bayu', swatch: 6, extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };
 
 async function runGift(occasion, c) {
@@ -108,25 +109,32 @@ async function runGift(occasion, c) {
   await logInHere(p, 'Sari', emailFor(occasion));
   await p.waitForURL(/\/new$/);
   await p.waitForSelector('#recipient');
-  await p.click(`#occasions [data-v="${c.occasion || occasion}"]`);
+  await p.click(`#occasions [data-v="${c.occasion}"]`);
   await p.fill('#recipient', c.recipient);
   await p.fill('#organizer', 'Sari');
-  // the kinds: a carousel of live gifts; the one in the middle is the gift
+  // the gifts: a carousel of live gifts (all six for every occasion); the one in the middle is the gift
   await p.waitForTimeout(300);
+  if ((await p.$$('#kinds .kind')).length !== 6) errors.push(`${occasion}: the carousel does not show all six gifts`);
   const lastKind = await p.$eval('#kinds', (b) => b.lastElementChild.dataset.v);
   await p.click(`#kinds [data-v="${lastKind}"]`);
   await p.waitForTimeout(700);
-  if ((await p.getAttribute('#kinds .on', 'data-v')) !== lastKind) errors.push(`${occasion}: tapping the last kind in the carousel did not pick it`);
-  if (!(await p.$eval('#kinds', (b) => b.scrollLeft))) errors.push(`${occasion}: the carousel did not slide to the last kind`);
-  await p.click(`#kinds [data-v="${c.shape}"]`);
+  if ((await p.getAttribute('#kinds .on', 'data-v')) !== lastKind) errors.push(`${occasion}: tapping the last gift in the carousel did not pick it`);
+  if (!(await p.$eval('#kinds', (b) => b.scrollLeft))) errors.push(`${occasion}: the carousel did not slide to the last gift`);
+  await p.click(`#kinds [data-v="${c.gift}"]`);
   await p.waitForTimeout(700);
-  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.shape) errors.push(`${occasion}: tapping a kind did not pick it`);
+  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.gift) errors.push(`${occasion}: tapping a gift did not pick it`);
+  if ((await p.getAttribute('#occasions .on', 'data-v')) !== c.occasion) errors.push(`${occasion}: picking a gift changed the occasion`);
   await shot(p, P('01-create-who'));
   // Customize: its own page
   await p.click('#customizeBtn');
   await p.waitForSelector('[data-screen="decorate"]:not([hidden])');
   await p.waitForTimeout(300);
-  // swiping the big gift changes its kind; the arrow brings it back
+  // the style, picked on its own strip
+  await p.click('.tool-tab[data-tool="style"]');
+  await p.click(`#styles [data-v="${c.style}"]`);
+  await p.waitForTimeout(700);
+  if ((await p.getAttribute('#styles .on', 'data-v')) !== c.style) errors.push(`${occasion}: the style strip did not pick ${c.style}`);
+  // swiping the big gift changes its style; the arrow brings it back
   const kindName0 = await p.textContent('#decorKindName');
   const sb0 = await (await p.$('#decorCake')).boundingBox();
   await p.mouse.move(sb0.x + sb0.width * 0.8, sb0.y + 60);
@@ -134,12 +142,13 @@ async function runGift(occasion, c) {
   await p.mouse.move(sb0.x + sb0.width * 0.2, sb0.y + 60, { steps: 4 });
   await p.mouse.up();
   await p.waitForTimeout(300);
-  if ((await p.textContent('#decorKindName')) === kindName0) errors.push(`${occasion}: swiping the gift did not change its kind`);
+  if ((await p.textContent('#decorKindName')) === kindName0) errors.push(`${occasion}: swiping the gift did not change its style`);
   await p.click('#kindPrev');
   await p.waitForTimeout(300);
   if ((await p.textContent('#decorKindName')) !== kindName0) errors.push(`${occasion}: the arrow did not go back to ${kindName0}`);
   // a strip picks whatever stops in the middle
   await p.click('.tool-tab[data-tool="color"]');
+  await p.waitForTimeout(200); // the strip centres itself once it is shown
   const flavor = await p.$eval(`#flavors > :nth-child(${c.swatch + 1})`, (el) => { el.parentElement.scrollLeft = el.offsetLeft - (el.parentElement.clientWidth - el.offsetWidth) / 2; return el.dataset.v; });
   await p.waitForTimeout(400);
   if ((await p.getAttribute('#flavors .on', 'data-v')) !== flavor) errors.push(`${occasion}: sliding the strip did not pick ${flavor}`);
@@ -184,7 +193,7 @@ async function runGift(occasion, c) {
   await p.click('#saveDecorBtn');
   await p.waitForSelector('[data-screen="who"]:not([hidden])');
   await p.waitForTimeout(500);
-  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.shape) errors.push(`${occasion}: after Customize the carousel lost the kind`);
+  if ((await p.getAttribute('#kinds .on', 'data-v')) !== c.gift) errors.push(`${occasion}: after Customize the carousel lost the gift`);
   await p.click('#createBtn');
   // "Create" opens the gift's one page: the gift, invite friends, who recorded, send it
   await p.waitForURL(/\/m\/.+\?k=/);
@@ -204,8 +213,8 @@ async function runGift(occasion, c) {
   const manageHref = new URL(p.url()).pathname + new URL(p.url()).search;
   const slug = friendLink.split('/g/')[1];
   console.log(occasion, 'slug', slug, 'manage', manageHref);
-  const shape = (await (await fetch(`${BASE}/api/gift?slug=${slug}`)).json()).gift?.cake?.shape;
-  if (shape !== c.shape) errors.push(`${occasion}: saved shape is ${shape}, expected ${c.shape}`);
+  const saved = (await (await fetch(`${BASE}/api/gift?slug=${slug}`)).json()).gift || {};
+  if (saved.occasion !== c.occasion || saved.cake?.family !== c.gift || saved.cake?.shape !== c.style) errors.push(`${occasion}: saved ${saved.occasion}/${saved.cake?.family}/${saved.cake?.shape}, expected ${c.occasion}/${c.gift}/${c.style}`);
   await p.context().close();
 
   // friends record
@@ -233,6 +242,11 @@ async function runGift(occasion, c) {
     if (k === c.friends.length - 1) await shot(f, P('07-done'));
     await f.context().close();
   }
+  // once friends recorded, the gift can't become another gift (their candles, dishes… belong to it); the occasion can change
+  const editBody = (family, occ = saved.occasion) => JSON.stringify({ slug, key: new URLSearchParams(manageHref.split('?')[1]).get('k'), recipient: saved.recipient || c.recipient, organizer: 'Sari', occasion: occ, cake: { ...saved.cake, family } });
+  const other = c.gift === 'cake' ? 'bouquet' : 'cake';
+  const lockSt = (await fetch(`${BASE}/api/gifts`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: editBody(other) })).status;
+  if (lockSt !== 409) errors.push(`${occasion}: changing the gift after friends recorded gave ${lockSt}, expected 409`);
   for (let g = 0; g < (c.extraGuests || 0); g++) await apiGuest(slug, `Tamu ${g + 1}`, `Selamat menempuh hidup baru, semoga bahagia selalu. (${g + 1})`);
 
   // friends who change /g/ into /r/ can't listen: the recipient's link has its own key
@@ -307,7 +321,7 @@ async function runGift(occasion, c) {
   await r.waitForTimeout(500);
   await shot(r, P('15-finale'));
   const hb = await (await r.$('.holdbtn')).boundingBox();
-  if (occasion === 'birthday') {
+  if (c.gift === 'cake') { // blow out the candles: press and hold
     await r.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
     await r.mouse.down();
     await r.waitForTimeout(700);

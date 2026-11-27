@@ -120,9 +120,12 @@ async function runGift(occasion, c) {
   } else if (await p.isVisible('#customTitle')) errors.push(`${occasion}: the title box shows for ${c.occasion}`);
   await p.fill('#recipient', c.recipient);
   await p.fill('#organizer', 'Sari');
-  // the gifts: a carousel of live gifts (all seven for every occasion); the one in the middle is the gift
+  // the gifts: a carousel of live gifts; first only the ones that suit the occasion, "+ more gifts" shows all seven
   await p.waitForTimeout(300);
-  if ((await p.$$('#kinds .kind')).length !== 7) errors.push(`${occasion}: the carousel does not show all seven gifts`);
+  if ((await p.$$('#kinds .kind')).length >= 7) errors.push(`${occasion}: the carousel shows every gift before "+ more gifts"`);
+  await p.click('#kindMore');
+  await p.waitForTimeout(300);
+  if ((await p.$$('#kinds .kind')).length !== 7) errors.push(`${occasion}: "+ more gifts" does not show all seven gifts`);
   const lastKind = await p.$eval('#kinds', (b) => b.lastElementChild.dataset.v);
   await p.click(`#kinds [data-v="${lastKind}"]`);
   await p.waitForTimeout(700);

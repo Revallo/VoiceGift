@@ -1047,3 +1047,12 @@ body[data-theme="custom"] {
   position: relative; padding-right: 4px; scrollbar-width: thin;
   -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent);
 }
+
+/* /new as three steps (2026-11-28): 1 what it's for, 2 pick a look, 3 who it's for */
+.make-step { display: flex; align-items: center; gap: 10px; margin: 14px 0 -2px; font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); }
+.make-step b { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: #FFFFFF; font-size: 12px; font-weight: 900; letter-spacing: 0; }
+.make-form .make-step { margin-top: 4px; }
+[data-screen="who"] .kind-name { margin-top: -6px; color: var(--text); font-size: 13px; }
+.kind-more { display: block; margin: -4px auto 0; padding: 6px 14px; border: 0; border-radius: 999px; background: var(--tile, rgba(0,0,0,.05)); color: var(--soft); font: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.kind-more[hidden] { display: none; }
+.make-actions .soft-btn { min-height: 44px; font-size: 11px; }

@@ -33,6 +33,7 @@ const state = {
   shape: start.shape, // its style (drip cake, tall cone, flower box, ketupat…)
   giftPicked: start.giftPicked, // picked by the person: then choosing an occasion leaves the gift alone
   locked: false, // editing a gift friends already recorded on: the gift can't change (their candles, dishes…)
+  showAll: false, // "+ more gifts": every gift in the carousel, not only the ones that suit the occasion
   flavor: '',
   font: NAME_FONTS[params.get('font')] ? params.get('font') : DEFAULT_FONT, // the letters of the name on the gift
   brush: 0,
@@ -80,14 +81,21 @@ function miniScene(host, family, shape, rec) {
   return sc;
 }
 
-// The six gifts as big live drawings you slide: the one in the middle is the gift. It carries the design made in
-// Customize; its neighbours show their own look. A gift friends already recorded on stays alone (locked).
+// The gifts as big live drawings you slide: the one in the middle is the gift. It carries the design made in
+// Customize; its neighbours show their own look. Only the gifts that suit the occasion (its `suggest` list, plus the
+// one picked), so a birthday doesn't show an angpao tree; "+ more gifts" shows them all (decided 2026-11-28).
+// A gift friends already recorded on stays alone (locked).
 let kindScenes = [];
+const suited = () => [...new Set([...OCCASIONS[state.occasion].suggest, state.family])].filter((k) => GIFT_INFO[k]);
 function renderCarousel() {
   const box = $('#kinds');
   const rec = recipientOr();
   kindScenes = [];
-  const keys = state.locked ? [state.family] : GIFT_KEYS;
+  const few = suited();
+  const keys = state.locked ? [state.family] : state.showAll ? GIFT_KEYS : few;
+  const more = GIFT_KEYS.length - few.length;
+  $('#kindMore').hidden = state.locked || more <= 0;
+  $('#kindMore').textContent = state.showAll ? 'Show fewer' : `+ ${more} more ${more === 1 ? 'gift' : 'gifts'}`;
   wheel(box, keys.map((k) => [k, GIFT_INFO[k]]), state.family, (key, g) => {
     const mini = h('div', { class: 'mini' });
     const el = h('button', { type: 'button', class: 'kind', role: 'radio', 'aria-label': g.label }, mini);
@@ -142,7 +150,9 @@ let firstOccasion = true;
 function setOccasion(key) {
   state.occasion = key;
   const o = OCCASIONS[key];
-  if (!state.giftPicked && !state.locked && !firstOccasion) { state.family = o.suggest[0]; state.shape = o.prefer?.[state.family] || 'classic'; }
+  // a new occasion shows its own gifts again; the gift changes unless the person picked one that suits it too
+  state.showAll = false;
+  if (!state.locked && !firstOccasion && (!state.giftPicked || !o.suggest.includes(state.family))) { state.family = o.suggest[0]; state.shape = o.prefer?.[state.family] || 'classic'; }
   $$('#occasions .occ').forEach((c) => { c.classList.toggle('on', c.dataset.v === key); c.setAttribute('aria-checked', String(c.dataset.v === key)); });
   const on = $('#occasions .occ.on');
   if (on) $('#occasions').scrollLeft = on.offsetLeft - ($('#occasions').clientWidth - on.offsetWidth) / 2;
@@ -381,6 +391,7 @@ function retheme() {
 }
 
 // A new gift, from the carousel on the first screen.
+$('#kindMore').addEventListener('click', () => { state.showAll = !state.showAll; renderCarousel(); });
 function setFamily(k) {
   if (k === state.family || state.locked) return;
   state.family = k;

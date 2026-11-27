@@ -48,6 +48,7 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
     <div class="occ-row" id="occasions" role="radiogroup" aria-label="Occasion"></div>
 
     <form id="whoForm" class="stack make-form" novalidate>
+      <label class="pill-field" id="customTitleField" hidden><span>What</span><input class="input" id="customTitle" maxlength="60" autocomplete="off" placeholder="What is it for? e.g. Get well soon"></label>
       <label class="pill-field"><span id="recipientLabel">For</span><input class="input" id="recipient" maxlength="40" autocomplete="off" placeholder="e.g. Dimas" required></label>
       <label class="pill-field"><span>From</span><input class="input" id="organizer" maxlength="40" autocomplete="name" placeholder="e.g. Sari" required></label>
       <div class="make-actions">

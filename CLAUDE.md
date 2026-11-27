@@ -3,7 +3,7 @@
 ## What this is
 A web app where friends record short voice messages for someone. The organizer sends the recipient
 their link when they want the surprise to start (e.g. at 00:00 on a birthday); it opens as a scene where every voice is one item: a cake with
-candles (birthday), a tumpeng with side dishes (Indonesian birthday), a bouquet of flowers (graduation) or lanterns (wedding). Built for
+candles, a tumpeng with side dishes, a bouquet of flowers, lanterns, an angpao tree, river lights or a gift box with a little present per voice. Built for
 Taiwan Mobile's AI team: every message gives **Indonesian speech + the caption the speaker
 corrected** — labeled data for our Indonesian ASR (~70% accurate today). The UX is the product;
 the data is the side effect. This is a **prototype**: keep it simple and readable.
@@ -22,6 +22,10 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
   numbers 900 tabular. The gifts are drawn **cute, like stickers** (2026-11-27, `soft.css` "The cute look"): flat colours,
   a warm brown outline (`--ol`; pieces cut with clip-path go in an `.ol-wrap`), a face on most cakes (each shape's `face` spot, `faceSvg` in `cake.js`) and on the tumpeng (`coneFace`), thin outlines (`--olt`) on dishes, envelopes and river lights, and
   **no card behind a gift**: the stage has no colour unless a backdrop is picked, and a backdrop (and the river's night) fades out at its edges.
+- **Recordings: up to 90 seconds** (2026-11-28, was 15): `MAX_RECORDING_SEC` in `recorder.js` (friends and the recipient's thank-you)
+  and `lib/gifts.js` (`api/message.js`, `api/thanks.js` refuse > 92 s, < 0.8 s). 90 s of WAV ≈ 2.9 MB (upload limit 4 MB in `lib/http.js`,
+  Vercel 4.5 MB). Times read m:ss (`clock()`). A long caption (> 40 words) on the recipient's page scrolls in its own box, following the voice.
+  Storage: audio is base64 in Redis, so one 90 s voice ≈ 3.9 MB of the free 256 MB.
   **Never capitals for captions, inputs or what people typed** (CSS `text-transform` only, strings unchanged).
   Icons: `assets/icons.js` (chunky two-tone SVG, fill = `--ico-fill`/`--wash`), re-exported as `icon` from `common.js`; emoji
   only as content (stickers, moods). Shared pieces in `common.js`: `topBar()`, `bottomNav()`, `openSheet()` (a sheet over a
@@ -39,7 +43,7 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
 | URL | File | Who |
 | --- | --- | --- |
 | `/` | `index.html` | home, logged in only (else `/login`): "Hi, name", quick-start templates in a carousel you slide (`TEMPLATES` in `themes.js`: Birthday cake, Graduation bouquet, Wedding lanterns, Lebaran ketupat, Imlek angpao; tap = `/new?occasion=&gift=&style=`), "Make a gift" → `/new`, "Open a gift" (paste the link in a sheet), bottom nav, thank-you notes pop up |
-| `/new` | `create.html` + `assets/create.js` | organizer, **one screen**: a carousel of the six gifts (`#kinds`, the one in the middle is the gift) + a sliding row of 8 occasion tiles (`#occasions`) + For/From + PIN chip + "Customize" + slide "Create gift". Any gift with any occasion. Customize (`data-screen="decorate"`) is its own page: the big gift with the styles before and after peeking in at the sides (swipe it or tap a peek = style; dots under the name), icon tabs (Style · Color · Accent · Pattern · Topper · Greens · Text · Stickers · Draw · Music · Backdrop · Local), one tool at a time, "Save" goes back. `?edit=slug&k=` opens Customize; its Save ("Save changes") saves and goes to `/m/…`; once a real voice exists the gift is locked (only it shows in the carousel) |
+| `/new` | `create.html` + `assets/create.js` | organizer, **one screen**: a carousel of the seven gifts (`#kinds`, the one in the middle is the gift) + a sliding row of 11 occasion tiles (`#occasions`; "Other" shows a "What" box for its own title) + For/From + PIN chip + "Customize" + slide "Create gift". Any gift with any occasion. Customize (`data-screen="decorate"`) is its own page: the big gift with the styles before and after peeking in at the sides (swipe it or tap a peek = style; dots under the name), icon tabs (Style · Color · Accent · Pattern · Topper · Greens · Text · Stickers · Draw · Music · Backdrop · Local), one tool at a time, "Save" goes back. `?edit=slug&k=` opens Customize; its Save ("Save changes") saves and goes to `/m/…`; once a real voice exists the gift is locked (only it shows in the carousel) |
 | `/signup`, `/login`, `/account`, `/gifts` | `account.html` + `assets/account.js` | everyone: "Continue with Google". `/account` = Profile (avatar, name, voices/gifts tiles, edit profile, log out); `/gifts` = Your gifts (their gifts, + to make one, thank-yous). Both have the bottom nav (`/account#gifts` goes to `/gifts`) |
 | `/g/:slug` | `record.html` + `assets/record.js` | friend (calm page, one big mic button): log in → name (filled in from the account, can be changed) + consent → record → check words (shown as the recipient will see them) → done |
 | `/m/:slug?k=key` | `manage.html` + `assets/manage.js` | the gift's one page for the organizer (only with the key): the gift + Edit (top right), who recorded as faces, three big actions that each open a sheet: Invite (link + share), Voices (names, not content; demo voices), Send (recipient link + PIN) |
@@ -50,11 +54,16 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
 
 ## Gifts and occasions (themes)
 - **Two free choices** (decided 2026-11-27: "a wedding, but with a cake" must work; no choice hides another):
-  the **gift** `gift.cake.family` = `cake | tumpeng | bouquet | lanterns | angpao | river` (the drawing, its items, how it opens)
-  and the **occasion** `gift.occasion` = `birthday | graduation | wedding | anniversary | lebaran | imlek | thanks | justbecause`
-  (the words: greeting, inscription, stickers first, page wash, recipient naming). `gift.cake.shape` is the gift's **style**, a key
+  the **gift** `gift.cake.family` = `cake | tumpeng | bouquet | lanterns | angpao | river | giftbox` (the drawing, its items, how it opens)
+  and the **occasion** `gift.occasion` = `birthday | graduation | wedding | anniversary | lebaran | imlek | thanks | justbecause | christmas | business | custom`
+  (the words: greeting, inscription, sample wish, stickers first, page wash, recipient naming). A gift never writes occasion words itself.
+  Added 2026-11-28: Christmas, New business, and **Other** (`custom`): the organizer types the occasion (`gift.customTitle`, ≤ 60
+  characters, required for `custom`; an edit without it keeps the old one); `customOccasion(title)` builds its words, the title is the
+  greeting and, when ≤ 30 characters, the text on the gift. `theme()`/`applyTheme()` take the title as 4th argument; `giftTheme(gift)` passes it.
+  Each occasion has a `sample` wish in Indonesian, shown on the friend's record page ("e.g. …"). `gift.cake.shape` is the gift's **style**, a key
   of its scene's `SHAPES` (cake shapes, tumpeng cones, bouquet wraps incl. money/snack, lantern shapes incl. ketupat/hoian/capiz/xi,
   angpao pots, river floats).
+- Adding an occasion = one object in `OCCASIONS` (+ its wash in `soft.css` and an icon in `OCC_ICONS`), no drawing.
 - `assets/themes.js`: `OCCASIONS` (words, `who` = friend/guest, `age` (topper with years: birthday, anniversary), `suggest` gifts,
   `prefer[gift]` style, `icon`), `GIFTS` (one factory per gift, built for the occasion's `who`), `BY_STYLE` (words of a style:
   money/snack, hoian, ketupat), `COMBO['occasion:gift']` (only where the pair needs its own words or look: graduation bouquet throws
@@ -69,7 +78,11 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
   `river` → river; graduation → bouquet; wedding → lanterns; else cake. Occasion `other` → just because.
 - Naming: a recipient with `&`, `and`, `dan` or `+` is always called by the full name; else the occasion's rule (wedding,
   anniversary, lebaran, imlek: full; the others: first name).
-- Scenes: `cake.js`, `tumpeng.js`, `bouquet.js`, `lanterns.js`, `lixi.js`, `krathong.js`, all built on `stage.js`
+- Scenes: `cake.js`, `tumpeng.js`, `bouquet.js`, `lanterns.js`, `lixi.js`, `krathong.js`, `gift-box.js`, all built on `stage.js`
+- Gift box (`gift-box.js`, 2026-11-28): a big wrapped box (paper `FLAVORS`, box `SHAPES` classic/tall/wide/hatbox, ribbon `ACCENTS`,
+  print `PATTERNS`, `TOPPERS` incl. age) with a little present per voice around it (an arc over the box, then piles at both sides, up to 40;
+  colour `colorFor(i)`, no pick for the friend). Finale "Open the box": `finaleStart()` (lid flies off, a beam of light), then each present
+  pops its lid (`finaleOut`), then the usual confetti.
 - Birthday keeps one logical candle per voice, with at most six visible per group. `setActive()`/`light()` open the matching group; `lightAll()`/`reset()` restore the first group. Keep every voice/index available; do not truncate messages to match the visible candles.
   (scaled stage, drawing layer, shared item states). Same API: `setCandles`, `light`, `setActive`,
   `finaleOrder`/`finaleOut`, `reset`…
@@ -148,7 +161,7 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
   links) and a one-shot reload if a module fails to link; `/assets/*` is served `stale-while-revalidate` (`vercel.json`).
 - Dashboards still open with the key alone (old gifts, co-organizers). Gifts a browser made before accounts
   (localStorage `vg-mine`) join the account when that browser logs in (`claim`, proven by the manage key).
-- **Demo voices** (updated 2026-11-19; only birthday, graduation and wedding have recordings, the other occasions hide the button, `hasDemo()`): the gift's page has "+ Add 5 demo voices" / "Remove the demo voices" (`DEMO_COUNT` in `lib/demo.js`, cut from 20 on 2026-11-19); deleted ones can be added back.
+- **Demo voices** (updated 2026-11-19; only birthday, graduation and wedding have recordings, the other occasions (incl. Christmas, New business, Other) hide the button, `hasDemo()`): the gift's page has "+ Add 5 demo voices" / "Remove the demo voices" (`DEMO_COUNT` in `lib/demo.js`, cut from 20 on 2026-11-19); deleted ones can be added back.
   (`POST /api/manage` `add-demo` / `remove-demo`). TTS audio + scripts in `demo/` (bundled via `includeFiles` in `vercel.json`),
   each with a mood and a candle. **Not stored in Blob** (`lib/demo.js`): the gift keeps only `demo: {at, hidden}` and the messages are
   built on each read, marked `demo: true`: never in the export or stats, no ASR call, no thank-you.
@@ -157,7 +170,7 @@ Older designed screens: `design/screens/*.jpg` (the journey still holds; the loo
 - Limits (`lib/limits.js`, counters in storage): 3 voices per account per gift, 20 recordings + 10 gifts per account per day.
 
 ## API (`api/*.js`)
-- `POST /api/gifts` {recipient, organizer, occasion, verifyPin, cake{family,flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit (409 if it changes the gift once a real voice exists)
+- `POST /api/gifts` {recipient, organizer, occasion, customTitle?, verifyPin, cake{family,flavor,shape,font,name,dots,stickers}} → {slug, manageKey, openKey} (logged in only); `PATCH` same + {slug, key} → edit (409 if it changes the gift once a real voice exists)
 - `GET /api/account` → {user} or {user: null}, + `googleClientId`, `devLogin` (`?gifts=1`: + their gifts with keys; `?thanks=1`: + their thank-you notes); `POST` actions `google` {credential}, `dev-login` {email, name} (local only), `logout`, `claim`, `thanks-read`
 - `GET /api/gift?slug` → public gift + message count (never content)
 - `POST /api/message?slug&name&consent=1` body = WAV (octet-stream), logged in only → stores, runs ASR → {id, token, asrText}

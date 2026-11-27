@@ -84,7 +84,8 @@ async function signUpHere(p, name, email, shotName) {
 }
 
 const CASES = {
-  birthday: { occasion: 'birthday', gift: 'cake', style: 'tower', recipient: 'Dimas', swatch: 9, friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
+  // longFirst: the first friend records for ~17 s (recordings may be up to 90 s since 2026-11-28)
+  birthday: { occasion: 'birthday', gift: 'cake', style: 'tower', recipient: 'Dimas', swatch: 9, longFirst: true, friends: [['Budi', 'Dimas! Selamat ulang tahun, sukses terus bro!'], ['Mama', 'Selamat ulang tahun, Nak. Mama bangga sama kamu.'], ['Ayu', 'Happy birthday Dimas, traktir ya!']] },
   tumpeng: { occasion: 'birthday', gift: 'tumpeng', style: 'tall', recipient: 'Putri', swatch: 3, friends: [['Budi', 'Putri! Selamat ulang tahun, sehat selalu ya.'], ['Mama', 'Selamat ulang tahun, Nak. Mama sayang kamu.'], ['Ayu', 'Happy birthday Putri, traktir sate ya!']] },
   graduation: { occasion: 'graduation', gift: 'bouquet', style: 'basket', recipient: 'Nadia', swatch: 6, friends: [['Pak Hadi', 'Selamat, Nadia. Revisinya memang banyak, tapi hasilnya bagus.'], ['Mama', 'Selamat wisuda, Nak!'], ['Rani', 'Nadia! Akhirnya S.Kom, traktir!']] },
   angpao: { occasion: 'wedding', gift: 'angpao', style: 'vase', recipient: 'Linh & Minh', swatch: 1, friends: [['Bibi Lan', 'Selamat menempuh hidup baru, semoga rukun selalu.'], ['Om Hendra', 'Selamat ya Linh dan Minh, langgeng terus.']] },
@@ -92,6 +93,9 @@ const CASES = {
   ketupat: { occasion: 'lebaran', gift: 'lanterns', style: 'ketupat', recipient: 'Mama', swatch: 3, friends: [['Bu Ani', 'Selamat Idul Fitri, mohon maaf lahir batin.'], ['Dodi', 'Minal aidin wal faizin, Ma!']] },
   river: { occasion: 'wedding', gift: 'river', style: 'lotus', recipient: 'Ploy & Ken', swatch: 2, friends: [['Nok', 'Selamat menikah, semoga bahagia selamanya.'], ['Budi', 'Selamat ya kalian berdua!']] },
   weddingcake: { occasion: 'wedding', gift: 'cake', style: 'pearl', recipient: 'Tia & Joe', swatch: 4, friends: [['Om Ben', 'Selamat menempuh hidup baru, Tia dan Joe!'], ['Sinta', 'Langgeng terus ya kalian!']] },
+  // added 2026-11-28: "Other" with a typed title on the new gift box, and Christmas on a cake
+  other: { occasion: 'custom', customTitle: 'Get well soon', gift: 'giftbox', style: 'round', recipient: 'Raka', swatch: 2, friends: [['Dewi', 'Cepat sembuh ya Raka, kita kangen main bareng.'], ['Pak Ari', 'Semoga lekas pulih, semangat terus!']] },
+  christmas: { occasion: 'christmas', gift: 'cake', style: 'classic', recipient: 'Maria', swatch: 3, friends: [['Yosef', 'Selamat Natal Maria, damai selalu.'], ['Lina', 'Merry Christmas, sehat terus ya!']] },
   wedding: { occasion: 'wedding', gift: 'lanterns', style: 'heart', recipient: 'Rina & Bayu', swatch: 6, extraGuests: 24, friends: [['Ibu Wati', 'Rina, anak Ibu, selamat menempuh hidup baru.'], ['Pak Joko', 'Selamat ya Bayu dan Rina, langgeng terus.']] }
 };
 
@@ -110,11 +114,15 @@ async function runGift(occasion, c) {
   await p.waitForURL(/\/new$/);
   await p.waitForSelector('#recipient');
   await p.click(`#occasions [data-v="${c.occasion}"]`);
+  if (c.customTitle) {
+    if (await p.isHidden('#customTitle')) errors.push(`${occasion}: "Other" did not show the title box`);
+    await p.fill('#customTitle', c.customTitle);
+  } else if (await p.isVisible('#customTitle')) errors.push(`${occasion}: the title box shows for ${c.occasion}`);
   await p.fill('#recipient', c.recipient);
   await p.fill('#organizer', 'Sari');
-  // the gifts: a carousel of live gifts (all six for every occasion); the one in the middle is the gift
+  // the gifts: a carousel of live gifts (all seven for every occasion); the one in the middle is the gift
   await p.waitForTimeout(300);
-  if ((await p.$$('#kinds .kind')).length !== 6) errors.push(`${occasion}: the carousel does not show all six gifts`);
+  if ((await p.$$('#kinds .kind')).length !== 7) errors.push(`${occasion}: the carousel does not show all seven gifts`);
   const lastKind = await p.$eval('#kinds', (b) => b.lastElementChild.dataset.v);
   await p.click(`#kinds [data-v="${lastKind}"]`);
   await p.waitForTimeout(700);
@@ -230,10 +238,16 @@ async function runGift(occasion, c) {
     await f.check('#consent');
     await f.click('#startBtn');
     await f.waitForSelector('[data-screen="record"]:not([hidden])');
-    await f.waitForTimeout(2600);
+    const long = c.longFirst && k === 0;
+    await f.waitForTimeout(long ? 17000 : 2600);
     if (k === 0) await shot(f, P('05-recording'));
     await f.click('#stopBtn');
     await f.waitForSelector('[data-screen="caption"]:not([hidden])', { timeout: 15000 });
+    if (long) {
+      const dur = await f.textContent('#ownDur');
+      const [mm, ss] = dur.split(':').map(Number);
+      if (!(mm * 60 + ss > 15)) errors.push(`${occasion}: a long recording was cut short (${dur})`);
+    }
     if (k === 0) await shot(f, P('06-caption'));
     await f.fill('#captionText', text);
     await f.click('#sendBtn');
@@ -352,7 +366,8 @@ async function runGift(occasion, c) {
   await r.check('.bottom-sheet .check input');
   await r.click('#thanksMic');
   await r.waitForSelector('#thanksStop');
-  await r.waitForTimeout(2200);
+  await r.waitForTimeout(c.longFirst ? 16500 : 2200); // the thank-you may be up to 90 s too
+  if (c.longFirst && !/^0:1[6-9]$/.test(await r.textContent('.bottom-sheet .timer'))) errors.push(`${occasion}: the thank-you timer stopped early (${await r.textContent('.bottom-sheet .timer')})`);
   await r.click('#thanksStop');
   await r.waitForSelector('#thanksWords', { timeout: 15000 });
   await shot(r, P('17a-thanks-words'));

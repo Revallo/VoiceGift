@@ -1,4 +1,4 @@
-// POST  /api/gifts  {recipient, organizer, occasion, cake}               → create a gift (logged in) → { slug, manageKey, openKey }
+// POST  /api/gifts  {recipient, organizer, occasion, customTitle?, cake}               → create a gift (logged in) → { slug, manageKey, openKey }
 // PATCH /api/gifts  {slug, key, recipient, organizer, occasion, cake}    → the organizer edits it (back from step 3)
 import { route, send, jsonBody, cleanText, HttpError } from '../lib/http.js';
 import { createGift, loadGift, saveGift, loadMessages, OCCASIONS, GIFT_FAMILIES, familyOf } from '../lib/gifts.js';
@@ -29,15 +29,18 @@ function cleanCake(cake = {}) {
   return { family, flavor, shape, font, name, dots, stickers, accent: key(cake.accent), pattern: key(cake.pattern), topper: key(cake.topper), greens: key(cake.greens), backdrop: key(cake.backdrop), music: key(cake.music), local: LOCAL_KEYS.includes(cake.local) ? cake.local : '', age };
 }
 
-function readGift(b) {
+function readGift(b, keepTitle = '') {
   const recipient = cleanText(b.recipient, 40);
   const organizer = cleanText(b.organizer, 40);
   if (!recipient) throw new HttpError(400, 'Please enter who the gift is for.');
   if (!organizer) throw new HttpError(400, 'Please enter your name.');
   const occasion = OCCASIONS.includes(b.occasion) ? b.occasion : 'birthday';
+  // "Other": the occasion in the organizer's own words (shown as the gift's title)
+  const customTitle = occasion === 'custom' ? cleanText(b.customTitle, 60) || keepTitle : ''; // an edit without it keeps the title
+  if (occasion === 'custom' && !customTitle) throw new HttpError(400, 'Please type what the gift is for.');
   const rawPin = String(b.verifyPin || b.verifyAnswer || '1234').replace(/\D/g, '').slice(0, 4);
   const verifyPin = rawPin.length === 4 ? rawPin : '1234';
-  return { recipient, organizer, occasion, verifyPin, cake: cleanCake(b.cake) };
+  return { recipient, organizer, occasion, customTitle, verifyPin, cake: cleanCake(b.cake) };
 }
 
 export default route({
@@ -55,7 +58,7 @@ export default route({
     const b = await jsonBody(req);
     const gift = await loadGift(b.slug);
     if (!b.key || b.key !== gift.manageKey) throw new HttpError(403, 'Not allowed');
-    const updates = readGift(b);
+    const updates = readGift(b, gift.customTitle);
     // Once friends recorded, the gift stays what it is: their candles, dishes or envelopes belong to it.
     if (familyOf({ ...gift, ...updates }) !== familyOf(gift)) {
       const real = (await loadMessages(gift.slug, gift)).filter((m) => !m.demo);

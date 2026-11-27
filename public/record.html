@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#FAF8F5">
 <title>Record a voice message</title>
 <meta property="og:title" content="Record a voice message">
-<meta property="og:description" content="15 seconds, straight from your browser. It stays a secret until it opens.">
+<meta property="og:description" content="Up to 90 seconds, straight from your browser. It stays a secret until it opens.">
 <meta property="og:image" content="/og.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,12 +61,13 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
         </label>
         <p class="small err" id="inviteError" hidden></p>
         <button class="mic-big" type="submit" id="startBtn" aria-label="Start recording"></button>
-        <p class="center small muted" id="micHint" style="margin:-4px 0 0">Tap to record · up to 15 seconds</p>
+        <p class="center small muted" id="micHint" style="margin:-4px 0 0">Tap to record · up to 90 seconds</p>
       </form>
 
       <div class="say-ideas" aria-label="Ideas">
         <span class="idea">✨ A wish</span><span class="idea">💭 A memory</span><span class="idea">😂 A joke</span>
       </div>
+      <p class="say-sample" id="saySample" hidden></p>
       <p class="say-lang">In Indonesian, the way you talk</p>
 
       <p class="private-note" data-private></p>
@@ -84,7 +85,7 @@ addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('vg-re
     <div class="spacer"></div>
     <div class="timer" id="timer">0:00</div>
     <div class="rec-progress" aria-hidden="true"><i id="recBar"></i></div>
-    <p class="center small muted" id="recLeft" style="margin:0" aria-live="polite">15 seconds left</p>
+    <p class="center small muted" id="recLeft" style="margin:0" aria-live="polite">1:30 left</p>
     <div class="meter" id="meter" aria-hidden="true"></div>
     <div class="spacer"></div>
     <button type="button" class="recbtn" id="stopBtn" aria-label="Stop recording"></button>

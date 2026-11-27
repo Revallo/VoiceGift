@@ -4,7 +4,7 @@
 //        plus the playback mood and their candle (the WAV itself is never changed)
 // DELETE /api/message   { slug, id, token }        → "record again"
 import { route, send, query, rawBody, jsonBody, cleanText, HttpError } from '../lib/http.js';
-import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug, cleanMood, cleanCandle } from '../lib/gifts.js';
+import { loadGift, loadMessages, createMessage, findMessage, updateMessage, deleteMessage, analyzeWav, CONSENT_VERSION, isSlug, cleanMood, cleanCandle, MAX_RECORDING_SEC } from '../lib/gifts.js';
 import { transcribe, asrProvider, evenWords, computeCorrections, syncCorrection } from '../lib/asr.js';
 import { requireUser } from '../lib/accounts.js';
 import { LIMITS, countRecording } from '../lib/limits.js';
@@ -30,7 +30,7 @@ export default route({
     if (!info) throw new HttpError(400, 'The recording could not be read. Please record again.');
     const { durationSec, peak, waveform, speechStartSec, speechEndSec } = info;
     if (durationSec < 0.8) throw new HttpError(400, 'That was too short. Please record again.');
-    if (durationSec > 20) throw new HttpError(400, 'Recordings can be up to 15 seconds.');
+    if (durationSec > MAX_RECORDING_SEC + 2) throw new HttpError(400, `Recordings can be up to ${MAX_RECORDING_SEC} seconds.`); // +2: the recorder stops a little after the limit
     if (peak < 0.005) throw new HttpError(400, 'No voice detected. Speak a little louder.');
     // Limits: a few voices per friend per gift, and a daily cap per account (each recording is an ASR call).
     const mine = (await loadMessages(gift.slug)).filter((m) => m.userId === user.id).length;

@@ -91,6 +91,17 @@ Claude (claude.ai), so a new session can continue without re-asking.
   names + slide "Create gift") with Customize as its own page. Added kinds: wedding `ketupat` (Ramadan feel) and `imlek`
   (red-gold angpao tree, dragon envelopes and backdrop); the bouquet wrap carries the country's motif. All in `soft.css`;
   the old override layers in `app.css` are still there underneath and can be deleted once nothing needs them.
+- Decision (2026-11-28, branch `feat/moments-wadah`, from a plan written in the claude.ai chat): **gift (wadah) and occasion (momen)
+  stay two free choices**, as built on 2026-11-27. Added the **gift box** (a little present per voice, the finale opens the big box) and
+  three occasions: **Christmas**, **New business** and **Other** (the organizer types the title, up to 60 characters). The existing
+  eight occasions stay. `/new` stays one screen (not the two screens the plan proposed). Every occasion has a sample wish in
+  Indonesian on the friend's page. Demo voices stay hidden on occasions without their own recordings (a birthday wish on a
+  Christmas gift would sound wrong); the plan suggested borrowing the birthday ones: not done, ask Revallo if wanted.
+- Decision (2026-11-28): **recordings up to 90 seconds** (friends and the recipient's thank-you), was 15. Each 90 s voice is ≈ 2.9 MB
+  of WAV (≈ 3.9 MB in Redis as base64), so the free 256 MB Upstash fills after roughly 65 long voices: watch it, or move audio to Blob
+  / the company storage. The thank-you flow is unchanged (one voice for everyone / per friend / written).
+- Postponed (2026-11-28): **email notifications** to friends (recipient opened the gift / sent a thank-you). Planned as a seam
+  `lib/email.js` like `lib/asr.js`; Resend needs a domain of our own to send to other people. Until then the rule "No email delivery" holds.
 - Not yet tested on real iPhone/Android microphones.
 
 ## Ideas offered, not started (ask Revallo before building)

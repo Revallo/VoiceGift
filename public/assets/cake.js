@@ -237,13 +237,13 @@ function buildShape(shape, P) {
     if (drips) for (let i = 0; i < drips; i++) {
       const xc = x + 12 + (i * (w - 24)) / (drips - 1), dx = (xc - (x + w / 2)) / (w / 2);
       const ya = top + ry * Math.sqrt(Math.max(0, 1 - dx * dx));
-      P({ left: px(xc - 9), top: px(ya - 6), width: '18px', height: px(8 + rnd() * 18 + Math.abs(dx) * 8), borderRadius: '0 0 9px 9px' }, topRole);
+      P({ left: px(xc - 9), top: px(ya - 6), width: '18px', height: px(8 + rnd() * 18 + Math.abs(dx) * 8), borderRadius: '0 0 9px 9px', cls: 'drip' }, topRole);
     }
   };
   const pearls = (x, w, y, ry, n) => {
     for (let i = 0; i < n; i++) {
       const xc = x + 10 + (i * (w - 20)) / (n - 1), dx = (xc - (x + w / 2)) / (w / 2);
-      P({ left: px(xc - 4), top: px(y + ry * Math.sqrt(Math.max(0, 1 - dx * dx))), width: '8px', height: '8px', borderRadius: '50%', background: '#F6B93B' });
+      P({ left: px(xc - 4), top: px(y + ry * Math.sqrt(Math.max(0, 1 - dx * dx))), width: '8px', height: '8px', borderRadius: '50%', background: '#F6B93B', cls: 'bead' });
     }
   };
 
@@ -261,7 +261,7 @@ function buildShape(shape, P) {
   const frills = (x, w, y, n, role) => {
     for (let i = 0; i < n; i++) {
       const xc = x + (i * w) / (n - 1), dx = (xc - (x + w / 2)) / (w / 2);
-      P({ left: px(xc - 15), top: px(y + 14 * Math.sqrt(Math.max(0, 1 - dx * dx))), width: '30px', height: '24px', borderRadius: '0 0 15px 15px', boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.08)' }, role);
+      P({ left: px(xc - 15), top: px(y + 14 * Math.sqrt(Math.max(0, 1 - dx * dx))), width: '30px', height: '24px', borderRadius: '0 0 15px 15px', cls: 'drip' }, role);
     }
   };
 
@@ -289,9 +289,9 @@ function buildShape(shape, P) {
   if (shape === 'dome') {
     plate();
     P({ left: '66px', top: '60px', width: '258px', height: '204px', borderRadius: '50% 50% 10% 10% / 78% 78% 8% 8%', boxShadow: 'inset -22px -8px 0 rgba(0,0,0,0.08)' }, 'b1');
-    P({ left: '96px', top: '78px', width: '60px', height: '86px', borderRadius: '50%', background: 'rgba(255,255,255,0.28)', transform: 'rotate(24deg)' });
+    P({ left: '96px', top: '78px', width: '60px', height: '86px', borderRadius: '50%', background: 'rgba(255,255,255,0.28)', transform: 'rotate(24deg)', cls: 'hl' });
     pearls(66, 258, 244, 12, 15);
-    return { x1: 92, x2: 298, y: 196, sag: 16, size: 30 };
+    return { x1: 92, x2: 298, y: 196, sag: 16, size: 30, face: { x: 195, y: 146, on: 'b1' } };
   }
   if (shape === 'stripe') {
     plate();
@@ -317,7 +317,7 @@ function buildShape(shape, P) {
     pearls(66, 258, 158, 20, 16);
     tier(112, 166, 90, 62, 'b2', 'top2', 18, 0);
     pearls(112, 166, 134, 18, 10);
-    return { x1: 90, x2: 300, y: 212, sag: 12, size: 29 };
+    return { x1: 90, x2: 300, y: 212, sag: 12, size: 29, face: { x: 195, y: 123, on: 'b2' } };
   }
   if (shape === 'cupcake') {
     plate();
@@ -326,7 +326,7 @@ function buildShape(shape, P) {
     P({ left: '84px', top: '98px', width: '222px', height: '56px', borderRadius: '50%', boxShadow: 'inset 0 -7px 0 rgba(0,0,0,0.07)' }, 'top2');
     P({ left: '112px', top: '68px', width: '166px', height: '46px', borderRadius: '50%', boxShadow: 'inset 0 -6px 0 rgba(0,0,0,0.07)' }, 'frost');
     plaque(112, 200, 166, 50);
-    return { x1: 126, x2: 264, y: 228, sag: 4, size: 23, plaque: true };
+    return { x1: 126, x2: 264, y: 228, sag: 4, size: 23, plaque: true, face: { x: 195, y: 165, on: 'frost' } };
   }
   if (shape === 'pancake') {
     plate();
@@ -335,7 +335,7 @@ function buildShape(shape, P) {
       P({ left: px(x), top: px(y), width: px(w), height: '40px', borderRadius: '50% / 46%', boxShadow: 'inset 0 -7px 0 rgba(0,0,0,0.12)' }, i % 2 ? 'b2' : 'b1');
     }
     P({ left: '84px', top: '72px', width: '222px', height: '34px', borderRadius: '50%' }, 'frost');
-    for (const [x, h] of [[100, 46], [150, 30], [238, 54], [282, 34]]) P({ left: px(x), top: '92px', width: '13px', height: px(h), borderRadius: '0 0 7px 7px' }, 'frost');
+    for (const [x, h] of [[100, 46], [150, 30], [238, 54], [282, 34]]) P({ left: px(x), top: '92px', width: '13px', height: px(h), borderRadius: '0 0 7px 7px', cls: 'drip' }, 'frost');
     plaque(102, 158, 186, 56);
     return { x1: 118, x2: 272, y: 192, sag: 5, size: 25, plaque: true };
   }
@@ -345,7 +345,7 @@ function buildShape(shape, P) {
     P({ left: '80px', top: '206px', width: '230px', height: '22px', borderRadius: '0 0 115px 115px / 0 0 14px 14px', opacity: '0.85' }, 'b2');
     tier(80, 230, 90, 0, 'b1', 'frost', 22, 13);
     pearls(80, 230, 240, 20, 13);
-    return { x1: 102, x2: 288, y: 190, sag: 14, size: 30 };
+    return { x1: 102, x2: 288, y: 190, sag: 14, size: 30, face: { x: 195, y: 149, on: 'b1' } };
   }
   if (shape === 'tower') {
     plate();
@@ -353,7 +353,7 @@ function buildShape(shape, P) {
     tier(72, 246, 146, 60, 'b2', 'top2', 16, 0);
     pearls(72, 246, 190, 16, 13);
     tier(100, 190, 90, 56, 'b1', 'top2', 20, 9);
-    return { x1: 104, x2: 286, y: 244, sag: 10, size: 24 };
+    return { x1: 104, x2: 286, y: 244, sag: 10, size: 24, face: { x: 195, y: 180, on: 'b2' } };
   }
   if (shape === 'sheet') {
     P({ left: '26px', top: '238px', width: '338px', height: '50px', borderRadius: '12px', background: '#FFFFFF', boxShadow: '0 4px 10px rgba(80,40,60,0.18)' });
@@ -362,7 +362,7 @@ function buildShape(shape, P) {
     P({ left: '56px', top: '62px', width: '278px', height: '56px', borderRadius: '16px' }, 'top2');
     for (let i = 0; i < 14; i++) P({ left: px(52 + i * 20.5), top: '108px', width: '22px', height: '16px', borderRadius: '50%' }, 'frost');
     for (let i = 0; i < 14; i++) P({ left: px(52 + i * 20.5), top: '246px', width: '22px', height: '16px', borderRadius: '50%' }, 'frost');
-    return { x1: 132, x2: 258, y: 200, sag: 0, size: 30 };
+    return { x1: 132, x2: 258, y: 200, sag: 0, size: 30, face: { x: 195, y: 160, on: 'b1' } };
   }
   // classic: two tiers
   plate();
@@ -371,12 +371,22 @@ function buildShape(shape, P) {
   for (let i = 0; i < 11; i++) {
     const xc = 76 + i * 23.8, dx = (xc - 195) / 131;
     const ya = 170 + 22 * Math.sqrt(Math.max(0, 1 - dx * dx));
-    P({ left: px(xc - 10), top: px(ya - 8), width: '20px', height: px(8 + rnd() * 8 + Math.abs(dx) * 12), borderRadius: '0 0 10px 10px' }, 'frost');
+    P({ left: px(xc - 10), top: px(ya - 8), width: '20px', height: px(8 + rnd() * 8 + Math.abs(dx) * 12), borderRadius: '0 0 10px 10px', cls: 'drip' }, 'frost');
   }
-  P({ left: '100px', top: '90px', width: '190px', height: '80px', borderRadius: '0 0 95px 95px / 0 0 18px 18px', boxShadow: 'inset -16px 0 0 rgba(0,0,0,0.07), inset 12px 0 0 rgba(255,255,255,0.3)' }, 'b2');
-  pearls(100, 190, 128, 18, 11);
+  P({ left: '100px', top: '90px', width: '190px', height: '80px', borderRadius: '0 0 95px 95px / 0 0 18px 18px' }, 'b2');
   P({ left: '100px', top: '70px', width: '190px', height: '40px', borderRadius: '50%' }, 'top2');
-  return { x1: 92, x2: 298, y: 236, sag: 12, size: 30 };
+  return { x1: 92, x2: 298, y: 236, sag: 12, size: 30, face: { x: 195, y: 142, on: 'b2' } };
+}
+
+// A happy little face on the cake (static markup): two eyes, a smile, pink cheeks. Eyes and smile take the
+// face element's colour, so they stay visible on a dark flavor.
+function faceSvg(x, y) {
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="position:absolute;inset:0;overflow:visible" aria-hidden="true">
+    <ellipse cx="${x - 30}" cy="${y + 9}" rx="9" ry="5" fill="#FF8FA8" opacity=".55"/><ellipse cx="${x + 30}" cy="${y + 9}" rx="9" ry="5" fill="#FF8FA8" opacity=".55"/>
+    <ellipse cx="${x - 16}" cy="${y}" rx="4" ry="5" fill="currentColor"/><ellipse cx="${x + 16}" cy="${y}" rx="4" ry="5" fill="currentColor"/>
+    <circle cx="${x - 14.6}" cy="${y - 1.8}" r="1.4" fill="#FFF"/><circle cx="${x + 17.4}" cy="${y - 1.8}" r="1.4" fill="#FFF"/>
+    <path d="M${x - 8} ${y + 6} Q${x} ${y + 14} ${x + 8} ${y + 6}" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+  </svg>`;
 }
 
 // 0–1, how light a #RRGGBB colour is.
@@ -441,6 +451,8 @@ export function createCake(host, opts = {}) {
 
   const shapeEl = div('', { position: 'absolute', inset: '0' });
   body.append(shapeEl);
+  const partsEl = div('cake-parts', { position: 'absolute', inset: '0' }); // the cake itself, drawn with a brown outline
+  const faceEl = div('cake-face', { position: 'absolute', inset: '0', pointerEvents: 'none' });
   let parts = {};
   let flavor = opts.flavor;
   let accent = opts.accent, pattern = opts.pattern, nameArea = null, currentShape = 'classic';
@@ -501,14 +513,20 @@ export function createCake(host, opts = {}) {
   }
 
   function setShape(shape) {
-    shapeEl.textContent = '';
+    shapeEl.textContent = partsEl.textContent = '';
     parts = {};
-    const P = (style, key) => { const d = div('p', style); shapeEl.append(d); if (key) (parts[key] ||= []).push(d); return d; };
+    const P = ({ cls, ...style }, key) => {
+      const d = div(cls ? `p ${cls}` : 'p', style);
+      if (style.clipPath) { const w = div('ol-wrap'); w.append(d); partsEl.append(w); } else partsEl.append(d); // outlined around its clipped shape
+      if (key) (parts[key] ||= []).push(d);
+      return d;
+    };
     currentShape = SHAPES[shape] ? shape : 'classic';
     nameArea = buildShape(currentShape, P);
     name.place(nameArea);
-    shapeEl.prepend(matEl);
-    shapeEl.append(garlandEl, decoEl, name.svg);
+    const f = nameArea.face;
+    faceEl.innerHTML = f ? faceSvg(f.x, f.y) : ''; // static markup
+    shapeEl.append(matEl, partsEl, faceEl, garlandEl, decoEl, name.svg);
     paintLocal();
     api.setPattern(pattern);
     api.setFlavor(flavor);
@@ -565,6 +583,7 @@ export function createCake(host, opts = {}) {
       const colors = { ...c, frost: cream || c.frost, top2: cream || c.top2, stripe: `repeating-linear-gradient(90deg, ${c.b1} 0 20px, ${c.b2} 20px 40px)` };
       for (const role of ['b1', 'b2', 'frost', 'top2', 'stripe']) (parts[role] || []).forEach((d) => (d.style.background = colors[role]));
       lipColor = colors.top2;
+      if (nameArea?.face) faceEl.style.color = lightness(colors[nameArea.face.on]) > 0.42 ? '#4A2E20' : '#FFF1E0';
       ageEl.querySelector('.age-lip')?.style.setProperty('background', lipColor);
       // On a plaque the letters are on the cream, so they take whatever reads best on it.
       name.setColor(nameArea?.plaque ? (lightness(colors.frost) > 0.55 ? '#4A2238' : '#FFFFFF') : c.text);

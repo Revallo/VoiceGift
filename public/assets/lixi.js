@@ -181,7 +181,7 @@ export function createLixi(host, opts = {}) {
     svg.innerHTML = `<defs><radialGradient id="${id}g" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFE7A0" stop-opacity=".22"/><stop offset="1" stop-color="#FFE7A0" stop-opacity="0"/></radialGradient></defs>
       <ellipse cx="${CX}" cy="128" rx="190" ry="150" fill="url(#${id}g)"/>
       <ellipse cx="${CX}" cy="${POT + 60}" rx="${shape === 'bonsai' ? 104 : 66}" ry="9" fill="#000" opacity=".3"/>
-      ${trunk}${branches}${blooms}${extras}${potSvg()}`;
+      ${trunk}${branches}${blooms}${extras}<g class="lx-pot">${potSvg()}</g>`;
     placeTopper(TOPPERS[topper]?.emoji ? TOPPERS[topper] : null, '');
     const el = body.querySelector('.topper');
     if (el) el.style.top = `${Math.max(32, rows[0] - 2)}px`;

@@ -125,7 +125,7 @@ export function createKrathong(host, opts = {}) {
   const id = `kt${++uid}`;
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  Object.assign(svg.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, overflow: 'visible', borderRadius: '18px' });
+  Object.assign(svg.style, { position: 'absolute', left: '0', top: '0', width: `${W}px`, height: `${H}px`, overflow: 'visible' });
   body.append(svg);
   const sign = div('kt-name', { position: 'absolute', left: '20px', width: `${W - 40}px`, top: '58px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', lineHeight: '1.3' });
   const signFont = nameText(sign, true);

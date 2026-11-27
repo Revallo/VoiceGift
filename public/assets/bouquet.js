@@ -171,7 +171,7 @@ function bow(P, x, y) {
   P({ left: `${x + 3}px`, top: `${y - 8}px`, width: '56px', height: '32px', borderRadius: '50%', transform: 'rotate(-18deg)' }, 'bow');
   P({ left: `${x - 11}px`, top: `${y + 14}px`, width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(16deg)', transformOrigin: '50% 0' }, 'bow');
   P({ left: `${x + 1}px`, top: `${y + 14}px`, width: '10px', height: '46px', borderRadius: '3px', transform: 'rotate(-16deg)', transformOrigin: '50% 0' }, 'bow');
-  P({ left: `${x - 10}px`, top: `${y}px`, width: '20px', height: '20px', borderRadius: '50%', background: '#D9A93A', boxShadow: 'inset -3px -3px 0 rgba(0,0,0,0.15)' });
+  P({ left: `${x - 10}px`, top: `${y}px`, width: '20px', height: '20px', borderRadius: '50%', background: '#D9A93A' });
 }
 
 // The country's motif, printed lightly on the wrapping paper (gift.cake.local): the same patterns as the local
@@ -230,7 +230,7 @@ export function createBouquet(host, opts = {}) {
   glow.style.top = '-130px';
   const P = (parent, style) => { const d = div('p', style); parent.append(d); return d; };
 
-  const backEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
+  const backEl = div('b-parts', { position: 'absolute', inset: '0' }); // the shape's pieces behind the flowers
   body.append(backEl);
   const stemsEl = div('', { position: 'absolute', inset: '0' });
   body.append(stemsEl);
@@ -259,9 +259,9 @@ export function createBouquet(host, opts = {}) {
   // front cone, in front of the flowers (clicks pass through to them)
   const front = div('', { position: 'absolute', inset: '0', pointerEvents: 'none' });
   stage.append(front);
-  const frontEl = div('', { position: 'absolute', inset: '0' }); // the shape's pieces in front of the flowers
+  const frontEl = div('b-parts', { position: 'absolute', inset: '0' }); // the shape's pieces in front of the flowers
   front.append(frontEl);
-  const nameEl = div('p', { textAlign: 'center', lineHeight: '1.25', whiteSpace: 'nowrap', overflow: 'hidden' });
+  const nameEl = div('p b-name', { textAlign: 'center', lineHeight: '1.25', whiteSpace: 'nowrap', overflow: 'hidden' });
   const nameFit = nameText(nameEl, true);
   const drawing = createDrawing(front, W, H);
 
@@ -275,7 +275,14 @@ export function createBouquet(host, opts = {}) {
     stage.dataset.treat = SHAPES[currentShape].treat || '';
     backEl.textContent = frontEl.textContent = '';
     parts = {};
-    const add = (parent) => (style, role) => { const d = div('p', style); parent.append(d); if (role) (parts[role] ||= []).push(d); return d; };
+    // every piece gets the brown outline: a clipped piece through a wrapper around it, a see-through sheen none
+    const add = (parent) => (style, role) => {
+      const sheen = String(style.background || '').startsWith('rgba');
+      const d = div(sheen ? 'p hl' : 'p', style);
+      if (style.clipPath && !sheen) { const w = div('ol-wrap'); w.append(d); parent.append(w); } else parent.append(d);
+      if (role) (parts[role] ||= []).push(d);
+      return d;
+    };
     const n = buildShape(SHAPES[shape] ? shape : 'classic', add(backEl), add(frontEl));
     nameSize = n.size || null;
     Object.assign(nameEl.style, { left: `${n.left ?? 62}px`, top: `${n.top}px`, width: `${n.width ?? 266}px`, transform: n.rotate ? `rotate(${n.rotate}deg)` : '' });

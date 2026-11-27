@@ -19,7 +19,10 @@ the data is the side effect. This is a **prototype**: keep it simple and readabl
   The look ("Soft", 2026-11-26) lives in `assets/soft.css`, loaded after `app.css` on every page: a light page with a pastel
   wash per occasion (`--wash`/`--wash2`), black pill buttons, round icon buttons, no bordered boxes (a soft tile only where
   something needs a surface). Type roles: display 900 caps, title 800 caps, label 700 caps, button 800 caps, body 500,
-  numbers 900 tabular. **Never capitals for captions, inputs or what people typed** (CSS `text-transform` only, strings unchanged).
+  numbers 900 tabular. The gifts are drawn **cute, like stickers** (2026-11-27, `soft.css` "The cute look"): flat colours,
+  a warm brown outline (`--ol`; pieces cut with clip-path go in an `.ol-wrap`), a face on most cakes (each shape's `face` spot, `faceSvg` in `cake.js`) and on the tumpeng (`coneFace`), thin outlines (`--olt`) on dishes, envelopes and river lights, and
+  **no card behind a gift**: the stage has no colour unless a backdrop is picked, and a backdrop (and the river's night) fades out at its edges.
+  **Never capitals for captions, inputs or what people typed** (CSS `text-transform` only, strings unchanged).
   Icons: `assets/icons.js` (chunky two-tone SVG, fill = `--ico-fill`/`--wash`), re-exported as `icon` from `common.js`; emoji
   only as content (stickers, moods). Shared pieces in `common.js`: `topBar()`, `bottomNav()`, `openSheet()` (a sheet over a
   sheet closes the first one properly). The slide buttons are real sliders (`swipeButton()` in `common.js`); a tap works too.

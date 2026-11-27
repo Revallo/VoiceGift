@@ -85,6 +85,7 @@ const W = 390, H = 360;
 const CX = 195, CY = 262; // the middle of the tray
 const BASE = CY - 6; // where the cone stands
 const MAX = 40;
+const OL = '#5B3A29'; // the brown sticker outline (soft.css --ol)
 let uid = 0;
 
 // Where the dishes go: around the tray (but never hidden behind the cone), then a second row in front.
@@ -176,13 +177,24 @@ export function createTumpeng(host, opts = {}) {
     return out;
   }
 
+  // A happy face low on the cone, sized to fit its width there (static markup). Dark eyes, or light ones on red rice.
+  function coneFace(hw, tipY) {
+    const h = BASE - tipY, y = tipY + h * 0.66, half = hw * Math.pow(0.66, 0.8);
+    const k = Math.min(1, half / 50), x = CX, ink = flavor === FLAVORS.redrice ? '#FFF1E0' : '#4A2E20';
+    return `<g transform="translate(${x} ${y.toFixed(1)}) scale(${k.toFixed(2)})">
+      <ellipse cx="-30" cy="9" rx="9" ry="5" fill="#FF8FA8" opacity=".6"/><ellipse cx="30" cy="9" rx="9" ry="5" fill="#FF8FA8" opacity=".6"/>
+      <ellipse cx="-16" cy="0" rx="4" ry="5" fill="${ink}"/><ellipse cx="16" cy="0" rx="4" ry="5" fill="${ink}"/>
+      <circle cx="-14.6" cy="-1.8" r="1.4" fill="#FFF"/><circle cx="17.4" cy="-1.8" r="1.4" fill="#FFF"/>
+      <path d="M-8 6Q0 14 8 6" fill="none" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/></g>`;
+  }
+
   function draw() {
     const { hw, tip: tipY } = shape;
     const h = BASE - tipY;
     const cut = tipY + h * 0.27; // where the top piece comes off
     const rnd = seeded(7);
     let grains = '';
-    for (let k = 0; k < 140; k++) {
+    for (let k = 0; k < 70; k++) {
       const y = tipY + 6 + h * Math.sqrt(rnd()), w = hw * Math.pow((y - tipY) / h, 0.8);
       const x = (CX + (rnd() * 2 - 1) * w * 0.95).toFixed(1);
       grains += `<ellipse cx="${x}" cy="${y.toFixed(1)}" rx="1.9" ry="1.1" transform="rotate(${Math.round(rnd() * 180)} ${x} ${y.toFixed(1)})" fill="${flavor.grain}" opacity="${(0.35 + rnd() * 0.4).toFixed(2)}"/>`;
@@ -203,21 +215,21 @@ export function createTumpeng(host, opts = {}) {
     for (let k = -7; k <= 7; k++) veins += `<path d="M${CX + k * 22} ${CY - 50 + Math.abs(k) * 3.5}L${CX + k * 22 + 10} ${CY + 50 - Math.abs(k) * 3.5}" stroke="#2F6B2A" stroke-width="1" opacity=".35"/>`;
     const cone = conePath(hw, tipY);
     svg.innerHTML = `<defs>
-      <linearGradient id="${id}r" x1="0" x2="1"><stop offset="0" stop-color="${flavor.rice2}"/><stop offset=".32" stop-color="${flavor.rice}"/><stop offset=".5" stop-color="${flavor.grain}"/><stop offset=".72" stop-color="${flavor.rice}"/><stop offset="1" stop-color="${flavor.rice2}"/></linearGradient>
-      <radialGradient id="${id}l" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#5DA94A"/><stop offset="1" stop-color="#3B7F36"/></radialGradient>
+      <linearGradient id="${id}r" x1="0" x2="1"><stop offset=".2" stop-color="${flavor.grain}"/><stop offset=".2" stop-color="${flavor.rice}"/><stop offset=".8" stop-color="${flavor.rice}"/><stop offset=".8" stop-color="${flavor.rice2}"/></linearGradient>
+      <radialGradient id="${id}l" cx=".5" cy=".42" r=".6"><stop offset=".62" stop-color="#62AE4C"/><stop offset=".62" stop-color="#4E9A3E"/></radialGradient>
       <clipPath id="${id}c"><path d="${cone}"/></clipPath>
       <clipPath id="${id}t"><rect x="0" y="0" width="${W}" height="${cut + 1}"/></clipPath>
       <clipPath id="${id}b"><rect x="0" y="${cut}" width="${W}" height="${H}"/></clipPath>
     </defs>
-    <ellipse cx="${CX}" cy="${CY + 16}" rx="186" ry="58" fill="#000" opacity=".28"/>
-    <ellipse cx="${CX}" cy="${CY + 7}" rx="184" ry="64" fill="${tray.rim}"/>
+    <ellipse cx="${CX}" cy="${CY + 16}" rx="186" ry="58" fill="#000" opacity=".1"/>
+    <ellipse cx="${CX}" cy="${CY + 7}" rx="184" ry="64" fill="${tray.rim}" stroke="${OL}" stroke-width="3"/>
     <ellipse cx="${CX}" cy="${CY}" rx="182" ry="64" fill="${tray.color}"/>${weave}
-    <path d="${leaf}Z" fill="url(#${id}l)"/>${veins}
+    <path d="${leaf}Z" fill="url(#${id}l)" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/>${veins}
     <path d="M${CX - 160} ${CY - 2}H${CX + 160}" stroke="#2F6B2A" stroke-width="1.6" opacity=".4"/>
     <ellipse cx="${CX}" cy="${BASE + 4}" rx="${hw + 10}" ry="18" fill="#1E3F18" opacity=".45"/>
-    <g class="tp-bottom" clip-path="url(#${id}b)"><g clip-path="url(#${id}c)"><path d="${cone}" fill="url(#${id}r)"/>${grains}${garnish(hw, tipY)}</g></g>
-    <g class="tp-top" clip-path="url(#${id}t)"><g clip-path="url(#${id}c)"><path d="${cone}" fill="url(#${id}r)"/>${grains}${garnish(hw, tipY)}</g></g>
-    <ellipse class="tp-cutline" cx="${CX}" cy="${cut}" rx="${(hw * Math.pow(0.27, 0.8) + 1).toFixed(1)}" ry="4.5" fill="${flavor.grain}" stroke="${flavor.rice2}" stroke-width="1"/>
+    <g class="tp-bottom" clip-path="url(#${id}b)"><g clip-path="url(#${id}c)"><path d="${cone}" fill="url(#${id}r)"/>${grains}${garnish(hw, tipY)}<path d="${cone}" fill="none" stroke="${OL}" stroke-width="6.4"/></g>${coneFace(hw, tipY)}</g>
+    <g class="tp-top" clip-path="url(#${id}t)"><g clip-path="url(#${id}c)"><path d="${cone}" fill="url(#${id}r)"/>${grains}${garnish(hw, tipY)}<path d="${cone}" fill="none" stroke="${OL}" stroke-width="6.4"/></g></g>
+    <ellipse class="tp-cutline" cx="${CX}" cy="${cut}" rx="${(hw * Math.pow(0.27, 0.8) + 1).toFixed(1)}" ry="4.5" fill="${flavor.grain}" stroke="${OL}" stroke-width="2"/>
     ${footGarnish(hw)}`;
     stage.style.setProperty('--cut', `${cut}px`);
     drawTopper();

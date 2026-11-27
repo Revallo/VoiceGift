@@ -73,12 +73,14 @@ const sagY = (base, x) => base + 22 * (1 - ((x - 195) / 205) ** 2);
 
 // Balanced rows, rather than filling the first string before starting the next.
 // Each returned index still belongs to the same voice; no decorative voices are added.
+const olLayer = (el) => { const w = div('l-ol'); w.append(el); return w; };
+
 export function lanternSpots(n) {
   n = Math.max(0, Math.min(MAX, Math.floor(Number(n) || 0)));
   const rows = strings(n);
   if (!rows.length) return [];
   const per = Math.floor(n / rows.length), extra = n % rows.length;
-  const [w, h] = n <= 4 ? [44, 58] : n <= 8 ? [40, 52] : n <= 12 ? [34, 46] : n <= 21 ? [28, 36] : n <= 30 ? [24, 32] : [22, 30];
+  const [w, h] = n <= 4 ? [56, 64] : n <= 8 ? [50, 56] : n <= 12 ? [42, 48] : n <= 21 ? [32, 38] : n <= 30 ? [27, 32] : [24, 28]; // round and plump
   const rnd = seeded(3 + n);
   const spots = [];
   rows.forEach((base, r) => {
@@ -117,9 +119,9 @@ export function createLanterns(host, opts = {}) {
     + '<path class="rv-wave" d="M10 22q20-4 40 0t40 0M150 30q20-4 40 0t40 0M280 20q20-4 40 0t40 0M60 40q20-4 40 0t40 0M240 44q20-4 40 0" stroke="rgba(255,226,160,.42)" stroke-width="1.5" fill="none" stroke-linecap="round"/>';
   body.append(river);
   const lines = div('', { position: 'absolute', left: '0', width: `${W}px`, textAlign: 'center' });
-  const words = div('', { lineHeight: '1.25', padding: '0 14px' });
+  const words = div('l-words', { lineHeight: '1.25', padding: '0 14px' });
   const wordsFont = nameText(words, false);
-  const names = div('', { marginTop: '10px', fontSize: '12px', fontWeight: '700', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.62)' });
+  const names = div('l-names', { marginTop: '10px', fontSize: '12px', fontWeight: '700', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.62)' });
   lines.append(words, names);
   body.append(lines);
 
@@ -207,7 +209,8 @@ export function createLanterns(host, opts = {}) {
         btn.style.setProperty('--river-at', `${(p.i % 5) * 0.12}s`);
         btn.append(
           div('l-line', { height: `${p.len}px` }),
-          Object.assign(div('l-body', { top: `${p.len}px`, left: '6px', width: `${p.w}px`, height: `${p.h}px` }), { innerHTML: '<i class="l-motif"></i>' }),
+          // the body sits in its own layer, so a star / heart / ketupat cut out with clip-path still gets an outline
+          olLayer(Object.assign(div('l-body', { top: `${p.len}px`, left: '6px', width: `${p.w}px`, height: `${p.h}px` }), { innerHTML: '<i class="l-motif"></i>' })),
           div('l-tassel', { top: `${p.len + p.h + 2}px` }),
           div('l-trail', { top: `${p.len + p.h * 0.7}px` }) // the glow it leaves behind as it rises
         );

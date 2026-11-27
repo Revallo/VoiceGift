@@ -110,7 +110,13 @@ export function createStage(host, W, H, cls = '') {
     const k = r.width / W;
     return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k };
   };
-  const setBackdrop = (key) => { wrap.style.background = BACKDROPS[key]?.bg || ''; };
+  // No backdrop picked: the gift stands on the page itself, nothing behind it. A picked backdrop is painted on the
+  // stage and fades out at its edges (soft.css), so it is never a box either.
+  const setBackdrop = (key) => {
+    const bg = BACKDROPS[key]?.bg || '';
+    stage.style.background = bg;
+    wrap.classList.toggle('with-backdrop', Boolean(bg));
+  };
   return { wrap, stage, glow, body, layer, toStage, size: { w: W, h: H }, setBackdrop };
 }
 
